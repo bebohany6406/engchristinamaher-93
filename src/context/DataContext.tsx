@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Attendance, Grade, Video, Book, Student } from "@/types";
 import { toast } from "@/hooks/use-toast";
@@ -184,7 +185,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return grades;
   };
 
-  const addVideo = (title: string, url: string, grade: "first" | "second" | "third", thumbnailUrl?: string) => {
+  const addVideo = (title: string, url: string, grade: "first" | "second" | "third" = "first", thumbnailUrl?: string) => {
     const newVideo: Video = {
       id: `video-${Date.now()}`,
       title,
@@ -209,7 +210,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return videos;
   };
 
-  const addBook = (title: string, url: string, grade: "first" | "second" | "third") => {
+  const addBook = (title: string, url: string, grade: "first" | "second" | "third" = "first") => {
     const newBook: Book = {
       id: `book-${Date.now()}`,
       title,

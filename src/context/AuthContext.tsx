@@ -18,6 +18,16 @@ interface AuthContextType {
     group: string,
     grade: "first" | "second" | "third"
   ) => Student;
+  updateStudent: (
+    id: string,
+    name: string,
+    phone: string,
+    password: string,
+    parentPhone: string,
+    group: string,
+    grade: "first" | "second" | "third"
+  ) => void;
+  deleteStudent: (id: string) => void;
   createParent: (phone: string, studentCode: string, password: string) => Parent;
   getStudentByCode: (code: string) => Student | undefined;
   getAllStudents: () => Student[];
@@ -98,7 +108,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: student.name,
         phone: student.phone,
         password: student.password,
-        role: "student"
+        role: "student",
+        code: student.code,
+        group: student.group,
+        grade: student.grade
       });
       toast({
         title: "تم تسجيل الدخول بنجاح",
@@ -169,6 +182,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newStudent;
   };
 
+  const updateStudent = (
+    id: string,
+    name: string,
+    phone: string,
+    password: string,
+    parentPhone: string,
+    group: string,
+    grade: "first" | "second" | "third"
+  ): void => {
+    const studentIndex = students.findIndex(s => s.id === id);
+    if (studentIndex !== -1) {
+      const updatedStudent = {
+        ...students[studentIndex],
+        name,
+        phone,
+        password,
+        parentPhone,
+        group,
+        grade
+      };
+
+      const newStudents = [...students];
+      newStudents[studentIndex] = updatedStudent;
+      setStudents(newStudents);
+    }
+  };
+
+  const deleteStudent = (id: string): void => {
+    setStudents(prev => prev.filter(student => student.id !== id));
+  };
+
   const createParent = (phone: string, studentCode: string, password: string): Parent => {
     const student = students.find(s => s.code === studentCode);
     
@@ -216,6 +260,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     createStudent,
+    updateStudent,
+    deleteStudent,
     createParent,
     getStudentByCode,
     getAllStudents,

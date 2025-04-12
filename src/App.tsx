@@ -29,12 +29,6 @@ import StudentGrades from "./pages/StudentGrades";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Play login sound when the app loads
-  const playLoginSound = () => {
-    const audio = new Audio("/login.mp3");
-    audio.play().catch(e => console.error("Sound play failed:", e));
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -45,7 +39,7 @@ const App = () => {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login onLoginSuccess={playLoginSound} />} />
+                <Route path="/login" element={<Login />} />
                 <Route path="/dashboard" element={<RequireAuth children={<Dashboard />} />} />
                 
                 {/* Admin Routes */}

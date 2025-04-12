@@ -18,6 +18,7 @@ const Videos = () => {
   // Form state
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [grade, setGrade] = useState<"first" | "second" | "third">("first");
   
   const videos = getAllVideos();
   const filteredVideos = videos.filter(video => 
@@ -26,9 +27,10 @@ const Videos = () => {
   
   const handleAddVideo = (e: React.FormEvent) => {
     e.preventDefault();
-    addVideo(title, url);
+    addVideo(title, url, grade);
     setTitle("");
     setUrl("");
+    setGrade("first");
     setShowAddForm(false);
   };
   
@@ -170,6 +172,20 @@ const Videos = () => {
                   placeholder="https://..."
                 />
                 <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm)</p>
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">الصف الدراسي</label>
+                <select
+                  className="inputField"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value as "first" | "second" | "third")}
+                  required
+                >
+                  <option value="first">الصف الأول الثانوي</option>
+                  <option value="second">الصف الثاني الثانوي</option>
+                  <option value="third">الصف الثالث الثانوي</option>
+                </select>
               </div>
               
               <div className="flex gap-4 pt-4">

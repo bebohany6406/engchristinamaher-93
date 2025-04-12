@@ -1,11 +1,10 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, FilePlus, Calendar, Search, BookOpen, FileText, Download } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { ArrowRight, FilePlus, Calendar, Search, FileText } from "lucide-react";
 
 const Books = () => {
   const navigate = useNavigate();
@@ -17,6 +16,7 @@ const Books = () => {
   // Form state
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [grade, setGrade] = useState<"first" | "second" | "third">("first");
   
   const books = getAllBooks();
   const filteredBooks = books.filter(book => 
@@ -25,10 +25,23 @@ const Books = () => {
   
   const handleAddBook = (e: React.FormEvent) => {
     e.preventDefault();
-    addBook(title, url);
+    addBook(title, url, grade);
     setTitle("");
     setUrl("");
+    setGrade("first");
     setShowAddForm(false);
+  };
+  
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-EG', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+  
+  const openBook = (url: string) => {
+    window.open(url, '_blank');
   };
   
   return (
@@ -51,14 +64,14 @@ const Books = () => {
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-physics-gold">الكتب</h1>
+            <h1 className="text-2xl font-bold text-physics-gold">الكتب والملفات</h1>
             {currentUser?.role === "admin" && (
               <button 
                 onClick={() => setShowAddForm(true)}
                 className="goldBtn flex items-center gap-2"
               >
                 <FilePlus size={18} />
-                <span>إضافة كتاب</span>
+                <span>إضافة كتاب/ملف</span>
               </button>
             )}
           </div>
@@ -69,7 +82,7 @@ const Books = () => {
             <input
               type="text"
               className="inputField pr-12"
-              placeholder="ابحث عن كتاب"
+              placeholder="ابحث عن كتاب أو ملف"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -79,14 +92,15 @@ const Books = () => {
           <div className="bg-physics-dark rounded-lg overflow-hidden">
             {filteredBooks.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-white text-lg">لا توجد كتب متاحة</p>
+                <p className="text-white text-lg">لا توجد كتب أو ملفات متاحة</p>
               </div>
             ) : (
               <div className="divide-y divide-physics-navy">
                 {filteredBooks.map((book) => (
                   <div 
                     key={book.id} 
-                    className="p-4 hover:bg-physics-navy/30"
+                    className="p-4 hover:bg-physics-navy/30 cursor-pointer"
+                    onClick={() => openBook(book.url)}
                   >
                     <div className="flex items-center">
                       <div className="mr-4 bg-physics-navy p-3 rounded-full">
@@ -99,14 +113,6 @@ const Books = () => {
                           <span>{formatDate(book.uploadDate)}</span>
                         </div>
                       </div>
-                      <a 
-                        href={book.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 text-physics-gold hover:text-physics-lightgold"
-                      >
-                        <Download size={20} />
-                      </a>
                     </div>
                   </div>
                 ))}
@@ -120,11 +126,11 @@ const Books = () => {
       {showAddForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">إضافة كتاب جديد</h2>
+            <h2 className="text-xl font-bold text-physics-gold mb-6">إضافة كتاب/ملف جديد</h2>
             
             <form onSubmit={handleAddBook} className="space-y-4">
               <div>
-                <label className="block text-white mb-1">عنوان الكتاب</label>
+                <label className="block text-white mb-1">عنوان الكتاب/الملف</label>
                 <input
                   type="text"
                   className="inputField"
@@ -135,7 +141,7 @@ const Books = () => {
               </div>
               
               <div>
-                <label className="block text-white mb-1">رابط الكتاب</label>
+                <label className="block text-white mb-1">رابط الكتاب/الملف</label>
                 <input
                   type="text"
                   className="inputField"
@@ -144,12 +150,26 @@ const Books = () => {
                   required
                   placeholder="https://..."
                 />
-                <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للكتاب (pdf)</p>
+                <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للكتاب أو الملف (PDF, DOCX, etc.)</p>
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">الصف الدراسي</label>
+                <select
+                  className="inputField"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value as "first" | "second" | "third")}
+                  required
+                >
+                  <option value="first">الصف الأول الثانوي</option>
+                  <option value="second">الصف الثاني الثانوي</option>
+                  <option value="third">الصف الثالث الثانوي</option>
+                </select>
               </div>
               
               <div className="flex gap-4 pt-4">
                 <button type="submit" className="goldBtn flex-1">
-                  إضافة الكتاب
+                  إضافة الكتاب/الملف
                 </button>
                 <button 
                   type="button" 
