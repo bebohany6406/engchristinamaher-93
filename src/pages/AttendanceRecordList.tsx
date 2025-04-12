@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, Checkbox, Check, X } from "lucide-react";
+import { ArrowRight, CheckSquare, Check, X } from "lucide-react";
 import { Student } from "@/types";
 import { getGradeDisplay } from "@/lib/utils";
 
@@ -67,7 +67,7 @@ const GradeButton = ({ grade, onClick }: GradeButtonProps) => {
       className="bg-physics-dark hover:bg-physics-dark/80 rounded-xl p-6 flex flex-col items-center justify-center transition-transform transform hover:scale-105"
     >
       <div className="bg-physics-gold/20 p-4 rounded-full mb-4 text-physics-gold">
-        <Checkbox className="h-10 w-10" />
+        <CheckSquare className="h-10 w-10" />
       </div>
       <h2 className="text-xl font-bold text-white">{getGradeDisplay(grade)}</h2>
     </button>

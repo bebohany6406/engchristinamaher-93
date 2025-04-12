@@ -5,6 +5,9 @@ export interface User {
   phone: string;
   password: string;
   role: "admin" | "student" | "parent";
+  code?: string;     // إضافة للطلاب
+  group?: string;    // إضافة للطلاب
+  grade?: "first" | "second" | "third"; // إضافة للطلاب
 }
 
 export interface Student {

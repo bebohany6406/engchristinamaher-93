@@ -37,6 +37,10 @@ export function ManualAttendance() {
   const handleAbsence = () => {
     if (studentInfo) {
       addAttendance(studentInfo.id, studentInfo.name, "absent");
+      // Play sound effect
+      const audio = new Audio("/attendance-absent.mp3");
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      
       toast({
         title: "تم تسجيل الغياب",
         description: `تم تسجيل غياب الطالب ${studentInfo.name}`
@@ -47,7 +51,7 @@ export function ManualAttendance() {
   };
 
   return (
-    <div className="bg-physics-navy p-6 rounded-lg">
+    <div className="bg-physics-dark p-6 rounded-lg">
       <h2 className="text-xl font-bold mb-6 text-physics-gold">تسجيل الغياب</h2>
       
       <div className="space-y-4">
@@ -68,7 +72,7 @@ export function ManualAttendance() {
         </div>
         
         {studentInfo && (
-          <div className="bg-physics-dark p-4 rounded-lg">
+          <div className="bg-physics-navy p-4 rounded-lg">
             <p className="text-white mb-2">الطالب: <span className="font-bold">{studentInfo.name}</span></p>
             <button 
               onClick={handleAbsence}

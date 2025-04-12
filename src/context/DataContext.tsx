@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Attendance, Grade, Video, Book, Student } from "@/types";
 import { toast } from "@/hooks/use-toast";
@@ -23,10 +22,12 @@ interface DataContextType {
   // Videos methods
   addVideo: (title: string, url: string, grade: "first" | "second" | "third", thumbnailUrl?: string) => void;
   getVideosByGrade: (grade: "first" | "second" | "third") => Video[];
+  getAllVideos: () => Video[];
   
   // Books methods
   addBook: (title: string, url: string, grade: "first" | "second" | "third") => void;
   getBooksByGrade: (grade: "first" | "second" | "third") => Book[];
+  getAllBooks: () => Book[];
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -37,7 +38,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [videos, setVideos] = useState<Video[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
 
-  // Load data from localStorage on initial mount
   useEffect(() => {
     const storedAttendance = localStorage.getItem("attendance");
     if (storedAttendance) {
@@ -76,7 +76,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Save data to localStorage when it changes
   useEffect(() => {
     localStorage.setItem("attendance", JSON.stringify(attendance));
     localStorage.setItem("grades", JSON.stringify(grades));
@@ -84,16 +83,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("books", JSON.stringify(books));
   }, [attendance, grades, videos, books]);
 
-  // Attendance methods
   const addAttendance = (studentId: string, studentName: string, status: "present" | "absent") => {
     const today = new Date().toISOString().split('T')[0];
     const time = new Date().toLocaleTimeString();
     
-    // Get the current lesson count for this student
     const studentAttendance = attendance.filter(a => a.studentId === studentId);
     const lessonNumber = studentAttendance.length + 1;
     
-    // Check if attendance for this student already exists for today
     const existingRecord = attendance.find(
       a => a.studentId === studentId && a.date === today
     );
@@ -107,7 +103,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         )
       );
       
-      // Play sound effect
       const audio = status === 'present' 
         ? new Audio("/attendance-present.mp3") 
         : new Audio("/attendance-absent.mp3");
@@ -125,12 +120,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         date: today,
         time,
         status,
-        lessonNumber: lessonNumber > 8 ? 8 : lessonNumber // Max 8 lessons
+        lessonNumber: lessonNumber > 8 ? 8 : lessonNumber
       };
       
       setAttendance(prev => [...prev, newAttendance]);
       
-      // Play sound effect
       const audio = status === 'present' 
         ? new Audio("/attendance-present.mp3") 
         : new Audio("/attendance-absent.mp3");
@@ -148,7 +142,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getAttendanceByGrade = (grade: "first" | "second" | "third"): Attendance[] => {
-    // This requires looking up students by grade and then finding their attendance
     return attendance;
   };
 
@@ -157,7 +150,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return studentAttendance.length > 8 ? 8 : studentAttendance.length;
   };
 
-  // Grades methods
   const addGrade = (
     studentId: string, 
     studentName: string, 
@@ -189,11 +181,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getGradesByGradeLevel = (grade: "first" | "second" | "third"): Grade[] => {
-    // This requires looking up students by grade and then finding their grades
     return grades;
   };
 
-  // Videos methods
   const addVideo = (title: string, url: string, grade: "first" | "second" | "third", thumbnailUrl?: string) => {
     const newVideo: Video = {
       id: `video-${Date.now()}`,
@@ -219,7 +209,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return videos;
   };
 
-  // Books methods
   const addBook = (title: string, url: string, grade: "first" | "second" | "third") => {
     const newBook: Book = {
       id: `book-${Date.now()}`,
@@ -258,9 +247,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getGradesByGradeLevel,
     addVideo,
     getVideosByGrade,
+    getAllVideos,
     addBook,
     getBooksByGrade,
-    getAllVideos,
     getAllBooks,
   };
 

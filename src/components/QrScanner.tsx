@@ -82,6 +82,10 @@ export function QrScanner() {
     const student = getStudentByCode(code);
     if (student) {
       addAttendance(student.id, student.name, "present");
+      // Play sound effect
+      const audio = new Audio("/attendance-present.mp3");
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      
       toast({
         title: "تم تسجيل الحضور",
         description: `تم تسجيل حضور الطالب ${student.name}`
@@ -107,6 +111,10 @@ export function QrScanner() {
       const student = getStudentByCode(scannedCode);
       if (student) {
         addAttendance(student.id, student.name, "present");
+        // Play sound effect
+        const audio = new Audio("/attendance-present.mp3");
+        audio.play().catch(e => console.error("Sound play failed:", e));
+        
         toast({
           title: "تم تسجيل الحضور",
           description: `تم تسجيل حضور الطالب ${student.name}`
