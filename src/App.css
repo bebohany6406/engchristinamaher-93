@@ -1,42 +1,83 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --physics-navy: #1e293b;
+  --physics-dark: #0f172a;
+  --physics-gold: #f59e0b;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Base styles and utility classes */
+body {
+  direction: rtl;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.bg-physics-navy {
+  background-color: var(--physics-navy);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.bg-physics-dark {
+  background-color: var(--physics-dark);
 }
 
-.card {
-  padding: 2em;
+.bg-physics-gold {
+  background-color: var(--physics-gold);
 }
 
-.read-the-docs {
-  color: #888;
+.text-physics-gold {
+  color: var(--physics-gold);
+}
+
+.text-physics-navy {
+  color: var(--physics-navy);
+}
+
+/* Button styles */
+.goldBtn {
+  background-color: var(--physics-gold);
+  color: var(--physics-navy);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.goldBtn:hover {
+  opacity: 0.9;
+}
+
+/* Input fields */
+.inputField {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: #334155;
+  border: 1px solid #475569;
+  color: white;
+  outline: none;
+}
+
+.inputField:focus {
+  border-color: var(--physics-gold);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--physics-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }

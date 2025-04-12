@@ -25,6 +25,7 @@ import AttendanceListByGrade from "./pages/AttendanceListByGrade";
 import GradesManagement from "./pages/GradesManagement";
 import GradesByGrade from "./pages/GradesByGrade";
 import StudentGrades from "./pages/StudentGrades";
+import "./App.css";
 
 const queryClient = new QueryClient();
 

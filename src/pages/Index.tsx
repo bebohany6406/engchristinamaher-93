@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -19,7 +18,7 @@ const Index = () => {
 
           <div className="space-y-4">
             <button
-              className="goldBtn w-full"
+              className="goldBtn w-full py-3 rounded-lg bg-physics-gold text-physics-navy font-bold hover:bg-physics-gold/90 transition-colors"
               onClick={() => navigate("/login")}
             >
               تسجيل الدخول
