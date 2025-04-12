@@ -31,7 +31,9 @@ export interface Attendance {
   studentId: string;
   studentName: string;
   date: string;
+  time: string;
   status: "present" | "absent";
+  lessonNumber: number;
 }
 
 export interface Grade {
@@ -42,6 +44,7 @@ export interface Grade {
   score: number;
   totalScore: number;
   date: string;
+  lessonNumber: number;
 }
 
 export interface Video {
@@ -50,6 +53,7 @@ export interface Video {
   url: string;
   thumbnailUrl?: string;
   uploadDate: string;
+  grade: "first" | "second" | "third";
 }
 
 export interface Book {
@@ -57,4 +61,5 @@ export interface Book {
   title: string;
   url: string;
   uploadDate: string;
+  grade: "first" | "second" | "third";
 }

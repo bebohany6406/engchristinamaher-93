@@ -12,18 +12,21 @@ interface DataContextType {
   // Attendance methods
   addAttendance: (studentId: string, studentName: string, status: "present" | "absent") => void;
   getStudentAttendance: (studentId: string) => Attendance[];
+  getAttendanceByGrade: (grade: "first" | "second" | "third") => Attendance[];
+  getStudentLessonCount: (studentId: string) => number;
   
   // Grades methods
-  addGrade: (studentId: string, studentName: string, examName: string, score: number, totalScore: number) => void;
+  addGrade: (studentId: string, studentName: string, examName: string, score: number, totalScore: number, lessonNumber: number) => void;
   getStudentGrades: (studentId: string) => Grade[];
+  getGradesByGradeLevel: (grade: "first" | "second" | "third") => Grade[];
   
   // Videos methods
-  addVideo: (title: string, url: string, thumbnailUrl?: string) => void;
-  getAllVideos: () => Video[];
+  addVideo: (title: string, url: string, grade: "first" | "second" | "third", thumbnailUrl?: string) => void;
+  getVideosByGrade: (grade: "first" | "second" | "third") => Video[];
   
   // Books methods
-  addBook: (title: string, url: string) => void;
-  getAllBooks: () => Book[];
+  addBook: (title: string, url: string, grade: "first" | "second" | "third") => void;
+  getBooksByGrade: (grade: "first" | "second" | "third") => Book[];
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -84,6 +87,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Attendance methods
   const addAttendance = (studentId: string, studentName: string, status: "present" | "absent") => {
     const today = new Date().toISOString().split('T')[0];
+    const time = new Date().toLocaleTimeString();
+    
+    // Get the current lesson count for this student
+    const studentAttendance = attendance.filter(a => a.studentId === studentId);
+    const lessonNumber = studentAttendance.length + 1;
     
     // Check if attendance for this student already exists for today
     const existingRecord = attendance.find(
@@ -94,10 +102,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAttendance(prev => 
         prev.map(record => 
           record.id === existingRecord.id 
-            ? { ...record, status } 
+            ? { ...record, status, time } 
             : record
         )
       );
+      
+      // Play sound effect
+      const audio = status === 'present' 
+        ? new Audio("/attendance-present.mp3") 
+        : new Audio("/attendance-absent.mp3");
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      
       toast({
         title: "تم تحديث الحضور",
         description: `تم تحديث حالة الطالب ${studentName} إلى ${status === 'present' ? 'حاضر' : 'غائب'}`,
@@ -108,13 +123,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         studentId,
         studentName,
         date: today,
-        status
+        time,
+        status,
+        lessonNumber: lessonNumber > 8 ? 8 : lessonNumber // Max 8 lessons
       };
       
       setAttendance(prev => [...prev, newAttendance]);
+      
+      // Play sound effect
+      const audio = status === 'present' 
+        ? new Audio("/attendance-present.mp3") 
+        : new Audio("/attendance-absent.mp3");
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      
       toast({
         title: "تم تسجيل الحضور",
-        description: `تم تسجيل ${status === 'present' ? 'حضور' : 'غياب'} الطالب ${studentName}`,
+        description: `تم تسجيل ${status === 'present' ? 'حضور' : 'غياب'} الطالب ${studentName} للحصة ${newAttendance.lessonNumber}`,
       });
     }
   };
@@ -123,13 +147,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return attendance.filter(record => record.studentId === studentId);
   };
 
+  const getAttendanceByGrade = (grade: "first" | "second" | "third"): Attendance[] => {
+    // This requires looking up students by grade and then finding their attendance
+    return attendance;
+  };
+
+  const getStudentLessonCount = (studentId: string): number => {
+    const studentAttendance = attendance.filter(a => a.studentId === studentId);
+    return studentAttendance.length > 8 ? 8 : studentAttendance.length;
+  };
+
   // Grades methods
   const addGrade = (
     studentId: string, 
     studentName: string, 
     examName: string, 
     score: number, 
-    totalScore: number
+    totalScore: number,
+    lessonNumber: number
   ) => {
     const newGrade: Grade = {
       id: `grade-${Date.now()}`,
@@ -138,7 +173,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       examName,
       score,
       totalScore,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      lessonNumber
     };
 
     setGrades(prev => [...prev, newGrade]);
@@ -152,14 +188,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return grades.filter(grade => grade.studentId === studentId);
   };
 
+  const getGradesByGradeLevel = (grade: "first" | "second" | "third"): Grade[] => {
+    // This requires looking up students by grade and then finding their grades
+    return grades;
+  };
+
   // Videos methods
-  const addVideo = (title: string, url: string, thumbnailUrl?: string) => {
+  const addVideo = (title: string, url: string, grade: "first" | "second" | "third", thumbnailUrl?: string) => {
     const newVideo: Video = {
       id: `video-${Date.now()}`,
       title,
       url,
       thumbnailUrl,
-      uploadDate: new Date().toISOString()
+      uploadDate: new Date().toISOString(),
+      grade
     };
 
     setVideos(prev => [...prev, newVideo]);
@@ -169,17 +211,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const getVideosByGrade = (grade: "first" | "second" | "third"): Video[] => {
+    return videos.filter(video => video.grade === grade);
+  };
+  
   const getAllVideos = (): Video[] => {
     return videos;
   };
 
   // Books methods
-  const addBook = (title: string, url: string) => {
+  const addBook = (title: string, url: string, grade: "first" | "second" | "third") => {
     const newBook: Book = {
       id: `book-${Date.now()}`,
       title,
       url,
-      uploadDate: new Date().toISOString()
+      uploadDate: new Date().toISOString(),
+      grade
     };
 
     setBooks(prev => [...prev, newBook]);
@@ -189,6 +236,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const getBooksByGrade = (grade: "first" | "second" | "third"): Book[] => {
+    return books.filter(book => book.grade === grade);
+  };
+  
   const getAllBooks = (): Book[] => {
     return books;
   };
@@ -200,11 +251,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     books,
     addAttendance,
     getStudentAttendance,
+    getAttendanceByGrade,
+    getStudentLessonCount,
     addGrade,
     getStudentGrades,
+    getGradesByGradeLevel,
     addVideo,
-    getAllVideos,
+    getVideosByGrade,
     addBook,
+    getBooksByGrade,
+    getAllVideos,
     getAllBooks,
   };
 

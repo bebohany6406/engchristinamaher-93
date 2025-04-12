@@ -1,18 +1,21 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, UserPlus, Search, UserX, Edit } from "lucide-react";
+import { ArrowRight, UserPlus, Search, UserX, Edit, Trash2 } from "lucide-react";
 import { Student } from "@/types";
 import { getGradeDisplay } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 const StudentsManagement = () => {
-  const { getAllStudents, createStudent } = useAuth();
+  const { getAllStudents, createStudent, deleteStudent, updateStudent } = useAuth();
   const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const students = getAllStudents();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   
   // Form state
   const [name, setName] = useState("");
@@ -21,6 +24,11 @@ const StudentsManagement = () => {
   const [parentPhone, setParentPhone] = useState("");
   const [group, setGroup] = useState("");
   const [grade, setGrade] = useState<"first" | "second" | "third">("first");
+  
+  useEffect(() => {
+    // Load students when component mounts
+    setStudents(getAllStudents());
+  }, [getAllStudents]);
   
   const filteredStudents = students.filter(student => 
     student.name.includes(searchQuery) || 
@@ -31,6 +39,7 @@ const StudentsManagement = () => {
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
     createStudent(name, phone, password, parentPhone, group, grade);
+    setStudents(getAllStudents()); // Refresh list
     setName("");
     setPhone("");
     setPassword("");
@@ -38,6 +47,54 @@ const StudentsManagement = () => {
     setGroup("");
     setGrade("first");
     setShowAddForm(false);
+  };
+  
+  const handleEditClick = (student: Student) => {
+    setEditingStudent(student);
+    setName(student.name);
+    setPhone(student.phone);
+    setPassword(student.password);
+    setParentPhone(student.parentPhone);
+    setGroup(student.group);
+    setGrade(student.grade);
+    setShowEditForm(true);
+  };
+  
+  const handleUpdateStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    
+    updateStudent(
+      editingStudent.id,
+      name,
+      phone,
+      password,
+      parentPhone,
+      group,
+      grade
+    );
+    
+    setStudents(getAllStudents()); // Refresh list
+    setShowEditForm(false);
+    setEditingStudent(null);
+    
+    toast({
+      title: "تم تحديث بيانات الطالب",
+      description: `تم تحديث بيانات الطالب ${name} بنجاح`,
+    });
+  };
+  
+  const handleDeleteStudent = (studentId: string, studentName: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف الطالب ${studentName}؟`)) {
+      deleteStudent(studentId);
+      setStudents(getAllStudents()); // Refresh list
+      
+      toast({
+        title: "تم حذف الطالب",
+        description: `تم حذف الطالب ${studentName} بنجاح`,
+        variant: "destructive",
+      });
+    }
   };
   
   return (
@@ -115,12 +172,15 @@ const StudentsManagement = () => {
                           <div className="flex justify-center gap-2">
                             <button 
                               className="p-1 text-physics-gold hover:text-physics-lightgold"
-                              onClick={() => navigate(`/student/${student.id}`)}
+                              onClick={() => handleEditClick(student)}
                             >
                               <Edit size={18} />
                             </button>
-                            <button className="p-1 text-red-400 hover:text-red-500">
-                              <UserX size={18} />
+                            <button 
+                              className="p-1 text-red-400 hover:text-red-500"
+                              onClick={() => handleDeleteStudent(student.id, student.name)}
+                            >
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </td>
@@ -218,6 +278,99 @@ const StudentsManagement = () => {
                   type="button" 
                   className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
                   onClick={() => setShowAddForm(false)}
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Student Modal */}
+      {showEditForm && editingStudent && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-physics-gold mb-6">تعديل بيانات الطالب</h2>
+            
+            <form onSubmit={handleUpdateStudent} className="space-y-4">
+              <div>
+                <label className="block text-white mb-1">اسم الطالب</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">رقم الهاتف</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">كلمة المرور</label>
+                <input
+                  type="password"
+                  className="inputField"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">رقم هاتف ولي الأمر</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={parentPhone}
+                  onChange={(e) => setParentPhone(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">المجموعة</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={group}
+                  onChange={(e) => setGroup(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">الصف الدراسي</label>
+                <select
+                  className="inputField"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value as any)}
+                  required
+                >
+                  <option value="first">الصف الأول الثانوي</option>
+                  <option value="second">الصف الثاني الثانوي</option>
+                  <option value="third">الصف الثالث الثانوي</option>
+                </select>
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button type="submit" className="goldBtn flex-1">
+                  حفظ التغييرات
+                </button>
+                <button 
+                  type="button" 
+                  className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
+                  onClick={() => setShowEditForm(false)}
                 >
                   إلغاء
                 </button>

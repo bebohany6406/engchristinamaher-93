@@ -1,26 +1,59 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { BookOpen, Video, UserCheck, QrCode, Users, User, LogOut } from "lucide-react";
+import { 
+  BookOpen, Video, UserCheck, QrCode, Users, User, 
+  LogOut, BookCopy, CheckSquare, GraduationCap 
+} from "lucide-react";
 
 const Dashboard = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [studentInfo, setStudentInfo] = useState({
+    name: "",
+    code: "",
+    group: "",
+    grade: ""
+  });
 
   useEffect(() => {
     if (!currentUser) {
       navigate("/login");
+      return;
+    }
+
+    // Load student information if the user is a student
+    if (currentUser.role === "student") {
+      setStudentInfo({
+        name: currentUser.name,
+        code: currentUser.code,
+        group: currentUser.group,
+        grade: currentUser.grade
+      });
     }
   }, [currentUser, navigate]);
 
   const handleLogout = () => {
+    // Play logout sound
+    const audio = new Audio("/logout.mp3");
+    audio.play().catch(e => console.error("Sound play failed:", e));
+    
     logout();
     navigate("/login");
   };
 
   if (!currentUser) return null;
+
+  const getGradeDisplay = (grade?: "first" | "second" | "third") => {
+    switch (grade) {
+      case "first": return "الصف الأول الثانوي";
+      case "second": return "الصف الثاني الثانوي";
+      case "third": return "الصف الثالث الثانوي";
+      default: return "";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
@@ -36,6 +69,13 @@ const Dashboard = () => {
               {currentUser.role === "admin" ? "مسؤول النظام" : 
                currentUser.role === "student" ? "طالب" : "ولي أمر"}
             </p>
+            {currentUser.role === "student" && (
+              <div className="text-sm opacity-80 flex flex-col sm:flex-row sm:gap-2">
+                <span>الكود: {studentInfo.code}</span>
+                <span>المجموعة: {studentInfo.group}</span>
+                <span>{getGradeDisplay(currentUser.grade)}</span>
+              </div>
+            )}
           </div>
           <button 
             onClick={handleLogout}
@@ -72,6 +112,18 @@ const Dashboard = () => {
               />
               
               <DashboardCard 
+                title="سجلات الحضور"
+                icon={<CheckSquare className="h-10 w-10" />}
+                onClick={() => navigate("/attendance-list")}
+              />
+              
+              <DashboardCard 
+                title="سجلات الدرجات"
+                icon={<GraduationCap className="h-10 w-10" />}
+                onClick={() => navigate("/grades-management")}
+              />
+              
+              <DashboardCard 
                 title="الفيديوهات التعليمية"
                 icon={<Video className="h-10 w-10" />}
                 onClick={() => navigate("/videos")}
@@ -94,6 +146,18 @@ const Dashboard = () => {
               />
               
               <DashboardCard 
+                title="سجل الحضور"
+                icon={<CheckSquare className="h-10 w-10" />}
+                onClick={() => navigate("/attendance-record")}
+              />
+              
+              <DashboardCard 
+                title="سجل الدرجات"
+                icon={<GraduationCap className="h-10 w-10" />}
+                onClick={() => navigate("/grades")}
+              />
+              
+              <DashboardCard 
                 title="الفيديوهات التعليمية"
                 icon={<Video className="h-10 w-10" />}
                 onClick={() => navigate("/videos")}
@@ -110,14 +174,14 @@ const Dashboard = () => {
           {currentUser.role === "parent" && (
             <>
               <DashboardCard 
-                title="سجل الحضور"
+                title="سجل حضور الطالب"
                 icon={<UserCheck className="h-10 w-10" />}
                 onClick={() => navigate("/attendance-record")}
               />
               
               <DashboardCard 
-                title="سجل الدرجات"
-                icon={<BookOpen className="h-10 w-10" />}
+                title="سجل درجات الطالب"
+                icon={<BookCopy className="h-10 w-10" />}
                 onClick={() => navigate("/grades")}
               />
             </>

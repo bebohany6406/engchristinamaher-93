@@ -38,3 +38,32 @@ export function getGradeDisplay(grade: "first" | "second" | "third"): string {
       return "";
   }
 }
+
+export function getLessonDisplay(lessonNumber: number): string {
+  switch (lessonNumber) {
+    case 1: return "الحصة الأولى";
+    case 2: return "الحصة الثانية";
+    case 3: return "الحصة الثالثة";
+    case 4: return "الحصة الرابعة";
+    case 5: return "الحصة الخامسة";
+    case 6: return "الحصة السادسة";
+    case 7: return "الحصة السابعة";
+    case 8: return "الحصة الثامنة";
+    default: return `الحصة ${lessonNumber}`;
+  }
+}
+
+export function countLessons(studentId: string): number {
+  // Get attendance records for this student from localStorage
+  const attendanceStr = localStorage.getItem("attendance");
+  if (!attendanceStr) return 0;
+  
+  try {
+    const attendance = JSON.parse(attendanceStr);
+    const studentAttendance = attendance.filter((a: any) => a.studentId === studentId);
+    return studentAttendance.length > 8 ? 8 : studentAttendance.length;
+  } catch (error) {
+    console.error("Error counting lessons:", error);
+    return 0;
+  }
+}

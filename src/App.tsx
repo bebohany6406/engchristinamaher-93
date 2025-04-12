@@ -20,37 +20,65 @@ import Grades from "./pages/Grades";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/RequireAuth";
+import AttendanceRecordList from "./pages/AttendanceRecordList";
+import AttendanceListByGrade from "./pages/AttendanceListByGrade";
+import GradesManagement from "./pages/GradesManagement";
+import GradesByGrade from "./pages/GradesByGrade";
+import StudentGrades from "./pages/StudentGrades";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <DataProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<RequireAuth children={<Dashboard />} />} />
-              <Route path="/students" element={<RequireAuth allowedRoles={["admin"]} children={<StudentsManagement />} />} />
-              <Route path="/parents" element={<RequireAuth allowedRoles={["admin"]} children={<ParentsManagement />} />} />
-              <Route path="/scan-code" element={<RequireAuth allowedRoles={["admin"]} children={<ScanCode />} />} />
-              <Route path="/videos" element={<RequireAuth children={<Videos />} />} />
-              <Route path="/books" element={<RequireAuth children={<Books />} />} />
-              <Route path="/student-code" element={<RequireAuth allowedRoles={["student"]} children={<StudentCode />} />} />
-              <Route path="/attendance-record" element={<RequireAuth allowedRoles={["parent"]} children={<AttendanceRecord />} />} />
-              <Route path="/grades" element={<RequireAuth allowedRoles={["parent"]} children={<Grades />} />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </DataProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Play login sound when the app loads
+  const playLoginSound = () => {
+    const audio = new Audio("/login.mp3");
+    audio.play().catch(e => console.error("Sound play failed:", e));
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <DataProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login onLoginSuccess={playLoginSound} />} />
+                <Route path="/dashboard" element={<RequireAuth children={<Dashboard />} />} />
+                
+                {/* Admin Routes */}
+                <Route path="/students" element={<RequireAuth allowedRoles={["admin"]} children={<StudentsManagement />} />} />
+                <Route path="/parents" element={<RequireAuth allowedRoles={["admin"]} children={<ParentsManagement />} />} />
+                <Route path="/scan-code" element={<RequireAuth allowedRoles={["admin"]} children={<ScanCode />} />} />
+                <Route path="/attendance-list" element={<RequireAuth allowedRoles={["admin"]} children={<AttendanceRecordList />} />} />
+                <Route path="/attendance-list/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<AttendanceListByGrade />} />} />
+                <Route path="/grades-management" element={<RequireAuth allowedRoles={["admin"]} children={<GradesManagement />} />} />
+                <Route path="/grades-management/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<GradesByGrade />} />} />
+                
+                {/* Student Routes */}
+                <Route path="/student-code" element={<RequireAuth allowedRoles={["student"]} children={<StudentCode />} />} />
+                <Route path="/student-grades" element={<RequireAuth allowedRoles={["student"]} children={<StudentGrades />} />} />
+                
+                {/* All Users Routes */}
+                <Route path="/videos" element={<RequireAuth allowedRoles={["admin", "student"]} children={<Videos />} />} />
+                <Route path="/books" element={<RequireAuth allowedRoles={["admin", "student"]} children={<Books />} />} />
+                
+                {/* Parent & Student Routes */}
+                <Route path="/attendance-record" element={<RequireAuth allowedRoles={["parent", "student"]} children={<AttendanceRecord />} />} />
+                <Route path="/grades" element={<RequireAuth allowedRoles={["parent", "student"]} children={<Grades />} />} />
+                
+                {/* Auth error routes */}
+                <Route path="/unauthorized" element={<Unauthorized />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </DataProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

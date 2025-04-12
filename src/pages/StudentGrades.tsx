@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, Calendar, Check, X } from "lucide-react";
-import { Student, Attendance } from "@/types";
+import { ArrowRight, Award } from "lucide-react";
+import { Student, Grade } from "@/types";
 import { formatDate } from "@/lib/utils";
 import {
   Table,
@@ -16,16 +16,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const AttendanceRecord = () => {
+const StudentGrades = () => {
   const navigate = useNavigate();
   const { currentUser, getAllStudents } = useAuth();
-  const { getStudentAttendance, getStudentLessonCount } = useData();
+  const { getStudentGrades } = useData();
   const [studentId, setStudentId] = useState("");
-  const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
+  const [gradeRecords, setGradeRecords] = useState<Grade[]>([]);
   const [studentName, setStudentName] = useState("");
   const [studentCode, setStudentCode] = useState("");
   const [studentGroup, setStudentGroup] = useState("");
-  const [lessonCount, setLessonCount] = useState(0);
   
   useEffect(() => {
     if (!currentUser) return;
@@ -41,20 +40,18 @@ const AttendanceRecord = () => {
         setStudentName(studentData.name);
         setStudentCode(studentData.code);
         setStudentGroup(studentData.group);
-        const records = getStudentAttendance(studentData.id);
-        setAttendanceRecords(records);
-        setLessonCount(getStudentLessonCount(studentData.id));
+        const records = getStudentGrades(studentData.id);
+        setGradeRecords(records);
       }
     } else if (currentUser.role === "student") {
       setStudentId(currentUser.id);
       setStudentName(currentUser.name);
       setStudentCode(currentUser.code);
       setStudentGroup(currentUser.group);
-      const records = getStudentAttendance(currentUser.id);
-      setAttendanceRecords(records);
-      setLessonCount(getStudentLessonCount(currentUser.id));
+      const records = getStudentGrades(currentUser.id);
+      setGradeRecords(records);
     }
-  }, [currentUser, getAllStudents, getStudentAttendance, getStudentLessonCount]);
+  }, [currentUser, getAllStudents, getStudentGrades]);
   
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
@@ -76,7 +73,7 @@ const AttendanceRecord = () => {
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-physics-gold">سجل الحضور</h1>
+            <h1 className="text-2xl font-bold text-physics-gold">سجل الدرجات</h1>
             
             <div className="bg-physics-dark p-4 rounded-lg mt-4 mb-6">
               <div className="flex flex-wrap gap-4 text-white">
@@ -92,48 +89,39 @@ const AttendanceRecord = () => {
                   <p className="text-physics-gold text-sm">المجموعة</p>
                   <p>{studentGroup}</p>
                 </div>
-                <div>
-                  <p className="text-physics-gold text-sm">الحصة الحالية</p>
-                  <p>الحصة {lessonCount + 1 > 8 ? 8 : lessonCount + 1}</p>
-                </div>
               </div>
             </div>
           </div>
           
-          {attendanceRecords.length === 0 ? (
+          {gradeRecords.length === 0 ? (
             <div className="bg-physics-dark rounded-lg p-6 text-center">
-              <p className="text-white text-lg">لا توجد سجلات حضور متاحة</p>
+              <p className="text-white text-lg">لا توجد سجلات درجات متاحة</p>
             </div>
           ) : (
             <div className="bg-physics-dark rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-physics-navy/50 text-physics-gold hover:bg-physics-navy/50">
-                    <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right">الوقت</TableHead>
+                    <TableHead className="text-right">الاختبار</TableHead>
+                    <TableHead className="text-center">الدرجة</TableHead>
+                    <TableHead className="text-center">من</TableHead>
                     <TableHead className="text-right">رقم الحصة</TableHead>
-                    <TableHead className="text-center">الحالة</TableHead>
+                    <TableHead className="text-right">التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {attendanceRecords.map((record) => (
+                  {gradeRecords.map((record) => (
                     <TableRow key={record.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
-                      <TableCell className="text-white">{formatDate(record.date)}</TableCell>
-                      <TableCell className="text-white">{record.time || "غير متاح"}</TableCell>
-                      <TableCell className="text-white">الحصة {record.lessonNumber || 1}</TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        {record.status === "present" ? (
-                          <div className="inline-flex items-center text-green-400 gap-1">
-                            <Check size={18} />
-                            <span>حاضر</span>
-                          </div>
-                        ) : (
-                          <div className="inline-flex items-center text-red-400 gap-1">
-                            <X size={18} />
-                            <span>غائب</span>
-                          </div>
-                        )}
+                      <TableCell className="text-white">{record.examName}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="inline-flex items-center gap-1 text-white">
+                          <Award className="text-physics-gold" size={18} />
+                          <span>{record.score}</span>
+                        </div>
                       </TableCell>
+                      <TableCell className="text-center text-white">{record.totalScore}</TableCell>
+                      <TableCell className="text-white">الحصة {record.lessonNumber || 1}</TableCell>
+                      <TableCell className="text-white">{formatDate(record.date)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -146,4 +134,4 @@ const AttendanceRecord = () => {
   );
 };
 
-export default AttendanceRecord;
+export default StudentGrades;
