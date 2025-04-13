@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
 import { ArrowRight, FilePlus, Calendar, Search, Play, Edit, Trash, X } from "lucide-react";
 import { VideoPlayerFixed } from "@/components/VideoPlayerFixed";
+import { VideoUploader } from "@/components/VideoUploader";
 
 const Videos = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const Videos = () => {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [grade, setGrade] = useState<"first" | "second" | "third">("first");
+  const [showUploader, setShowUploader] = useState(false);
   
   // Edit state
   const [editId, setEditId] = useState("");
@@ -44,6 +46,11 @@ const Videos = () => {
     setUrl("");
     setGrade("first");
     setShowAddForm(false);
+    setShowUploader(false);
+  };
+
+  const handleVideoURLGenerated = (generatedUrl: string) => {
+    setUrl(generatedUrl);
   };
   
   const handleEditVideo = (e: React.FormEvent) => {
@@ -251,60 +258,122 @@ const Videos = () => {
       {showAddForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">إضافة فيديو جديد</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-physics-gold">إضافة فيديو جديد</h2>
+              <button 
+                type="button" 
+                className="text-gray-400 hover:text-white"
+                onClick={() => setShowAddForm(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
             
-            <form onSubmit={handleAddVideo} className="space-y-4">
-              <div>
-                <label className="block text-white mb-1">عنوان الفيديو</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">رابط الفيديو</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  required
-                  placeholder="https://..."
-                />
-                <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm)</p>
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">الصف الدراسي</label>
-                <select
-                  className="inputField"
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value as "first" | "second" | "third")}
-                  required
-                >
-                  <option value="first">الصف الأول الثانوي</option>
-                  <option value="second">الصف الثاني الثانوي</option>
-                  <option value="third">الصف الثالث الثانوي</option>
-                </select>
-              </div>
-              
-              <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1">
-                  إضافة الفيديو
-                </button>
-                <button 
-                  type="button" 
-                  className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
-                  onClick={() => setShowAddForm(false)}
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
+            <div className="flex justify-between mb-4">
+              <button
+                className={`flex-1 text-center py-2 px-4 rounded-t-lg ${!showUploader ? 'bg-physics-gold text-physics-navy' : 'bg-physics-navy text-white'}`}
+                onClick={() => setShowUploader(false)}
+              >
+                إدخال رابط
+              </button>
+              <button
+                className={`flex-1 text-center py-2 px-4 rounded-t-lg ${showUploader ? 'bg-physics-gold text-physics-navy' : 'bg-physics-navy text-white'}`}
+                onClick={() => setShowUploader(true)}
+              >
+                رفع فيديو
+              </button>
+            </div>
+            
+            {showUploader ? (
+              <VideoUploader onVideoURLGenerated={handleVideoURLGenerated} />
+            ) : (
+              <form onSubmit={handleAddVideo} className="space-y-4">
+                <div>
+                  <label className="block text-white mb-1">عنوان الفيديو</label>
+                  <input
+                    type="text"
+                    className="inputField"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-white mb-1">رابط الفيديو</label>
+                  <input
+                    type="text"
+                    className="inputField"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    required
+                    placeholder="https://..."
+                  />
+                  <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm)</p>
+                </div>
+                
+                <div>
+                  <label className="block text-white mb-1">الصف الدراسي</label>
+                  <select
+                    className="inputField"
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value as "first" | "second" | "third")}
+                    required
+                  >
+                    <option value="first">الصف الأول الثانوي</option>
+                    <option value="second">الصف الثاني الثانوي</option>
+                    <option value="third">الصف الثالث الثانوي</option>
+                  </select>
+                </div>
+                
+                <div className="flex gap-4 pt-4">
+                  <button type="submit" className="goldBtn flex-1" disabled={!url || !title}>
+                    إضافة الفيديو
+                  </button>
+                  <button 
+                    type="button" 
+                    className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
+                    onClick={() => setShowAddForm(false)}
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            )}
+            {showUploader && url && (
+              <form onSubmit={handleAddVideo} className="space-y-4 mt-4 border-t border-physics-navy pt-4">
+                <div>
+                  <label className="block text-white mb-1">عنوان الفيديو</label>
+                  <input
+                    type="text"
+                    className="inputField"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-white mb-1">الصف الدراسي</label>
+                  <select
+                    className="inputField"
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value as "first" | "second" | "third")}
+                    required
+                  >
+                    <option value="first">الصف الأول الثانوي</option>
+                    <option value="second">الصف الثاني الثانوي</option>
+                    <option value="third">الصف الثالث الثانوي</option>
+                  </select>
+                </div>
+                
+                <div className="flex gap-4 pt-4">
+                  <button type="submit" className="goldBtn flex-1" disabled={!url || !title}>
+                    إضافة الفيديو
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

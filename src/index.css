@@ -54,4 +54,51 @@
   .inputField {
     @apply bg-physics-dark/80 text-white border-2 border-physics-gold rounded-full px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-physics-lightgold focus:border-physics-lightgold;
   }
+
+  /* Physics particles and formulas styling */
+  .physics-particle {
+    @apply rounded-full absolute;
+  }
+
+  .physics-electron {
+    @apply bg-blue-400 shadow-lg shadow-blue-400/50;
+  }
+
+  .physics-formula {
+    @apply text-physics-gold font-mono absolute;
+  }
+
+  .physics-atom {
+    @apply absolute w-24 h-24;
+  }
+
+  @keyframes orbit {
+    from { transform: rotate(0deg) translateX(30px) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+  
+  /* Phone contact button styling */
+  .phone-button {
+    @apply fixed bottom-4 left-4 z-50 bg-physics-gold p-3 rounded-full shadow-lg hover:bg-physics-lightgold transition-colors;
+  }
+  
+  .phone-modal {
+    @apply fixed inset-0 bg-black/60 flex items-center justify-center z-50;
+  }
+  
+  .phone-modal-content {
+    @apply bg-physics-dark rounded-lg p-6 w-full max-w-xs mx-4;
+  }
 }

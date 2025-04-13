@@ -22,6 +22,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     const handleError = () => {
       setIsLoading(false);
       setError("حدث خطأ في تحميل الفيديو، يرجى التحقق من الرابط");
+      console.error("Video error loading source:", src);
     };
     
     const video = videoRef.current;
@@ -60,10 +61,12 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         controls
         title={title}
         controlsList="nodownload"
+        playsInline
         onContextMenu={(e) => e.preventDefault()}
       >
         <source src={src} type="video/mp4" />
         <source src={src} type="video/webm" />
+        <source src={src} type="application/x-mpegURL" />
         متصفحك لا يدعم تشغيل الفيديو
       </video>
     </div>
