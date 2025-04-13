@@ -39,7 +39,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   }, [src]);
   
   return (
-    <div className="relative">
+    <div className="relative w-full h-full bg-physics-dark rounded-lg overflow-hidden">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-physics-dark">
           <div className="w-12 h-12 border-4 border-physics-gold border-t-transparent rounded-full animate-spin"></div>
@@ -57,12 +57,13 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       
       <video
         ref={videoRef}
-        className="w-full rounded-lg aspect-video bg-black"
+        className="w-full h-full rounded-lg aspect-video bg-black"
         controls
         title={title}
         controlsList="nodownload"
         playsInline
         onContextMenu={(e) => e.preventDefault()}
+        style={{ display: isLoading ? 'none' : 'block' }}
       >
         <source src={src} type="video/mp4" />
         <source src={src} type="video/webm" />

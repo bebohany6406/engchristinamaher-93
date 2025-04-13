@@ -7,12 +7,15 @@
   --physics-navy: #1e293b;
   --physics-dark: #0f172a;
   --physics-gold: #f59e0b;
+  --physics-lightgold: #fbbf24;
 }
 
 /* Base styles and utility classes */
 body {
   direction: rtl;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background-color: var(--physics-navy);
+  color: white;
 }
 
 .bg-physics-navy {
@@ -25,6 +28,10 @@ body {
 
 .bg-physics-gold {
   background-color: var(--physics-gold);
+}
+
+.bg-physics-lightgold {
+  background-color: var(--physics-lightgold);
 }
 
 .text-physics-gold {
@@ -99,7 +106,7 @@ body {
 
 .phone-button {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   left: 20px;
   z-index: 100;
   background-color: var(--physics-gold);
@@ -139,6 +146,23 @@ body {
   max-width: 500px;
   padding: 20px;
   border: 1px solid var(--physics-gold);
+}
+
+/* Video player styles */
+.video-container {
+  position: relative;
+  width: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background-color: black;
+}
+
+.video-list-item {
+  transition: all 0.2s ease;
+}
+
+.video-list-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 @keyframes orbit {
