@@ -20,6 +20,11 @@ export default function PhysicsBackground() {
     ];
     
     if (!containerRef.current) return;
+
+    // Clear any existing elements
+    while (containerRef.current.firstChild) {
+      containerRef.current.removeChild(containerRef.current.firstChild);
+    }
     
     // Create electrons
     for (let i = 0; i < 8; i++) {

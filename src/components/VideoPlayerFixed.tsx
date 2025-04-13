@@ -28,6 +28,9 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
     
+    // Force reload video source
+    video.load();
+    
     return () => {
       video.removeEventListener("canplay", handleCanPlay);
       video.removeEventListener("error", handleError);
