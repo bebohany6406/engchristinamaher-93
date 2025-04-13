@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
+import { PhoneContact } from "@/components/PhoneContact";
 import { ArrowRight, Plus, Search } from "lucide-react";
 import { Student, Grade } from "@/types";
 import { getGradeDisplay, formatDate } from "@/lib/utils";
@@ -24,6 +25,7 @@ const GradesByGrade = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchType, setSearchType] = useState<"name" | "code">("name");
 
   // Form state
   const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -77,18 +79,23 @@ const GradesByGrade = () => {
     const student = students.find(s => s.id === g.studentId);
     if (!student) return false;
     
-    // If we have a search term, filter by student name or exam name
+    // If we have a search term, filter by student name or exam name or code based on searchType
     if (searchTerm) {
-      return student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-             g.examName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             student.code.includes(searchTerm);
+      if (searchType === "name") {
+        return student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+               g.examName.toLowerCase().includes(searchTerm.toLowerCase());
+      } else {
+        return student.code.includes(searchTerm);
+      }
     }
     
     return true;
   });
 
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhoneContact />
+      
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
@@ -121,16 +128,29 @@ const GradesByGrade = () => {
             </button>
           </div>
           
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
-            <input
-              type="text"
-              className="inputField pr-12"
-              placeholder="ابحث عن طالب بالاسم أو الكود أو الاختبار"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* Search with Type Selector */}
+          <div className="mb-6 flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-1/4">
+              <select
+                className="inputField"
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value as "name" | "code")}
+              >
+                <option value="name">بحث بالاسم</option>
+                <option value="code">بحث بالكود</option>
+              </select>
+            </div>
+            
+            <div className="relative w-full md:w-3/4">
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
+              <input
+                type="text"
+                className="inputField pr-12"
+                placeholder={searchType === "name" ? "ابحث عن طالب بالاسم أو عنوان الاختبار" : "ابحث عن طالب بالكود"}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
           
           {filteredGrades.length === 0 ? (
@@ -183,6 +203,18 @@ const GradesByGrade = () => {
             <form onSubmit={handleAddGrade} className="space-y-4">
               <div>
                 <label className="block text-white mb-1">الطالب</label>
+                <div className="mb-2">
+                  <input
+                    type="text"
+                    className="inputField mb-2"
+                    placeholder="ابحث عن الطالب بالاسم أو الكود"
+                    onChange={(e) => {
+                      const searchVal = e.target.value.toLowerCase();
+                      // Clear the selection when search changes
+                      setSelectedStudentId("");
+                    }}
+                  />
+                </div>
                 <select
                   className="inputField"
                   value={selectedStudentId}

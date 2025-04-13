@@ -22,11 +22,15 @@ interface DataContextType {
   
   // Videos methods
   addVideo: (title: string, url: string, grade: "first" | "second" | "third", thumbnailUrl?: string) => void;
+  updateVideo: (id: string, title: string, url: string, grade: "first" | "second" | "third", thumbnailUrl?: string) => void;
+  deleteVideo: (id: string) => void;
   getVideosByGrade: (grade: "first" | "second" | "third") => Video[];
   getAllVideos: () => Video[];
   
   // Books methods
   addBook: (title: string, url: string, grade: "first" | "second" | "third") => void;
+  updateBook: (id: string, title: string, url: string, grade: "first" | "second" | "third") => void;
+  deleteBook: (id: string) => void;
   getBooksByGrade: (grade: "first" | "second" | "third") => Book[];
   getAllBooks: () => Book[];
 }
@@ -201,6 +205,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: `تم إضافة فيديو ${title} بنجاح`,
     });
   };
+  
+  const updateVideo = (id: string, title: string, url: string, grade: "first" | "second" | "third" = "first", thumbnailUrl?: string) => {
+    setVideos(prev => 
+      prev.map(video => 
+        video.id === id 
+          ? { ...video, title, url, grade, thumbnailUrl } 
+          : video
+      )
+    );
+    
+    toast({
+      title: "تم تحديث الفيديو",
+      description: `تم تحديث فيديو ${title} بنجاح`,
+    });
+  };
+  
+  const deleteVideo = (id: string) => {
+    setVideos(prev => prev.filter(video => video.id !== id));
+    
+    toast({
+      title: "تم حذف الفيديو",
+      description: "تم حذف الفيديو بنجاح",
+    });
+  };
 
   const getVideosByGrade = (grade: "first" | "second" | "third"): Video[] => {
     return videos.filter(video => video.grade === grade);
@@ -225,6 +253,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: `تم إضافة كتاب ${title} بنجاح`,
     });
   };
+  
+  const updateBook = (id: string, title: string, url: string, grade: "first" | "second" | "third") => {
+    setBooks(prev => 
+      prev.map(book => 
+        book.id === id 
+          ? { ...book, title, url, grade } 
+          : book
+      )
+    );
+    
+    toast({
+      title: "تم تحديث الكتاب",
+      description: `تم تحديث كتاب ${title} بنجاح`,
+    });
+  };
+  
+  const deleteBook = (id: string) => {
+    setBooks(prev => prev.filter(book => book.id !== id));
+    
+    toast({
+      title: "تم حذف الكتاب",
+      description: "تم حذف الكتاب بنجاح",
+    });
+  };
 
   const getBooksByGrade = (grade: "first" | "second" | "third"): Book[] => {
     return books.filter(book => book.grade === grade);
@@ -247,9 +299,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getStudentGrades,
     getGradesByGradeLevel,
     addVideo,
+    updateVideo,
+    deleteVideo,
     getVideosByGrade,
     getAllVideos,
     addBook,
+    updateBook,
+    deleteBook,
     getBooksByGrade,
     getAllBooks,
   };

@@ -64,6 +64,98 @@ body {
   border-color: var(--physics-gold);
 }
 
+/* Physics animations */
+.physics-particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.physics-electron {
+  background: #4fc3f7;
+  box-shadow: 0 0 10px #4fc3f7, 0 0 20px #4fc3f7;
+  animation: orbit 10s linear infinite;
+}
+
+.physics-atom {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.physics-formula {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: 'Times New Roman', serif;
+  font-size: 24px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+.phone-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  background-color: var(--physics-gold);
+  color: var(--physics-dark);
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.phone-button:hover {
+  transform: scale(1.1);
+}
+
+.phone-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-modal-content {
+  background-color: var(--physics-dark);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  padding: 20px;
+  border: 1px solid var(--physics-gold);
+}
+
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(50px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(50px) rotate(-360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

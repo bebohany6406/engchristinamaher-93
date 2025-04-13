@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
+import { PhoneContact } from "@/components/PhoneContact";
 import { 
   BookOpen, Video, UserCheck, QrCode, Users, User, 
   LogOut, BookCopy, CheckSquare, GraduationCap 
@@ -56,7 +57,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhoneContact />
+      
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
