@@ -1,16 +1,16 @@
 
 import { useState, useRef } from "react";
-import { Upload, Copy, Check } from "lucide-react";
+import { Upload, Copy, Check, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-interface VideoUploaderProps {
-  onVideoURLGenerated: (url: string) => void;
+interface FileUploaderProps {
+  onFileURLGenerated: (url: string) => void;
 }
 
-export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
+export function FileUploader({ onFileURLGenerated }: FileUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [videoURL, setVideoURL] = useState<string | null>(null);
+  const [fileURL, setFileURL] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -18,11 +18,12 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check if file is a video
-    if (!file.type.startsWith("video/")) {
+    // Check file type (PDF, DOCX, etc.)
+    const acceptedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!acceptedTypes.includes(file.type)) {
       toast({
         title: "خطأ في الملف",
-        description: "يرجى اختيار ملف فيديو صالح",
+        description: "يرجى اختيار ملف PDF أو DOCX",
         variant: "destructive"
       });
       return;
@@ -54,7 +55,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     }, 300);
     
     try {
-      // Create a temporary local URL for the video
+      // Create a temporary local URL for the file
       // In a real app, this would be replaced with an actual upload to a server/CDN
       const url = URL.createObjectURL(file);
       
@@ -63,11 +64,11 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
       setTimeout(() => {
         clearInterval(interval);
         setUploadProgress(100);
-        setVideoURL(url);
-        onVideoURLGenerated(url);
+        setFileURL(url);
+        onFileURLGenerated(url);
         
         toast({
-          title: "تم رفع الفيديو بنجاح",
+          title: "تم رفع الملف بنجاح",
           description: "يمكنك الآن نسخ الرابط"
         });
         
@@ -80,22 +81,22 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
       setIsUploading(false);
       
       toast({
-        title: "فشل في رفع الفيديو",
-        description: "حدث خطأ أثناء رفع الفيديو، يرجى المحاولة مرة أخرى",
+        title: "فشل في رفع الملف",
+        description: "حدث خطأ أثناء رفع الملف، يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     }
   };
   
   const handleCopyLink = () => {
-    if (!videoURL) return;
+    if (!fileURL) return;
     
-    navigator.clipboard.writeText(videoURL).then(() => {
+    navigator.clipboard.writeText(fileURL).then(() => {
       setIsCopied(true);
       
       toast({
         title: "تم نسخ الرابط",
-        description: "تم نسخ رابط الفيديو إلى الحافظة"
+        description: "تم نسخ رابط الملف إلى الحافظة"
       });
       
       setTimeout(() => {
@@ -107,8 +108,8 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
   return (
     <div className="bg-physics-dark p-6 rounded-lg">
       <div className="text-center mb-4">
-        <h3 className="text-lg font-bold text-physics-gold">رفع فيديو جديد</h3>
-        <p className="text-sm text-gray-300">اختر ملف فيديو لرفعه والحصول على رابط مباشر</p>
+        <h3 className="text-lg font-bold text-physics-gold">رفع ملف جديد</h3>
+        <p className="text-sm text-gray-300">اختر ملف PDF أو DOCX لرفعه والحصول على رابط مباشر</p>
       </div>
       
       <div 
@@ -119,12 +120,12 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
           ref={fileInputRef}
           type="file" 
           className="hidden" 
-          accept="video/*"
+          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           onChange={handleFileChange}
         />
         
-        <Upload className="mx-auto text-physics-gold mb-2" size={36} />
-        <p className="text-white">اضغط هنا لاختيار فيديو للرفع</p>
+        <FileText className="mx-auto text-physics-gold mb-2" size={36} />
+        <p className="text-white">اضغط هنا لاختيار ملف للرفع</p>
         <p className="text-sm text-gray-400 mt-2">الحد الأقصى: 10 جيجابايت</p>
       </div>
       
@@ -143,12 +144,12 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
         </div>
       )}
       
-      {videoURL && !isUploading && (
+      {fileURL && !isUploading && (
         <div className="mt-4">
           <div className="flex items-center">
             <input 
               type="text" 
-              value={videoURL} 
+              value={fileURL} 
               readOnly 
               className="inputField flex-1 ml-2"
               onClick={(e) => (e.target as HTMLInputElement).select()}

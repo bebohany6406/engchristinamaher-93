@@ -5,7 +5,9 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
+import { FileUploader } from "@/components/FileUploader";
 import { ArrowRight, FilePlus, Calendar, Search, FileText, Edit, Trash } from "lucide-react";
+import PhysicsBackground from "@/components/PhysicsBackground";
 
 const Books = () => {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ const Books = () => {
   const { currentUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showUploader, setShowUploader] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGrade, setSelectedGrade] = useState<"all" | "first" | "second" | "third">("all");
   
@@ -64,6 +67,10 @@ const Books = () => {
     setShowEditForm(true);
   };
   
+  const handleFileURLGenerated = (fileURL: string) => {
+    setUrl(fileURL);
+  };
+  
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-EG', {
       year: 'numeric',
@@ -78,10 +85,11 @@ const Books = () => {
   
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhysicsBackground />
       <PhoneContact />
       
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <button 
             onClick={() => navigate("/dashboard")}
@@ -95,18 +103,27 @@ const Books = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">الكتب والملفات</h1>
             {currentUser?.role === "admin" && (
-              <button 
-                onClick={() => setShowAddForm(true)}
-                className="goldBtn flex items-center gap-2"
-              >
-                <FilePlus size={18} />
-                <span>إضافة كتاب/ملف</span>
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowUploader(true)}
+                  className="goldBtn flex items-center gap-2"
+                >
+                  <FilePlus size={18} />
+                  <span>رفع ملف</span>
+                </button>
+                <button 
+                  onClick={() => setShowAddForm(true)}
+                  className="goldBtn flex items-center gap-2"
+                >
+                  <FilePlus size={18} />
+                  <span>إضافة كتاب/ملف</span>
+                </button>
+              </div>
             )}
           </div>
           
@@ -196,6 +213,27 @@ const Books = () => {
           </div>
         </div>
       </main>
+      
+      {/* File Uploader Modal */}
+      {showUploader && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-physics-gold mb-6">رفع ملف جديد</h2>
+            
+            <FileUploader onFileURLGenerated={handleFileURLGenerated} />
+            
+            <div className="flex gap-4 mt-6">
+              <button 
+                type="button" 
+                className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
+                onClick={() => setShowUploader(false)}
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Add Book Modal */}
       {showAddForm && (

@@ -1,34 +1,3 @@
-
-export interface User {
-  id: string;
-  name: string;
-  phone: string;
-  password: string;
-  role: "admin" | "student" | "parent";
-  code?: string;     // إضافة للطلاب
-  group?: string;    // إضافة للطلاب
-  grade?: "first" | "second" | "third"; // إضافة للطلاب
-}
-
-export interface Student {
-  id: string;
-  name: string;
-  phone: string;
-  password: string;
-  code: string;
-  parentPhone: string;
-  group: string;
-  grade: "first" | "second" | "third";
-}
-
-export interface Parent {
-  id: string;
-  phone: string;
-  studentCode: string;
-  studentName: string;
-  password: string;
-}
-
 export interface Attendance {
   id: string;
   studentId: string;
@@ -65,4 +34,25 @@ export interface Book {
   url: string;
   uploadDate: string;
   grade: "first" | "second" | "third";
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  phone: string;
+  parentPhone: string;
+  role: "student";
+  grade: "first" | "second" | "third";
+  password: string;
+  qrCode?: string;
+  group?: string; // Added student group
+}
+
+export interface User {
+  id: string;
+  name: string;
+  phone: string;
+  role: "admin" | "parent" | "student";
+  password?: string;
+  grade?: "first" | "second" | "third";
 }

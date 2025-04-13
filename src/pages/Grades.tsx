@@ -7,6 +7,8 @@ import { Logo } from "@/components/Logo";
 import { ArrowRight, Award } from "lucide-react";
 import { Student, Grade } from "@/types";
 import { formatDate } from "@/lib/utils";
+import PhysicsBackground from "@/components/PhysicsBackground";
+import { PhoneContact } from "@/components/PhoneContact";
 
 const Grades = () => {
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ const Grades = () => {
   const [studentId, setStudentId] = useState("");
   const [gradeRecords, setGradeRecords] = useState<Grade[]>([]);
   const [studentName, setStudentName] = useState("");
+  const [studentGroup, setStudentGroup] = useState("");
   
   useEffect(() => {
     if (!currentUser) return;
@@ -28,21 +31,26 @@ const Grades = () => {
       if (studentData) {
         setStudentId(studentData.id);
         setStudentName(studentData.name);
+        setStudentGroup(studentData.group || "");
         const records = getStudentGrades(studentData.id);
         setGradeRecords(records);
       }
     } else if (currentUser.role === "student") {
       setStudentId(currentUser.id);
       setStudentName(currentUser.name);
+      setStudentGroup(currentUser.group || "");
       const records = getStudentGrades(currentUser.id);
       setGradeRecords(records);
     }
   }, [currentUser, getAllStudents, getStudentGrades]);
   
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhysicsBackground />
+      <PhoneContact />
+      
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <button 
             onClick={() => navigate("/dashboard")}
@@ -56,12 +64,15 @@ const Grades = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 relative z-10">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">سجل الدرجات</h1>
             {studentName && (
-              <p className="text-white mt-1">الطالب: {studentName}</p>
+              <div className="text-white mt-1">
+                <p>الطالب: {studentName}</p>
+                {studentGroup && <p className="mt-1">المجموعة: {studentGroup}</p>}
+              </div>
             )}
           </div>
           

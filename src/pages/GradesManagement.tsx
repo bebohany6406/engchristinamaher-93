@@ -5,14 +5,19 @@ import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { ArrowRight, GraduationCap } from "lucide-react";
 import { getGradeDisplay } from "@/lib/utils";
+import PhysicsBackground from "@/components/PhysicsBackground";
+import { PhoneContact } from "@/components/PhoneContact";
 
 const GradesManagement = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhysicsBackground />
+      <PhoneContact />
+      
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <button 
             onClick={() => navigate("/dashboard")}
@@ -26,7 +31,7 @@ const GradesManagement = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 relative z-10">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">سجلات الدرجات</h1>
