@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -29,9 +28,9 @@ const Dashboard = () => {
     if (currentUser.role === "student") {
       setStudentInfo({
         name: currentUser.name,
-        code: currentUser.code,
-        group: currentUser.group,
-        grade: currentUser.grade
+        code: currentUser.code || "",
+        group: currentUser.group || "",
+        grade: currentUser.grade || "first"
       });
     }
   }, [currentUser, navigate]);
@@ -57,7 +56,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+    <div className="min-h-screen bg-transparent flex flex-col relative">
       <PhoneContact />
       
       {/* Header */}
@@ -90,7 +89,7 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 relative z-10">
         <h1 className="text-3xl font-bold text-physics-gold mb-8 text-center">الصفحة الرئيسية</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -205,7 +204,7 @@ const DashboardCard = ({ title, icon, onClick }: DashboardCardProps) => {
   return (
     <button
       onClick={onClick}
-      className="bg-physics-dark hover:bg-physics-dark/80 rounded-xl p-6 flex flex-col items-center justify-center transition-transform transform hover:scale-105"
+      className="bg-physics-dark/80 hover:bg-physics-dark rounded-xl p-6 flex flex-col items-center justify-center transition-transform transform hover:scale-105"
     >
       <div className="bg-physics-gold/20 p-4 rounded-full mb-4 text-physics-gold">
         {icon}

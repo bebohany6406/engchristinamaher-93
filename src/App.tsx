@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { DataProvider } from "./context/DataContext";
+import PhysicsBackground from "./components/PhysicsBackground";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -38,36 +39,41 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<RequireAuth children={<Dashboard />} />} />
-                
-                {/* Admin Routes */}
-                <Route path="/students" element={<RequireAuth allowedRoles={["admin"]} children={<StudentsManagement />} />} />
-                <Route path="/parents" element={<RequireAuth allowedRoles={["admin"]} children={<ParentsManagement />} />} />
-                <Route path="/scan-code" element={<RequireAuth allowedRoles={["admin"]} children={<ScanCode />} />} />
-                <Route path="/attendance-list" element={<RequireAuth allowedRoles={["admin"]} children={<AttendanceRecordList />} />} />
-                <Route path="/attendance-list/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<AttendanceListByGrade />} />} />
-                <Route path="/grades-management" element={<RequireAuth allowedRoles={["admin"]} children={<GradesManagement />} />} />
-                <Route path="/grades-management/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<GradesByGrade />} />} />
-                
-                {/* Student Routes */}
-                <Route path="/student-code" element={<RequireAuth allowedRoles={["student"]} children={<StudentCode />} />} />
-                <Route path="/student-grades" element={<RequireAuth allowedRoles={["student"]} children={<StudentGrades />} />} />
-                
-                {/* All Users Routes */}
-                <Route path="/videos" element={<RequireAuth allowedRoles={["admin", "student"]} children={<Videos />} />} />
-                <Route path="/books" element={<RequireAuth allowedRoles={["admin", "student"]} children={<Books />} />} />
-                
-                {/* Parent & Student Routes */}
-                <Route path="/attendance-record" element={<RequireAuth allowedRoles={["parent", "student"]} children={<AttendanceRecord />} />} />
-                <Route path="/grades" element={<RequireAuth allowedRoles={["parent", "student"]} children={<Grades />} />} />
-                
-                {/* Auth error routes */}
-                <Route path="/unauthorized" element={<Unauthorized />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <div className="relative min-h-screen">
+                <PhysicsBackground />
+                <div className="relative z-10">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/dashboard" element={<RequireAuth children={<Dashboard />} />} />
+                    
+                    {/* Admin Routes */}
+                    <Route path="/students" element={<RequireAuth allowedRoles={["admin"]} children={<StudentsManagement />} />} />
+                    <Route path="/parents" element={<RequireAuth allowedRoles={["admin"]} children={<ParentsManagement />} />} />
+                    <Route path="/scan-code" element={<RequireAuth allowedRoles={["admin"]} children={<ScanCode />} />} />
+                    <Route path="/attendance-list" element={<RequireAuth allowedRoles={["admin"]} children={<AttendanceRecordList />} />} />
+                    <Route path="/attendance-list/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<AttendanceListByGrade />} />} />
+                    <Route path="/grades-management" element={<RequireAuth allowedRoles={["admin"]} children={<GradesManagement />} />} />
+                    <Route path="/grades-management/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<GradesByGrade />} />} />
+                    
+                    {/* Student Routes */}
+                    <Route path="/student-code" element={<RequireAuth allowedRoles={["student"]} children={<StudentCode />} />} />
+                    <Route path="/student-grades" element={<RequireAuth allowedRoles={["student"]} children={<StudentGrades />} />} />
+                    
+                    {/* All Users Routes */}
+                    <Route path="/videos" element={<RequireAuth allowedRoles={["admin", "student"]} children={<Videos />} />} />
+                    <Route path="/books" element={<RequireAuth allowedRoles={["admin", "student"]} children={<Books />} />} />
+                    
+                    {/* Parent & Student Routes */}
+                    <Route path="/attendance-record" element={<RequireAuth allowedRoles={["parent", "student"]} children={<AttendanceRecord />} />} />
+                    <Route path="/grades" element={<RequireAuth allowedRoles={["parent", "student"]} children={<Grades />} />} />
+                    
+                    {/* Auth error routes */}
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </div>
             </BrowserRouter>
           </TooltipProvider>
         </DataProvider>

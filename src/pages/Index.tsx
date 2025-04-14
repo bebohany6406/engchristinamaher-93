@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import PhysicsBackground from "@/components/PhysicsBackground";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -11,7 +10,6 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-physics-navy relative overflow-hidden">
       <PhoneContact />
-      <PhysicsBackground />
       
       <div className="flex-1 flex items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-md">

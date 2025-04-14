@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, UserPlus, Search, UserX, Edit, Trash2 } from "lucide-react";
+import { ArrowRight, UserPlus, Search, Edit, Trash2 } from "lucide-react";
 import { Student } from "@/types";
 import { getGradeDisplay } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -55,7 +54,7 @@ const StudentsManagement = () => {
     setPhone(student.phone);
     setPassword(student.password);
     setParentPhone(student.parentPhone);
-    setGroup(student.group);
+    setGroup(student.group || "");
     setGrade(student.grade);
     setShowEditForm(true);
   };
@@ -98,7 +97,7 @@ const StudentsManagement = () => {
   };
   
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-transparent flex flex-col">
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
@@ -114,7 +113,7 @@ const StudentsManagement = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 relative z-10">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة الطلاب</h1>
@@ -140,7 +139,7 @@ const StudentsManagement = () => {
           </div>
           
           {/* Students List */}
-          <div className="bg-physics-dark rounded-lg overflow-hidden">
+          <div className="bg-physics-dark/80 rounded-lg overflow-hidden">
             {filteredStudents.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-white text-lg">لا يوجد طلاب مسجلين</p>
@@ -165,7 +164,7 @@ const StudentsManagement = () => {
                         <td className="py-3 px-4 text-white">{student.name}</td>
                         <td className="py-3 px-4 text-white">{student.phone}</td>
                         <td className="py-3 px-4 text-white">{student.code}</td>
-                        <td className="py-3 px-4 text-white">{student.group}</td>
+                        <td className="py-3 px-4 text-white">{student.group || "—"}</td>
                         <td className="py-3 px-4 text-white">{getGradeDisplay(student.grade)}</td>
                         <td className="py-3 px-4 text-white">{student.parentPhone}</td>
                         <td className="py-3 px-4 text-white text-center">

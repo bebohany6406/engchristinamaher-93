@@ -14,8 +14,8 @@ const Unauthorized = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-physics-navy">
-      <div className="flex-1 flex items-center justify-center p-6">
+    <div className="min-h-screen flex flex-col bg-transparent">
+      <div className="flex-1 flex items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-md text-center">
           <Logo />
           <h1 className="text-2xl font-bold text-physics-gold mb-4">غير مصرح بالوصول</h1>
