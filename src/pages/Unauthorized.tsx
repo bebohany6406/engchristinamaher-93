@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { LogOut } from "lucide-react";
+import PhysicsBackground from "@/components/PhysicsBackground";
+import { PhoneContact } from "@/components/PhoneContact";
 
 const Unauthorized = () => {
   const navigate = useNavigate();
@@ -14,7 +16,10 @@ const Unauthorized = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-transparent">
+    <div className="min-h-screen flex flex-col bg-physics-navy relative">
+      <PhysicsBackground />
+      <PhoneContact />
+      
       <div className="flex-1 flex items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-md text-center">
           <Logo />

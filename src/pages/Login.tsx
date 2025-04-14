@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { User, Lock } from "lucide-react";
+import PhysicsBackground from "@/components/PhysicsBackground";
+import { PhoneContact } from "@/components/PhoneContact";
 
 const Login = () => {
   const [phone, setPhone] = useState("");
@@ -23,9 +25,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-physics-navy">
+    <div className="min-h-screen flex flex-col bg-physics-navy relative">
+      <PhysicsBackground />
+      <PhoneContact />
+      
       {loginType === "" ? (
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex-1 flex items-center justify-center p-6 relative z-10">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
               <Logo />
@@ -67,7 +72,7 @@ const Login = () => {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex-1 flex items-center justify-center p-6 relative z-10">
           <div className="w-full max-w-md">
             <div className="text-center mb-6">
               <Logo />
