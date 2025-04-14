@@ -1,7 +1,5 @@
 
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { ArrowRight, GraduationCap } from "lucide-react";
 import { getGradeDisplay } from "@/lib/utils";

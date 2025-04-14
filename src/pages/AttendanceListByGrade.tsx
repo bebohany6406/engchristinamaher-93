@@ -4,8 +4,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, CheckCircle, XCircle, Filter } from "lucide-react";
+import { ArrowRight, CheckCircle, XCircle, Filter, Search } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import PhysicsBackground from "@/components/PhysicsBackground";
+import { PhoneContact } from "@/components/PhoneContact";
 import {
   Table,
   TableBody,
@@ -25,6 +27,7 @@ const AttendanceListByGrade = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
   const [filter, setFilter] = useState<"all" | "present" | "absent">("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   
   useEffect(() => {
     if (!currentUser) return;
@@ -45,9 +48,22 @@ const AttendanceListByGrade = () => {
   }, [currentUser, getAllStudents, getStudentAttendance, grade]);
   
   const filteredRecords = attendanceRecords.filter(record => {
-    if (filter === "all") return true;
-    if (filter === "present") return record.status === "present";
-    if (filter === "absent") return record.status === "absent";
+    // Apply status filter
+    if (filter !== "all" && record.status !== filter) {
+      return false;
+    }
+    
+    // Apply search filter if provided
+    if (searchTerm.trim() !== "") {
+      const student = students.find(s => s.id === record.studentId);
+      const searchLower = searchTerm.toLowerCase();
+      
+      return (
+        record.studentName.toLowerCase().includes(searchLower) ||
+        student?.code.toLowerCase().includes(searchLower)
+      );
+    }
+    
     return true;
   });
 
@@ -61,9 +77,12 @@ const AttendanceListByGrade = () => {
   };
 
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhysicsBackground />
+      <PhoneContact />
+      
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <button 
             onClick={() => navigate("/attendance-list")}
@@ -77,7 +96,7 @@ const AttendanceListByGrade = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 relative z-10">
         <div className="max-w-6xl mx-auto">
           <div className="mb-6 flex justify-between items-center">
             <div>
@@ -100,6 +119,20 @@ const AttendanceListByGrade = () => {
             </div>
           </div>
           
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="بحث باسم الطالب أو الكود..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="inputField pl-10"
+              />
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+            </div>
+          </div>
+          
           {filteredRecords.length === 0 ? (
             <div className="bg-physics-dark rounded-lg p-6 text-center">
               <p className="text-white text-lg">لا توجد سجلات حضور متاحة</p>
@@ -111,6 +144,7 @@ const AttendanceListByGrade = () => {
                   <TableRow className="bg-physics-navy/50 text-physics-gold hover:bg-physics-navy/50">
                     <TableHead className="text-right">الطالب</TableHead>
                     <TableHead className="text-right">الكود</TableHead>
+                    <TableHead className="text-right">المجموعة</TableHead>
                     <TableHead className="text-right">التاريخ</TableHead>
                     <TableHead className="text-right">الوقت</TableHead>
                     <TableHead className="text-right">رقم الحصة</TableHead>
@@ -125,6 +159,7 @@ const AttendanceListByGrade = () => {
                       <TableRow key={record.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
                         <TableCell className="text-white">{record.studentName}</TableCell>
                         <TableCell className="text-white">{student?.code || ""}</TableCell>
+                        <TableCell className="text-white">{student?.group || "غير محدد"}</TableCell>
                         <TableCell className="text-white">{formatDate(record.date)}</TableCell>
                         <TableCell className="text-white">{record.time || "غير متاح"}</TableCell>
                         <TableCell className="text-white">الحصة {record.lessonNumber || 1}</TableCell>

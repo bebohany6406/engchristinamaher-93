@@ -88,6 +88,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("books", JSON.stringify(books));
   }, [attendance, grades, videos, books]);
 
+  // Function to show notifications on the device
+  const showNotification = (title: string, body: string) => {
+    // Check if the browser supports notifications
+    if ('Notification' in window) {
+      // Check if we have permission
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body });
+      } 
+      // If permission is not granted, request it
+      else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification(title, { body });
+          }
+        });
+      }
+    }
+  };
+
   const addAttendance = (studentId: string, studentName: string, status: "present" | "absent") => {
     const today = new Date().toISOString().split('T')[0];
     const time = new Date().toLocaleTimeString();
@@ -108,6 +127,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         )
       );
       
+      // Play sound effect
       const audio = status === 'present' 
         ? new Audio("/attendance-present.mp3") 
         : new Audio("/attendance-absent.mp3");
@@ -117,6 +137,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "تم تحديث الحضور",
         description: `تم تحديث حالة الطالب ${studentName} إلى ${status === 'present' ? 'حاضر' : 'غائب'}`,
       });
+      
+      // Show notification for absence
+      if (status === 'absent') {
+        showNotification(
+          "تسجيل غياب", 
+          `تم تسجيل غياب الطالب ${studentName}`
+        );
+      }
     } else {
       const newAttendance: Attendance = {
         id: `attendance-${Date.now()}`,
@@ -130,6 +158,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setAttendance(prev => [...prev, newAttendance]);
       
+      // Play sound effect
       const audio = status === 'present' 
         ? new Audio("/attendance-present.mp3") 
         : new Audio("/attendance-absent.mp3");
@@ -139,6 +168,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "تم تسجيل الحضور",
         description: `تم تسجيل ${status === 'present' ? 'حضور' : 'غياب'} الطالب ${studentName} للحصة ${newAttendance.lessonNumber}`,
       });
+      
+      // Show notification for absence
+      if (status === 'absent') {
+        showNotification(
+          "تسجيل غياب", 
+          `تم تسجيل غياب الطالب ${studentName} للحصة ${newAttendance.lessonNumber}`
+        );
+      }
     }
   };
 

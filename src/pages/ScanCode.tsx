@@ -5,15 +5,20 @@ import { Logo } from "@/components/Logo";
 import { ArrowRight, QrCode, UserMinus } from "lucide-react";
 import { QrScanner } from "@/components/QrScanner";
 import { ManualAttendance } from "@/components/ManualAttendance";
+import PhysicsBackground from "@/components/PhysicsBackground";
+import { PhoneContact } from "@/components/PhoneContact";
 
 const ScanCode = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"scan" | "absence">("scan");
 
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhysicsBackground />
+      <PhoneContact />
+      
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <button 
             onClick={() => navigate("/dashboard")}
@@ -27,7 +32,7 @@ const ScanCode = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 relative z-10">
         <div className="max-w-md mx-auto">
           <h1 className="text-2xl font-bold text-physics-gold text-center mb-6">تسجيل الحضور</h1>
           

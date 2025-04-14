@@ -1,3 +1,4 @@
+
 export interface Attendance {
   id: string;
   studentId: string;
@@ -45,7 +46,8 @@ export interface Student {
   grade: "first" | "second" | "third";
   password: string;
   qrCode?: string;
-  group?: string; // Added student group
+  group?: string;
+  code: string; // Added code property
 }
 
 export interface User {
@@ -55,4 +57,6 @@ export interface User {
   role: "admin" | "parent" | "student";
   password?: string;
   grade?: "first" | "second" | "third";
+  group?: string; // Added group property for students
+  code?: string; // Added code property for students
 }
