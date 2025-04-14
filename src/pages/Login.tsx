@@ -25,7 +25,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-physics-navy relative">
+    <div className="min-h-screen flex flex-col relative">
       <PhysicsBackground />
       <PhoneContact />
       

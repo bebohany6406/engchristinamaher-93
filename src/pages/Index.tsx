@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
+import PhysicsBackground from "@/components/PhysicsBackground";
 
 const Index = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="min-h-screen flex flex-col bg-physics-navy relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative">
+      <PhysicsBackground />
       <PhoneContact />
       
       <div className="flex-1 flex items-center justify-center p-6 relative z-10">
@@ -21,7 +23,7 @@ const Index = () => {
 
           <div className="space-y-4">
             <button
-              className="goldBtn w-full py-3 rounded-lg bg-physics-gold text-physics-navy font-bold hover:bg-physics-gold/90 transition-colors"
+              className="goldBtn w-full py-3 rounded-lg text-physics-navy font-bold transition-colors"
               onClick={() => navigate("/login")}
             >
               تسجيل الدخول

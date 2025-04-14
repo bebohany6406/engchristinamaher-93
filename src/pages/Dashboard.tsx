@@ -1,8 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
+import PhysicsBackground from "@/components/PhysicsBackground";
 import { 
   BookOpen, Video, UserCheck, QrCode, Users, User, 
   LogOut, BookCopy, CheckSquare, GraduationCap 
@@ -36,10 +38,7 @@ const Dashboard = () => {
   }, [currentUser, navigate]);
 
   const handleLogout = () => {
-    // Play logout sound
-    const audio = new Audio("/logout.mp3");
-    audio.play().catch(e => console.error("Sound play failed:", e));
-    
+    // Instead of trying to play a sound that might not exist, just log out directly
     logout();
     navigate("/login");
   };
@@ -56,11 +55,12 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative">
+      <PhysicsBackground />
       <PhoneContact />
       
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+      <header className="bg-physics-dark/80 py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <Logo />
         </div>

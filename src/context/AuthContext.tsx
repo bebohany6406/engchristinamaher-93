@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode } from "@/lib/utils";
@@ -36,12 +35,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Initial admin user
+// Initial admin user with updated credentials
 const adminUser: User = {
   id: "admin-1",
-  name: "مسؤول النظام",
+  name: "AdminAPPEng.Christina Maher",
   phone: "admin",
-  password: "admin123",
+  password: "Eng.Christina Maher0022",
   role: "admin",
 };
 
