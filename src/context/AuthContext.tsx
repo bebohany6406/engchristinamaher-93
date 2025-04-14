@@ -171,7 +171,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       code,
       parentPhone,
       group,
-      grade
+      grade,
+      role: "student" // Added the missing role property
     };
 
     setStudents(prev => [...prev, newStudent]);

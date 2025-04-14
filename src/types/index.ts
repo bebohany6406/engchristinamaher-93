@@ -47,7 +47,15 @@ export interface Student {
   password: string;
   qrCode?: string;
   group?: string;
-  code: string; // Added code property
+  code: string;
+}
+
+export interface Parent {
+  id: string;
+  phone: string;
+  studentCode: string;
+  studentName: string;
+  password: string;
 }
 
 export interface User {
@@ -57,6 +65,6 @@ export interface User {
   role: "admin" | "parent" | "student";
   password?: string;
   grade?: "first" | "second" | "third";
-  group?: string; // Added group property for students
-  code?: string; // Added code property for students
+  group?: string;
+  code?: string;
 }
