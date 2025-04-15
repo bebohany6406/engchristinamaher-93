@@ -1,104 +1,49 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  font-family: 'Tajawal', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: white;
+  background-color: #0e1525;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 @layer base {
-  :root {
-    --background: 220 35% 16%;
-    --foreground: 0 0% 100%;
-
-    --card: 220 35% 16%;
-    --card-foreground: 0 0% 100%;
-
-    --popover: 220 35% 16%;
-    --popover-foreground: 0 0% 100%;
-
-    --primary: 45 65% 53%;
-    --primary-foreground: 220 35% 16%;
-
-    --secondary: 220 30% 20%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 220 20% 25%;
-    --muted-foreground: 0 0% 80%;
-
-    --accent: 220 30% 25%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 45 65% 53%;
-    --input: 220 20% 25%;
-    --ring: 45 65% 53%;
-
-    --radius: 1.5rem;
-  }
-
-  * {
-    @apply border-border;
-  }
-
   body {
-    @apply bg-physics-navy text-foreground font-cairo;
+    @apply direction-rtl;
+  }
+}
+
+@layer utilities {
+  .direction-rtl {
     direction: rtl;
   }
 
-  .goldBtn {
-    @apply bg-physics-gold hover:bg-physics-lightgold text-physics-navy font-bold py-3 px-6 rounded-full transition-all duration-200 border-2 border-physics-gold hover:border-physics-lightgold;
+  .direction-ltr {
+    direction: ltr;
   }
+}
 
+@layer components {
   .inputField {
-    @apply bg-physics-dark/80 text-white border-2 border-physics-gold rounded-full px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-physics-lightgold focus:border-physics-lightgold;
+    @apply w-full py-2 px-4 bg-physics-navy border border-physics-gold/30 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-physics-gold;
   }
 
-  /* Physics particles and formulas styling */
-  .physics-particle {
-    @apply rounded-full absolute;
+  .goldBtn {
+    @apply bg-physics-gold text-physics-navy py-2 px-4 rounded-lg font-bold hover:bg-physics-gold/90 transition-colors;
   }
 
-  .physics-electron {
-    @apply bg-blue-400 shadow-lg shadow-blue-400/50;
-  }
-
-  .physics-formula {
-    @apply text-physics-gold font-mono absolute;
-  }
-
-  .physics-atom {
-    @apply absolute w-24 h-24;
-  }
-
-  @keyframes orbit {
-    from { transform: rotate(0deg) translateX(30px) rotate(0deg); }
-    to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
-  }
-
-  @keyframes pulse {
-    0% { transform: scale(0.95); opacity: 0.7; }
-    50% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(0.95); opacity: 0.7; }
-  }
-
-  @keyframes float {
-    0% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-10px) rotate(5deg); }
-    100% { transform: translateY(0px) rotate(0deg); }
-  }
-  
-  /* Phone contact button styling */
-  .phone-button {
-    @apply fixed bottom-4 left-4 z-50 bg-physics-gold p-3 rounded-full shadow-lg hover:bg-physics-lightgold transition-colors;
-  }
-  
-  .phone-modal {
-    @apply fixed inset-0 bg-black/60 flex items-center justify-center z-50;
-  }
-  
-  .phone-modal-content {
-    @apply bg-physics-dark rounded-lg p-6 w-full max-w-xs mx-4;
+  .physics-bg {
+    background-image: radial-gradient(circle at center, #171E31 0%, #0E1525 100%);
   }
 }

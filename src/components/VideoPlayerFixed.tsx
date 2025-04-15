@@ -62,6 +62,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         title={title}
         controlsList="nodownload"
         playsInline
+        preload="auto"
         onContextMenu={(e) => e.preventDefault()}
         style={{ display: isLoading ? 'none' : 'block' }}
       >

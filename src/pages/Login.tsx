@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
@@ -12,8 +12,22 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loginType, setLoginType] = useState<"" | "student" | "parent" | "admin">("");
   const [loginError, setLoginError] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Check for saved login information on component mount
+  useEffect(() => {
+    const savedLoginType = localStorage.getItem("loginType");
+    const savedPhone = localStorage.getItem("userPhone");
+    const savedPassword = localStorage.getItem("userPassword");
+    
+    if (savedLoginType) {
+      setLoginType(savedLoginType as "" | "student" | "parent" | "admin");
+      setPhone(savedPhone || "");
+      setPassword(savedPassword || "");
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +48,18 @@ const Login = () => {
     const success = login(phone, password);
     
     if (success) {
+      // Save login information if "remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem("loginType", loginType);
+        localStorage.setItem("userPhone", phone);
+        localStorage.setItem("userPassword", password);
+      } else {
+        // Clear any saved login information
+        localStorage.removeItem("loginType");
+        localStorage.removeItem("userPhone");
+        localStorage.removeItem("userPassword");
+      }
+      
       navigate("/dashboard");
     }
   };
@@ -118,6 +144,19 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="remember-me"
+                  className="w-4 h-4 accent-physics-gold"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label htmlFor="remember-me" className="mr-2 text-white">
+                  تذكرني
+                </label>
               </div>
 
               {loginError && (

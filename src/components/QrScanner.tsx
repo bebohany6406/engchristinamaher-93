@@ -4,6 +4,7 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Camera, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import jsQR from "jsqr";
 
 export function QrScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -50,26 +51,27 @@ export function QrScanner() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    if (video && canvas) {
+    if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // This is a placeholder for actual barcode scanning library
-        // In a real implementation, you'd use a library like jsQR or similar
-        // For the purposes of this demo, we'll just pretend to scan after a delay
-        setTimeout(() => {
-          if (scanning) {
-            // Simulate finding a code
-            const simulatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-            processScannedCode(simulatedCode);
-          }
-        }, 2000);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        
+        if (code) {
+          // QR code found
+          processScannedCode(code.data);
+          return;
+        }
       }
     }
     
+    // Continue scanning if no code was found
     if (scanning) {
       requestAnimationFrame(scanCode);
     }
@@ -140,6 +142,7 @@ export function QrScanner() {
               className="w-full rounded-lg"
               playsInline
               muted
+              autoPlay
             ></video>
             <canvas ref={canvasRef} className="hidden"></canvas>
             <button 
