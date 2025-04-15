@@ -11,11 +11,25 @@ const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loginType, setLoginType] = useState<"" | "student" | "parent" | "admin">("");
+  const [loginError, setLoginError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError("");
+    
+    // Validate login based on login type
+    if (loginType === "admin" && !phone.startsWith("AdminAPP")) {
+      setLoginError("اسم المستخدم غير صحيح لحساب المسؤول");
+      return;
+    } else if (loginType === "student" && phone.startsWith("AdminAPP")) {
+      setLoginError("رقم الهاتف غير صحيح لحساب الطالب");
+      return;
+    } else if (loginType === "parent" && phone.startsWith("AdminAPP")) {
+      setLoginError("رقم الهاتف غير صحيح لحساب ولي الأمر");
+      return;
+    }
     
     const success = login(phone, password);
     
@@ -106,6 +120,12 @@ const Login = () => {
                 />
               </div>
 
+              {loginError && (
+                <div className="bg-red-500/20 text-white p-3 rounded-lg text-center">
+                  {loginError}
+                </div>
+              )}
+
               <button type="submit" className="goldBtn w-full">
                 تسجيل الدخول
               </button>
@@ -113,7 +133,12 @@ const Login = () => {
               <div className="text-center">
                 <button 
                   type="button"
-                  onClick={() => setLoginType("")}
+                  onClick={() => { 
+                    setLoginType("");
+                    setLoginError("");
+                    setPhone("");
+                    setPassword(""); 
+                  }}
                   className="text-physics-gold hover:underline"
                 >
                   العودة لاختيار نوع الحساب
