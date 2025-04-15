@@ -11,7 +11,7 @@ export function Logo() {
           className="h-16 w-16 object-cover rounded-full" 
         />
       </div>
-      <h1 className="text-2xl font-bold text-physics-gold mr-3">Eng Christina Maher</h1>
+      <h1 className="text-2xl font-bold text-physics-gold mr-3">Eng.Christina Maher</h1>
     </div>
   );
 }

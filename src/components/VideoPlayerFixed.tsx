@@ -19,17 +19,17 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       setError(null);
     };
     
-    const handleError = () => {
+    const handleError = (e: any) => {
       setIsLoading(false);
       setError("حدث خطأ في تحميل الفيديو، يرجى التحقق من الرابط");
-      console.error("Video error loading source:", src);
+      console.error("Video error loading source:", src, e);
     };
     
     const video = videoRef.current;
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
     
-    // Force reload video source
+    // التأكد من تحميل مصدر الفيديو
     video.load();
     
     return () => {
@@ -37,6 +37,20 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       video.removeEventListener("error", handleError);
     };
   }, [src]);
+  
+  // معالجة خطأ التحميل في حالة اكتشافه
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(e => {
+          console.error("Failed to play video:", e);
+          setError("فشل تشغيل الفيديو، يرجى المحاولة مرة أخرى");
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  };
   
   return (
     <div className="relative w-full h-full bg-physics-dark rounded-lg overflow-hidden">
@@ -63,6 +77,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         controlsList="nodownload"
         playsInline
         preload="auto"
+        onClick={handleVideoClick}
         onContextMenu={(e) => e.preventDefault()}
         style={{ display: isLoading ? 'none' : 'block' }}
       >
