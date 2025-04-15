@@ -10,6 +10,15 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentQuality, setCurrentQuality] = useState<string>("auto");
+  
+  // جودات الفيديو المتاحة
+  const qualities = {
+    auto: src,
+    high: src,
+    medium: src,
+    low: src
+  };
   
   useEffect(() => {
     if (!videoRef.current) return;
@@ -52,6 +61,25 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     }
   };
   
+  // تغيير جودة الفيديو
+  const changeQuality = (quality: string) => {
+    if (videoRef.current) {
+      const currentTime = videoRef.current.currentTime;
+      const isPlaying = !videoRef.current.paused;
+      
+      setCurrentQuality(quality);
+      videoRef.current.src = qualities[quality as keyof typeof qualities];
+      videoRef.current.load();
+      
+      // الاستمرار من نفس النقطة
+      videoRef.current.addEventListener("canplay", function resumePlayback() {
+        videoRef.current?.removeEventListener("canplay", resumePlayback);
+        videoRef.current.currentTime = currentTime;
+        if (isPlaying) videoRef.current.play();
+      });
+    }
+  };
+  
   return (
     <div className="relative w-full h-full bg-physics-dark rounded-lg overflow-hidden">
       {isLoading && (
@@ -86,6 +114,24 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         <source src={src} type="application/x-mpegURL" />
         متصفحك لا يدعم تشغيل الفيديو
       </video>
+      
+      {/* زر اختيار الجودة */}
+      <div className="absolute bottom-14 left-4 bg-black/70 rounded-md overflow-hidden" style={{ display: isLoading ? 'none' : 'block' }}>
+        <div className="text-white text-xs p-1 bg-physics-gold">الجودة</div>
+        <div className="p-1">
+          {Object.keys(qualities).map((quality) => (
+            <button
+              key={quality}
+              onClick={() => changeQuality(quality)}
+              className={`block w-full text-xs text-left px-2 py-1 ${currentQuality === quality ? 'text-physics-gold' : 'text-white'} hover:bg-gray-700`}
+            >
+              {quality === 'auto' ? 'تلقائي' : 
+               quality === 'high' ? 'عالية' : 
+               quality === 'medium' ? 'متوسطة' : 'منخفضة'}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

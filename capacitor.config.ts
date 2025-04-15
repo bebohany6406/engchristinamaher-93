@@ -29,7 +29,12 @@ const config: CapacitorConfig = {
       keystoreAliasPassword: undefined,
       signingType: undefined
     }
+  },
+  ios: {
+    contentInset: "always",
+    scheme: "Eng.ChristinaMaher",
+    backgroundColor: "#171E31"
   }
-};
+}
 
 export default config;

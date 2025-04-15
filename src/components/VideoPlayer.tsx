@@ -1,6 +1,6 @@
 
-import { useState, useRef } from "react";
-import { Play, Pause, Volume2, VolumeX, Download, Maximize } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Play, Pause, Volume2, VolumeX, Download, Maximize, Settings } from "lucide-react";
 
 interface VideoPlayerProps {
   src: string;
@@ -12,9 +12,19 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [currentQuality, setCurrentQuality] = useState<string>("auto");
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<number | null>(null);
   const [showControls, setShowControls] = useState(true);
+
+  // جودات الفيديو المتاحة
+  const qualities = {
+    auto: src,
+    high: src,
+    medium: src,
+    low: src
+  };
 
   const handlePlayPause = () => {
     const video = videoRef.current;
@@ -23,7 +33,9 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
     if (isPlaying) {
       video.pause();
     } else {
-      video.play();
+      video.play().catch(e => {
+        console.error("Failed to play video:", e);
+      });
     }
     
     setIsPlaying(!isPlaying);
@@ -93,6 +105,29 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
       }
     }, 3000);
   };
+  
+  const toggleQualityMenu = () => {
+    setShowQualityMenu(!showQualityMenu);
+  };
+  
+  const changeQuality = (quality: string) => {
+    if (videoRef.current) {
+      const currentTime = videoRef.current.currentTime;
+      const isPlaying = !videoRef.current.paused;
+      
+      setCurrentQuality(quality);
+      videoRef.current.src = qualities[quality as keyof typeof qualities];
+      videoRef.current.load();
+      
+      // الاستمرار من نفس النقطة
+      videoRef.current.addEventListener("canplay", function resumePlayback() {
+        videoRef.current?.removeEventListener("canplay", resumePlayback);
+        videoRef.current.currentTime = currentTime;
+        if (isPlaying) videoRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
+      });
+    }
+    setShowQualityMenu(false);
+  };
 
   const handleDownload = () => {
     if (src) {
@@ -104,6 +139,23 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
       document.body.removeChild(link);
     }
   };
+
+  // معالجة أخطاء الفيديو
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    const handleError = (e: Event) => {
+      console.error("Video error:", e);
+      setIsPlaying(false);
+    };
+    
+    video.addEventListener("error", handleError);
+    
+    return () => {
+      video.removeEventListener("error", handleError);
+    };
+  }, []);
 
   return (
     <div 
@@ -117,8 +169,12 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
         onTimeUpdate={handleTimeUpdate}
         onEnded={() => setIsPlaying(false)}
         onClick={handlePlayPause}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
       >
         <source src={src} type="video/mp4" />
+        <source src={src} type="video/webm" />
+        <source src={src} type="application/x-mpegURL" />
         متصفحك لا يدعم تشغيل الفيديو.
       </video>
       
@@ -157,6 +213,29 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
             </div>
             
             <div className="flex items-center gap-3">
+              <div className="relative">
+                <button onClick={toggleQualityMenu} className="text-white">
+                  <Settings size={20} />
+                </button>
+                
+                {showQualityMenu && (
+                  <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-md overflow-hidden w-24">
+                    <div className="text-white text-xs p-1 bg-physics-gold text-center">الجودة</div>
+                    {Object.keys(qualities).map(quality => (
+                      <button
+                        key={quality}
+                        className={`block w-full text-xs text-center px-2 py-1 ${currentQuality === quality ? 'text-physics-gold' : 'text-white'} hover:bg-gray-700`}
+                        onClick={() => changeQuality(quality)}
+                      >
+                        {quality === 'auto' ? 'تلقائي' : 
+                         quality === 'high' ? 'عالية' : 
+                         quality === 'medium' ? 'متوسطة' : 'منخفضة'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
               <button onClick={handleDownload} className="text-white">
                 <Download size={20} />
               </button>
