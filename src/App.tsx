@@ -54,9 +54,20 @@ tajawalFontStyles.textContent = `
     color: white !important;
   }
   
-  /* Change buttons to rounded */
+  /* Rounded buttons */
   .goldBtn {
     border-radius: 24px !important;
+  }
+  
+  /* Improved image quality */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* Better video player */
+  video {
+    object-fit: contain;
   }
 `;
 document.head.appendChild(tajawalFontStyles);
@@ -67,11 +78,6 @@ const App = () => {
   // Request permissions on app load
   useEffect(() => {
     const requestPermissions = async () => {
-      // Request notification permission if not already granted
-      if ('Notification' in window && Notification.permission !== 'granted') {
-        // We'll request it on user interaction instead of automatically
-      }
-      
       // Check for saved credentials and restore session if needed
       const userLoggedIn = localStorage.getItem("userLoggedIn");
       if (userLoggedIn === "true") {
@@ -94,6 +100,7 @@ const App = () => {
                 color: 'white',
                 border: '1px solid #D4AF37',
                 borderRadius: '12px',
+                opacity: '1',
               }
             }} />
             <BrowserRouter>

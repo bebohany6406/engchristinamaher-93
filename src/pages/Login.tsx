@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -17,10 +16,34 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, currentUser } = useAuth();
 
-  // Check if user is already logged in
+  // Check if user is already logged in on component mount
   useEffect(() => {
+    const userLoggedIn = localStorage.getItem("userLoggedIn");
+    const storedUser = localStorage.getItem("currentUser");
+    
+    if (userLoggedIn === "true" && storedUser && !currentUser) {
+      try {
+        // Auto-login user from localStorage if session exists
+        const savedUser = JSON.parse(storedUser);
+        if (savedUser && savedUser.phone && savedUser.password) {
+          login(savedUser.phone, savedUser.password);
+          
+          // Play login success sound
+          const audio = new Audio("/login-success.mp3");
+          audio.volume = 0.5;
+          audio.play().catch(e => console.error("Sound play failed:", e));
+          
+          navigate("/dashboard");
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to parse stored user data:", error);
+      }
+    }
+    
     if (currentUser) {
       navigate("/dashboard");
+      return;
     }
     
     // Check for saved login information on component mount
@@ -33,7 +56,7 @@ const Login = () => {
       setPhone(savedPhone || "");
       setPassword(savedPassword || "");
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, login]);
 
   // Function to request notification permission
   const requestNotificationPermission = async () => {
@@ -79,22 +102,24 @@ const Login = () => {
       // Request notification permission based on login type
       await requestNotificationPermission();
       
-      // Save login information if "remember me" is checked
+      // Always save login information if successful to maintain persistent sessions
+      localStorage.setItem("userLoggedIn", "true");
+      
+      // Additional saved info if "Remember Me" is checked
       if (rememberMe) {
         localStorage.setItem("loginType", loginType);
         localStorage.setItem("userPhone", phone);
         localStorage.setItem("userPassword", password);
-        localStorage.setItem("userLoggedIn", "true");
       } else {
-        // Clear any saved login information
+        // Clear any saved form data but keep the session active
         localStorage.removeItem("loginType");
         localStorage.removeItem("userPhone");
         localStorage.removeItem("userPassword");
-        localStorage.setItem("userLoggedIn", "true");
       }
       
       // Play login success sound
       const audio = new Audio("/login-success.mp3");
+      audio.volume = 0.5;
       audio.play().catch(e => console.error("Sound play failed:", e));
       
       navigate("/dashboard");
@@ -117,21 +142,21 @@ const Login = () => {
 
             <div className="space-y-4">
               <button
-                className="goldBtn w-full rounded-3xl shadow-lg font-tajawal"
+                className="goldBtn w-full shadow-lg font-tajawal"
                 onClick={() => setLoginType("admin")}
               >
                 دخول المسؤول
               </button>
 
               <button
-                className="goldBtn w-full rounded-3xl shadow-lg font-tajawal"
+                className="goldBtn w-full shadow-lg font-tajawal"
                 onClick={() => setLoginType("student")}
               >
                 دخول الطالب
               </button>
 
               <button
-                className="goldBtn w-full rounded-3xl shadow-lg font-tajawal"
+                className="goldBtn w-full shadow-lg font-tajawal"
                 onClick={() => setLoginType("parent")}
               >
                 دخول ولي الأمر
@@ -204,12 +229,12 @@ const Login = () => {
               </div>
 
               {loginError && (
-                <div className="bg-red-500/90 text-white p-3 rounded-lg text-center font-tajawal">
+                <div className="bg-red-500 text-white p-3 rounded-lg text-center font-tajawal">
                   {loginError}
                 </div>
               )}
 
-              <button type="submit" className="goldBtn w-full rounded-3xl shadow-lg font-tajawal">
+              <button type="submit" className="goldBtn w-full shadow-lg font-tajawal">
                 تسجيل الدخول
               </button>
               

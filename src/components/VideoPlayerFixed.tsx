@@ -14,7 +14,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   const [currentQuality, setCurrentQuality] = useState<string>("auto");
   const [isPlaying, setIsPlaying] = useState(false);
   
-  // جودات الفيديو المتاحة - مع دعم أفضل للجوال
+  // Available video qualities with better mobile support
   const qualities = {
     auto: src,
     high: src,
@@ -32,18 +32,21 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     
     const handleError = (e: any) => {
       setIsLoading(false);
-      setError("حدث خطأ في تحميل الفيديو، يرجى التحقق من الرابط");
-      console.error("Video error loading source:", src, e);
+      console.error("Video error:", e);
+      setError("حدث خطأ في تحميل الفيديو، يرجى التحقق من الرابط أو الاتصال بالإنترنت");
     };
     
     const video = videoRef.current;
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
     
-    // التأكد من تحميل مصدر الفيديو - مع دعم أفضل للمحمول
+    // Ensure video loads properly on mobile
     video.setAttribute("playsinline", "true");
     video.setAttribute("webkit-playsinline", "true");
     video.setAttribute("x5-playsinline", "true");
+    video.setAttribute("controls", "false");
+    video.muted = false;
+    video.preload = "auto";
     video.load();
     
     return () => {
@@ -52,45 +55,67 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     };
   }, [src]);
   
-  // تشغيل الفيديو بشكل أفضل على الجوال
+  // Better video playback function for mobile
   const handlePlayVideo = () => {
     if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play().then(() => {
+      const video = videoRef.current;
+      
+      if (video.paused) {
+        // Fix for iOS: Request fullscreen first to bypass autoplay restrictions
+        if (video.webkitEnterFullscreen && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+          try {
+            video.webkitEnterFullscreen();
+          } catch (e) {
+            console.log("Failed to enter fullscreen:", e);
+          }
+        }
+        
+        video.play().then(() => {
           setIsPlaying(true);
         }).catch(e => {
           console.error("Failed to play video:", e);
-          setError("فشل تشغيل الفيديو، يرجى المحاولة مرة أخرى");
+          setError("فشل تشغيل الفيديو، يرجى النقر مرة أخرى أو التحقق من إعدادات المتصفح");
+          
+          // Try playing muted if normal playback fails (browsers often allow muted autoplay)
+          video.muted = true;
+          video.play().then(() => {
+            video.muted = false; // Try to unmute after playback starts
+            setIsPlaying(true);
+          }).catch(err => {
+            console.error("Failed to play even when muted:", err);
+          });
         });
       } else {
-        videoRef.current.pause();
+        video.pause();
         setIsPlaying(false);
       }
     }
   };
   
-  // تغيير جودة الفيديو
+  // Change video quality
   const changeQuality = (quality: string) => {
-    if (videoRef.current) {
-      const currentTime = videoRef.current.currentTime;
-      const wasPlaying = !videoRef.current.paused;
-      
-      setCurrentQuality(quality);
-      videoRef.current.src = qualities[quality as keyof typeof qualities];
-      videoRef.current.load();
-      
-      // الاستمرار من نفس النقطة
-      videoRef.current.addEventListener("canplay", function resumePlayback() {
-        if (!videoRef.current) return;
-        videoRef.current.removeEventListener("canplay", resumePlayback);
-        videoRef.current.currentTime = currentTime;
-        if (wasPlaying) {
-          videoRef.current.play()
-            .then(() => setIsPlaying(true))
-            .catch(e => console.error("Failed to resume video:", e));
-        }
-      });
-    }
+    if (!videoRef.current) return;
+    
+    const currentTime = videoRef.current.currentTime;
+    const wasPlaying = !videoRef.current.paused;
+    
+    setCurrentQuality(quality);
+    videoRef.current.src = qualities[quality as keyof typeof qualities];
+    videoRef.current.load();
+    
+    // Continue from the same point
+    const resumePlayback = () => {
+      if (!videoRef.current) return;
+      videoRef.current.removeEventListener("canplay", resumePlayback);
+      videoRef.current.currentTime = currentTime;
+      if (wasPlaying) {
+        videoRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.error("Failed to resume video:", e));
+      }
+    };
+    
+    videoRef.current.addEventListener("canplay", resumePlayback);
   };
   
   return (
@@ -106,6 +131,18 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
           <div className="text-white text-center px-4">
             <p className="text-red-400 mb-2">{error}</p>
             <p className="text-sm">تأكد من صحة الرابط وأنه يدعم التشغيل المباشر</p>
+            <button 
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                if (videoRef.current) {
+                  videoRef.current.load();
+                }
+              }}
+              className="mt-2 goldBtn"
+            >
+              إعادة المحاولة
+            </button>
           </div>
         </div>
       )}
@@ -117,11 +154,9 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         title={title}
         controlsList="nodownload"
         playsInline
-        webkit-playsinline="true"
-        x5-playsinline="true"
         preload="auto"
         onContextMenu={(e) => e.preventDefault()}
-        style={{ display: isLoading || !isPlaying ? 'none' : 'block' }}
+        style={{ display: isLoading || error || !isPlaying ? 'none' : 'block' }}
       >
         <source src={src} type="video/mp4" />
         <source src={src} type="video/webm" />
@@ -129,24 +164,24 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         متصفحك لا يدعم تشغيل الفيديو
       </video>
       
-      {/* زر تشغيل واضح للفيديو */}
+      {/* Clear play button for video */}
       {!isPlaying && !isLoading && !error && (
         <div 
-          className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/30"
+          className="absolute inset-0 flex items-center justify-center cursor-pointer"
           onClick={handlePlayVideo}
         >
-          <div className="bg-physics-gold/80 p-6 rounded-full hover:bg-physics-gold transition-colors">
+          <div className="bg-physics-gold/90 p-6 rounded-full hover:bg-physics-gold transition-colors shadow-lg">
             <Play size={48} className="text-physics-navy" />
           </div>
-          <div className="absolute bottom-6 left-6 text-lg text-white font-bold">
+          <div className="absolute bottom-6 left-6 text-lg text-white font-bold bg-physics-navy/70 px-3 py-1 rounded-full">
             اضغط للتشغيل
           </div>
         </div>
       )}
       
-      {/* زر اختيار الجودة */}
+      {/* Quality selection button */}
       {isPlaying && (
-        <div className="absolute bottom-14 left-4 bg-physics-gold/90 rounded-md overflow-hidden shadow-lg" style={{ display: isLoading ? 'none' : 'block' }}>
+        <div className="absolute bottom-14 left-4 bg-physics-gold rounded-md overflow-hidden shadow-lg" style={{ display: isLoading ? 'none' : 'block' }}>
           <div className="text-physics-navy text-xs font-bold p-2 bg-physics-gold">الجودة</div>
           <div className="p-1">
             {Object.keys(qualities).map((quality) => (

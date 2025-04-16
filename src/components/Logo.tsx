@@ -10,7 +10,7 @@ export function Logo() {
           <img 
             src="/lovable-uploads/05c76ed8-a195-4223-8d12-9d9dda7c397e.png" 
             alt="Eng.Christina Maher" 
-            className="h-16 w-16 object-cover rounded-full" 
+            className="h-16 w-16 object-cover rounded-full"
           />
         </Avatar>
       </div>

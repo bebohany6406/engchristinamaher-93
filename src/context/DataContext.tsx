@@ -16,7 +16,7 @@ interface DataContextType {
   getStudentLessonCount: (studentId: string) => number;
   
   // Grades methods
-  addGrade: (studentId: string, studentName: string, examName: string, score: number, totalScore: number, lessonNumber: number) => void;
+  addGrade: (studentId: string, studentName: string, examName: string, score: number, totalScore: number, lessonNumber: number, group: string) => void;
   getStudentGrades: (studentId: string) => Grade[];
   getGradesByGradeLevel: (grade: "first" | "second" | "third") => Grade[];
   
@@ -43,6 +43,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [videos, setVideos] = useState<Video[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
 
+  // Load data from localStorage on initial mount
   useEffect(() => {
     const storedAttendance = localStorage.getItem("attendance");
     if (storedAttendance) {
@@ -81,6 +82,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Save data to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("attendance", JSON.stringify(attendance));
     localStorage.setItem("grades", JSON.stringify(grades));
@@ -131,6 +133,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const audio = status === 'present' 
         ? new Audio("/attendance-present.mp3") 
         : new Audio("/attendance-absent.mp3");
+      audio.volume = 0.5;
       audio.play().catch(e => console.error("Sound play failed:", e));
       
       toast({
@@ -162,6 +165,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const audio = status === 'present' 
         ? new Audio("/attendance-present.mp3") 
         : new Audio("/attendance-absent.mp3");
+      audio.volume = 0.5;
       audio.play().catch(e => console.error("Sound play failed:", e));
       
       toast({
@@ -198,8 +202,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     examName: string, 
     score: number, 
     totalScore: number,
-    lessonNumber: number
+    lessonNumber: number,
+    group: string
   ) => {
+    // Calculate performance indicator
+    const percentage = (score / totalScore) * 100;
+    let performanceIndicator: "excellent" | "good" | "average" | "poor" = "average";
+    
+    if (percentage >= 85) {
+      performanceIndicator = "excellent";
+    } else if (percentage >= 70) {
+      performanceIndicator = "good";
+    } else if (percentage >= 50) {
+      performanceIndicator = "average";
+    } else {
+      performanceIndicator = "poor";
+    }
+    
     const newGrade: Grade = {
       id: `grade-${Date.now()}`,
       studentId,
@@ -208,14 +227,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       score,
       totalScore,
       date: new Date().toISOString(),
-      lessonNumber
+      lessonNumber,
+      group,
+      performanceIndicator
     };
 
     setGrades(prev => [...prev, newGrade]);
+    
+    // Play sound effect
+    const audio = new Audio("/grade-added.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
+    
     toast({
       title: "تم إضافة الدرجة",
       description: `تم إضافة درجة ${examName} للطالب ${studentName}`,
     });
+    
+    // Send notification
+    showNotification(
+      "إضافة درجة جديدة", 
+      `تم إضافة درجة ${examName} للطالب ${studentName}: ${score}/${totalScore}`
+    );
   };
 
   const getStudentGrades = (studentId: string): Grade[] => {
@@ -227,16 +260,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addVideo = (title: string, url: string, grade: "first" | "second" | "third" = "first", thumbnailUrl?: string) => {
+    // Ensure URL is suitable for direct playback on mobile devices
+    let processedUrl = url;
+    
+    // Convert to direct links if not already
+    if (url.includes('drive.google.com') && !url.includes('download')) {
+      const fileId = url.match(/[-\w]{25,}/);
+      if (fileId && fileId[0]) {
+        processedUrl = `https://drive.google.com/uc?export=download&id=${fileId[0]}`;
+      }
+    }
+    
     const newVideo: Video = {
       id: `video-${Date.now()}`,
       title,
-      url,
+      url: processedUrl,
       thumbnailUrl,
       uploadDate: new Date().toISOString(),
       grade
     };
 
     setVideos(prev => [...prev, newVideo]);
+    
+    // Play sound effect
+    const audio = new Audio("/item-added.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
+    
     toast({
       title: "تم إضافة الفيديو",
       description: `تم إضافة فيديو ${title} بنجاح`,
@@ -244,13 +294,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const updateVideo = (id: string, title: string, url: string, grade: "first" | "second" | "third" = "first", thumbnailUrl?: string) => {
+    // Ensure URL is suitable for direct playback
+    let processedUrl = url;
+    
+    // Convert to direct links if not already
+    if (url.includes('drive.google.com') && !url.includes('download')) {
+      const fileId = url.match(/[-\w]{25,}/);
+      if (fileId && fileId[0]) {
+        processedUrl = `https://drive.google.com/uc?export=download&id=${fileId[0]}`;
+      }
+    }
+    
     setVideos(prev => 
       prev.map(video => 
         video.id === id 
-          ? { ...video, title, url, grade, thumbnailUrl } 
+          ? { ...video, title, url: processedUrl, grade, thumbnailUrl } 
           : video
       )
     );
+    
+    // Play sound effect
+    const audio = new Audio("/item-updated.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
     
     toast({
       title: "تم تحديث الفيديو",
@@ -260,6 +326,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const deleteVideo = (id: string) => {
     setVideos(prev => prev.filter(video => video.id !== id));
+    
+    // Play sound effect
+    const audio = new Audio("/item-deleted.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
     
     toast({
       title: "تم حذف الفيديو",
@@ -276,15 +347,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addBook = (title: string, url: string, grade: "first" | "second" | "third" = "first") => {
+    // Process URL for direct download if needed
+    let processedUrl = url;
+    
+    // Convert to direct links if not already
+    if (url.includes('drive.google.com') && !url.includes('download')) {
+      const fileId = url.match(/[-\w]{25,}/);
+      if (fileId && fileId[0]) {
+        processedUrl = `https://drive.google.com/uc?export=download&id=${fileId[0]}`;
+      }
+    }
+    
     const newBook: Book = {
       id: `book-${Date.now()}`,
       title,
-      url,
+      url: processedUrl,
       uploadDate: new Date().toISOString(),
       grade
     };
 
     setBooks(prev => [...prev, newBook]);
+    
+    // Play sound effect
+    const audio = new Audio("/item-added.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
+    
     toast({
       title: "تم إضافة الكتاب",
       description: `تم إضافة كتاب ${title} بنجاح`,
@@ -292,13 +380,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const updateBook = (id: string, title: string, url: string, grade: "first" | "second" | "third") => {
+    // Process URL for direct download if needed
+    let processedUrl = url;
+    
+    // Convert to direct links if not already
+    if (url.includes('drive.google.com') && !url.includes('download')) {
+      const fileId = url.match(/[-\w]{25,}/);
+      if (fileId && fileId[0]) {
+        processedUrl = `https://drive.google.com/uc?export=download&id=${fileId[0]}`;
+      }
+    }
+    
     setBooks(prev => 
       prev.map(book => 
         book.id === id 
-          ? { ...book, title, url, grade } 
+          ? { ...book, title, url: processedUrl, grade } 
           : book
       )
     );
+    
+    // Play sound effect
+    const audio = new Audio("/item-updated.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
     
     toast({
       title: "تم تحديث الكتاب",
@@ -308,6 +412,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const deleteBook = (id: string) => {
     setBooks(prev => prev.filter(book => book.id !== id));
+    
+    // Play sound effect
+    const audio = new Audio("/item-deleted.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
     
     toast({
       title: "تم حذف الكتاب",

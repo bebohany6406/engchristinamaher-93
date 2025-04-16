@@ -12,6 +12,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoURL, setVideoURL] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,6 +42,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     
     setIsUploading(true);
     setUploadProgress(0);
+    setVideoPreview(null);
     
     // Simulate upload with progress
     const interval = setInterval(() => {
@@ -58,6 +60,10 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
       // In a real app, this would be replaced with an actual upload to a server/CDN
       const url = URL.createObjectURL(file);
       
+      // Generate a video preview
+      const videoPreviewUrl = URL.createObjectURL(file);
+      setVideoPreview(videoPreviewUrl);
+      
       // In a production app, we'd upload to a server here
       // For demo purposes, we'll use the local URL
       setTimeout(() => {
@@ -65,6 +71,11 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
         setUploadProgress(100);
         setVideoURL(url);
         onVideoURLGenerated(url);
+        
+        // Play sound effect
+        const audio = new Audio("/upload-complete.mp3");
+        audio.volume = 0.5;
+        audio.play().catch(e => console.error("Sound play failed:", e));
         
         toast({
           title: "تم رفع الفيديو بنجاح",
@@ -93,6 +104,11 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     navigator.clipboard.writeText(videoURL).then(() => {
       setIsCopied(true);
       
+      // Play sound effect
+      const audio = new Audio("/copy-sound.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      
       toast({
         title: "تم نسخ الرابط",
         description: "تم نسخ رابط الفيديو إلى الحافظة"
@@ -111,22 +127,45 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
         <p className="text-sm text-gray-300">اختر ملف فيديو لرفعه والحصول على رابط مباشر</p>
       </div>
       
-      <div 
-        className="border-2 border-dashed border-physics-gold/50 rounded-lg p-8 text-center cursor-pointer hover:border-physics-gold transition-colors"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input 
-          ref={fileInputRef}
-          type="file" 
-          className="hidden" 
-          accept="video/*"
-          onChange={handleFileChange}
-        />
-        
-        <Upload className="mx-auto text-physics-gold mb-2" size={36} />
-        <p className="text-white">اضغط هنا لاختيار فيديو للرفع</p>
-        <p className="text-sm text-gray-400 mt-2">الحد الأقصى: 10 جيجابايت</p>
-      </div>
+      {!videoPreview ? (
+        <div 
+          className="border-2 border-dashed border-physics-gold/50 rounded-lg p-8 text-center cursor-pointer hover:border-physics-gold transition-colors"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input 
+            ref={fileInputRef}
+            type="file" 
+            className="hidden" 
+            accept="video/*"
+            onChange={handleFileChange}
+          />
+          
+          <Upload className="mx-auto text-physics-gold mb-2" size={36} />
+          <p className="text-white">اضغط هنا لاختيار فيديو للرفع</p>
+          <p className="text-sm text-gray-400 mt-2">الحد الأقصى: 10 جيجابايت</p>
+        </div>
+      ) : (
+        <div className="border-2 border-physics-gold/50 rounded-lg overflow-hidden mb-4">
+          <video 
+            src={videoPreview} 
+            className="w-full h-40 object-contain bg-black"
+            controls
+            playsInline
+          />
+          <div className="p-2 bg-physics-navy">
+            <button
+              onClick={() => {
+                setVideoPreview(null);
+                setVideoURL(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+              className="text-sm text-red-400 hover:text-red-300"
+            >
+              إزالة الفيديو واختيار آخر
+            </button>
+          </div>
+        </div>
+      )}
       
       {isUploading && (
         <div className="mt-4">
