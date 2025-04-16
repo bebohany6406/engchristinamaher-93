@@ -30,12 +30,12 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
       return;
     }
     
-    // Check file size (max 500MB to prevent memory issues)
-    const MAX_FILE_SIZE = 500 * 1024 * 1024; 
+    // Check file size (max 10GB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB in bytes
     if (file.size > MAX_FILE_SIZE) {
       toast({
         title: "حجم الملف كبير جداً",
-        description: "الحد الأقصى لحجم الملف هو 500 ميجابايت",
+        description: "الحد الأقصى لحجم الملف هو 10 جيجابايت",
         variant: "destructive"
       });
       return;
@@ -157,7 +157,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
           
           <Upload className="mx-auto text-physics-gold mb-2" size={36} />
           <p className="text-white">اضغط هنا لاختيار فيديو للرفع</p>
-          <p className="text-sm text-gray-400 mt-2">بحد أقصى 500 ميجابايت</p>
+          <p className="text-sm text-gray-400 mt-2">بحد أقصى 10 جيجابايت</p>
         </div>
       ) : (
         <div className="border-2 border-physics-gold/50 rounded-lg overflow-hidden mb-4 bg-black">

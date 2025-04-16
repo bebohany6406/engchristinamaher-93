@@ -13,7 +13,6 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   const [error, setError] = useState<string | null>(null);
   const [currentQuality, setCurrentQuality] = useState<string>("auto");
   const [isPlaying, setIsPlaying] = useState(false);
-  const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   
   // Available video qualities with better mobile support
   const qualities = {
@@ -104,7 +103,6 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     setCurrentQuality(quality);
     videoRef.current.src = qualities[quality as keyof typeof qualities];
     videoRef.current.load();
-    setQualityMenuOpen(false);
     
     // Continue from the same point
     const resumePlayback = () => {
@@ -180,17 +178,18 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       >
         <source src={src} type="video/mp4" />
         <source src={src} type="video/webm" />
+        <source src={src} type="video/x-matroska" />
         <source src={src} type="application/x-mpegURL" />
         متصفحك لا يدعم تشغيل الفيديو
       </video>
       
-      {/* Enhanced play button with improved style */}
+      {/* تحديث شكل زر التشغيل */}
       {!isPlaying && !isLoading && !error && (
         <div 
           className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/30 z-10"
           onClick={handlePlayVideo}
         >
-          <div className="bg-physics-gold/90 p-8 rounded-full hover:bg-physics-gold transition-colors shadow-xl hover:scale-105 transform duration-200 flex items-center justify-center">
+          <div className="bg-primary bg-opacity-90 p-8 rounded-full hover:bg-primary transition-colors shadow-xl hover:scale-105 transform duration-200 flex items-center justify-center">
             <Play size={56} className="text-physics-navy ml-2" fill="#091138" />
           </div>
           
@@ -210,40 +209,6 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
           <div className="absolute bottom-6 left-6 text-lg text-white font-bold bg-physics-navy/90 hover:bg-physics-navy px-4 py-2 rounded-full shadow-lg transition-all">
             اضغط للتشغيل
           </div>
-        </div>
-      )}
-      
-      {/* Quality selection button */}
-      {isPlaying && (
-        <div 
-          className="absolute bottom-16 left-4 z-20"
-          style={{ display: isLoading ? 'none' : 'block' }}
-        >
-          <button 
-            onClick={() => setQualityMenuOpen(!qualityMenuOpen)}
-            className="bg-physics-navy/80 hover:bg-physics-navy p-2 rounded-full text-physics-gold shadow-lg transition-all"
-          >
-            <Settings size={20} />
-          </button>
-          
-          {qualityMenuOpen && (
-            <div className="absolute bottom-0 left-10 bg-physics-gold rounded-md overflow-hidden shadow-lg mt-2">
-              <div className="text-physics-navy text-xs font-bold p-2 bg-physics-gold">الجودة</div>
-              <div className="p-1">
-                {Object.keys(qualities).map((quality) => (
-                  <button
-                    key={quality}
-                    onClick={() => changeQuality(quality)}
-                    className={`block w-full text-xs text-left px-3 py-2 rounded ${currentQuality === quality ? 'bg-physics-navy text-physics-gold' : 'text-physics-navy hover:bg-physics-navy/10'}`}
-                  >
-                    {quality === 'auto' ? 'تلقائي' : 
-                     quality === 'high' ? 'عالية' : 
-                     quality === 'medium' ? 'متوسطة' : 'منخفضة'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
       

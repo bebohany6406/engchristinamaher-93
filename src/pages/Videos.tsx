@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, FilePlus, Calendar, Search, Play, Edit, Trash, X } from "lucide-react";
+import { ArrowRight, FilePlus, Calendar, Search, Play, Edit, Trash, X, Check } from "lucide-react";
 import { VideoPlayerFixed } from "@/components/VideoPlayerFixed";
 import { VideoUploader } from "@/components/VideoUploader";
 
@@ -41,6 +41,14 @@ const Videos = () => {
   
   const handleAddVideo = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!title.trim()) {
+      const audio = new Audio("/error-sound.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      return;
+    }
+    
     addVideo(title, url, grade);
     setTitle("");
     setUrl("");
@@ -214,7 +222,12 @@ const Videos = () => {
                           <Play size={24} className="text-physics-gold" />
                         </div>
                         <div className="flex-1 cursor-pointer" onClick={() => setSelectedVideo(video.url)}>
-                          <h3 className="text-lg font-medium text-white">{video.title}</h3>
+                          <div className="flex items-center">
+                            <h3 className="text-lg font-medium text-white">{video.title}</h3>
+                            <div className="mr-2 text-green-500">
+                              <Check size={16} />
+                            </div>
+                          </div>
                           <div className="flex items-center text-sm text-gray-300 mt-1">
                             <Calendar size={14} className="ml-1" />
                             <span>{formatDate(video.uploadDate)}</span>
