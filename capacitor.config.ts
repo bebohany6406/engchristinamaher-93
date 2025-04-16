@@ -5,7 +5,11 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.bc1591bb7b9946cdb6615410c6078375',
   appName: 'Eng.Christina Maher',
   webDir: 'dist',
-  // تم إزالة عنوان السيرفر للسماح بالتطبيق بالعمل محلياً
+  server: {
+    androidScheme: 'https',
+    cleartext: true,
+    allowNavigation: ['*']
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 3000,
@@ -19,6 +23,12 @@ const config: CapacitorConfig = {
       spinnerColor: "#D4AF37",
       splashFullScreen: true,
       splashImmersive: true
+    },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
+    },
+    CapacitorHttp: {
+      enabled: true
     }
   },
   android: {
@@ -35,6 +45,6 @@ const config: CapacitorConfig = {
     scheme: "Eng.ChristinaMaher",
     backgroundColor: "#171E31"
   }
-}
+};
 
 export default config;

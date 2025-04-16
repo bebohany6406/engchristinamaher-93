@@ -11,10 +11,36 @@ export function QrScanner() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scanning, setScanning] = useState<boolean>(false);
   const [scannedCode, setScannedCode] = useState<string>("");
+  const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const { getStudentByCode } = useAuth();
   const { addAttendance } = useData();
   
+  const requestCameraPermission = async () => {
+    try {
+      // Request camera permission explicitly
+      const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      
+      if (result.state === 'denied') {
+        setPermissionDenied(true);
+        toast({
+          variant: "destructive",
+          title: "تم رفض الوصول للكاميرا",
+          description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز",
+        });
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Error checking camera permission:", err);
+      return true; // Continue anyway since some browsers don't support permissions API
+    }
+  };
+  
   const startScanner = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" }
@@ -24,10 +50,12 @@ export function QrScanner() {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
         setScanning(true);
+        setPermissionDenied(false);
         scanCode();
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
+      setPermissionDenied(true);
       toast({
         variant: "destructive",
         title: "فشل الوصول للكاميرا",
@@ -157,11 +185,17 @@ export function QrScanner() {
           <div className="flex flex-col items-center p-6">
             <button 
               onClick={startScanner}
-              className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-3 px-6 font-bold"
+              className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-3 px-6 font-bold shadow-lg hover:bg-physics-gold/90 transition-colors"
             >
               <Camera size={24} />
-              <span>مسح الكود</span>
+              <span>مسح الكود بالكاميرا</span>
             </button>
+            
+            {permissionDenied && (
+              <div className="mt-4 p-3 bg-red-500/20 text-white rounded-lg text-sm text-center">
+                تم رفض الوصول للكاميرا. يرجى تفعيل الكاميرا من إعدادات الجهاز ثم المحاولة مرة أخرى.
+              </div>
+            )}
             
             <div className="my-4 text-center">
               <p className="text-white">أو</p>
@@ -179,7 +213,7 @@ export function QrScanner() {
               </div>
               <button 
                 type="submit" 
-                className="goldBtn w-full"
+                className="goldBtn w-full rounded-full shadow-lg"
                 disabled={!scannedCode}
               >
                 تسجيل الحضور

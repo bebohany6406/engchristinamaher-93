@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode } from "@/lib/utils";
@@ -49,15 +48,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [parents, setParents] = useState<Parent[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load data from localStorage on initial mount
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
+    const userLoggedIn = localStorage.getItem("userLoggedIn");
+    
+    if (storedUser && userLoggedIn === "true") {
       try {
         setCurrentUser(JSON.parse(storedUser));
       } catch (error) {
         console.error("Failed to parse user from localStorage:", error);
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("userLoggedIn");
       }
     }
 
@@ -78,16 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Failed to parse parents from localStorage:", error);
       }
     }
+    
+    setIsInitialized(true);
   }, []);
 
   // Save data to localStorage when it changes
   useEffect(() => {
+    if (!isInitialized) return;
+    
     if (currentUser) {
       localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      localStorage.setItem("userLoggedIn", "true");
     }
     localStorage.setItem("students", JSON.stringify(students));
     localStorage.setItem("parents", JSON.stringify(parents));
-  }, [currentUser, students, parents]);
+  }, [currentUser, students, parents, isInitialized]);
 
   const login = (phoneNumber: string, password: string): boolean => {
     // Check if admin
@@ -148,10 +157,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("userLoggedIn");
     toast({
       title: "تم تسجيل الخروج",
       description: "نراك قريباً!",
     });
+    
+    // Play logout sound
+    const audio = new Audio("/logout-sound.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
   };
 
   const createStudent = (
@@ -172,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       parentPhone,
       group,
       grade,
-      role: "student" // Added the missing role property
+      role: "student" 
     };
 
     setStudents(prev => [...prev, newStudent]);

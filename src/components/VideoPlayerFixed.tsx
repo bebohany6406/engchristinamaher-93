@@ -1,5 +1,6 @@
 
 import React, { useRef, useEffect, useState } from "react";
+import { Play } from "lucide-react";
 
 interface VideoPlayerProps {
   src: string;
@@ -11,8 +12,9 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentQuality, setCurrentQuality] = useState<string>("auto");
+  const [isPlaying, setIsPlaying] = useState(false);
   
-  // جودات الفيديو المتاحة
+  // جودات الفيديو المتاحة - مع دعم أفضل للجوال
   const qualities = {
     auto: src,
     high: src,
@@ -38,7 +40,10 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
     
-    // التأكد من تحميل مصدر الفيديو
+    // التأكد من تحميل مصدر الفيديو - مع دعم أفضل للمحمول
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
+    video.setAttribute("x5-playsinline", "true");
     video.load();
     
     return () => {
@@ -47,16 +52,19 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     };
   }, [src]);
   
-  // معالجة خطأ التحميل في حالة اكتشافه
-  const handleVideoClick = () => {
+  // تشغيل الفيديو بشكل أفضل على الجوال
+  const handlePlayVideo = () => {
     if (videoRef.current) {
       if (videoRef.current.paused) {
-        videoRef.current.play().catch(e => {
+        videoRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch(e => {
           console.error("Failed to play video:", e);
           setError("فشل تشغيل الفيديو، يرجى المحاولة مرة أخرى");
         });
       } else {
         videoRef.current.pause();
+        setIsPlaying(false);
       }
     }
   };
@@ -65,7 +73,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   const changeQuality = (quality: string) => {
     if (videoRef.current) {
       const currentTime = videoRef.current.currentTime;
-      const isPlaying = !videoRef.current.paused;
+      const wasPlaying = !videoRef.current.paused;
       
       setCurrentQuality(quality);
       videoRef.current.src = qualities[quality as keyof typeof qualities];
@@ -73,9 +81,14 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       
       // الاستمرار من نفس النقطة
       videoRef.current.addEventListener("canplay", function resumePlayback() {
-        videoRef.current?.removeEventListener("canplay", resumePlayback);
+        if (!videoRef.current) return;
+        videoRef.current.removeEventListener("canplay", resumePlayback);
         videoRef.current.currentTime = currentTime;
-        if (isPlaying) videoRef.current.play();
+        if (wasPlaying) {
+          videoRef.current.play()
+            .then(() => setIsPlaying(true))
+            .catch(e => console.error("Failed to resume video:", e));
+        }
       });
     }
   };
@@ -100,14 +113,15 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       <video
         ref={videoRef}
         className="w-full h-full rounded-lg aspect-video bg-black"
-        controls
+        controls={isPlaying}
         title={title}
         controlsList="nodownload"
         playsInline
+        webkit-playsinline="true"
+        x5-playsinline="true"
         preload="auto"
-        onClick={handleVideoClick}
         onContextMenu={(e) => e.preventDefault()}
-        style={{ display: isLoading ? 'none' : 'block' }}
+        style={{ display: isLoading || !isPlaying ? 'none' : 'block' }}
       >
         <source src={src} type="video/mp4" />
         <source src={src} type="video/webm" />
@@ -115,23 +129,40 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         متصفحك لا يدعم تشغيل الفيديو
       </video>
       
-      {/* زر اختيار الجودة */}
-      <div className="absolute bottom-14 left-4 bg-black/70 rounded-md overflow-hidden" style={{ display: isLoading ? 'none' : 'block' }}>
-        <div className="text-white text-xs p-1 bg-physics-gold">الجودة</div>
-        <div className="p-1">
-          {Object.keys(qualities).map((quality) => (
-            <button
-              key={quality}
-              onClick={() => changeQuality(quality)}
-              className={`block w-full text-xs text-left px-2 py-1 ${currentQuality === quality ? 'text-physics-gold' : 'text-white'} hover:bg-gray-700`}
-            >
-              {quality === 'auto' ? 'تلقائي' : 
-               quality === 'high' ? 'عالية' : 
-               quality === 'medium' ? 'متوسطة' : 'منخفضة'}
-            </button>
-          ))}
+      {/* زر تشغيل واضح للفيديو */}
+      {!isPlaying && !isLoading && !error && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/30"
+          onClick={handlePlayVideo}
+        >
+          <div className="bg-physics-gold/80 p-6 rounded-full hover:bg-physics-gold transition-colors">
+            <Play size={48} className="text-physics-navy" />
+          </div>
+          <div className="absolute bottom-6 left-6 text-lg text-white font-bold">
+            اضغط للتشغيل
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* زر اختيار الجودة */}
+      {isPlaying && (
+        <div className="absolute bottom-14 left-4 bg-physics-gold/90 rounded-md overflow-hidden shadow-lg" style={{ display: isLoading ? 'none' : 'block' }}>
+          <div className="text-physics-navy text-xs font-bold p-2 bg-physics-gold">الجودة</div>
+          <div className="p-1">
+            {Object.keys(qualities).map((quality) => (
+              <button
+                key={quality}
+                onClick={() => changeQuality(quality)}
+                className={`block w-full text-xs text-left px-3 py-2 rounded ${currentQuality === quality ? 'bg-physics-navy text-physics-gold' : 'text-physics-navy hover:bg-physics-navy/10'}`}
+              >
+                {quality === 'auto' ? 'تلقائي' : 
+                 quality === 'high' ? 'عالية' : 
+                 quality === 'medium' ? 'متوسطة' : 'منخفضة'}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -26,20 +26,78 @@ import AttendanceListByGrade from "./pages/AttendanceListByGrade";
 import GradesManagement from "./pages/GradesManagement";
 import GradesByGrade from "./pages/GradesByGrade";
 import StudentGrades from "./pages/StudentGrades";
+import { useEffect } from "react";
 import "./App.css";
+
+// Import Tajawal font for Arabic text
+import "@fontsource/tajawal/400.css"; 
+import "@fontsource/tajawal/500.css";
+import "@fontsource/tajawal/700.css";
+
+// Create a styles element for the font
+const tajawalFontStyles = document.createElement("style");
+tajawalFontStyles.textContent = `
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+  
+  * {
+    font-family: 'Tajawal', sans-serif;
+  }
+  
+  .font-tajawal {
+    font-family: 'Tajawal', sans-serif;
+  }
+  
+  /* Override notification styling */
+  .toast-root {
+    background-color: #171E31 !important;
+    border: 1px solid #D4AF37 !important;
+    color: white !important;
+  }
+  
+  /* Change buttons to rounded */
+  .goldBtn {
+    border-radius: 24px !important;
+  }
+`;
+document.head.appendChild(tajawalFontStyles);
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Request permissions on app load
+  useEffect(() => {
+    const requestPermissions = async () => {
+      // Request notification permission if not already granted
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        // We'll request it on user interaction instead of automatically
+      }
+      
+      // Check for saved credentials and restore session if needed
+      const userLoggedIn = localStorage.getItem("userLoggedIn");
+      if (userLoggedIn === "true") {
+        console.log("User session restored from storage");
+      }
+    };
+    
+    requestPermissions();
+  }, []);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DataProvider>
           <TooltipProvider>
             <Toaster />
-            <Sonner />
+            <Sonner toastOptions={{
+              style: {
+                background: '#171E31',
+                color: 'white',
+                border: '1px solid #D4AF37',
+                borderRadius: '12px',
+              }
+            }} />
             <BrowserRouter>
-              <div className="relative min-h-screen">
+              <div className="relative min-h-screen font-tajawal">
                 <PhysicsBackground />
                 <div className="relative z-10">
                   <Routes>
