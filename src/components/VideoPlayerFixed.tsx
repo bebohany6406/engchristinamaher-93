@@ -7,8 +7,13 @@ interface VideoPlayerProps {
   title: string;
 }
 
+// Extended interface for HTMLVideoElement with webkit properties
+interface HTMLVideoElementWithWebkit extends HTMLVideoElement {
+  webkitEnterFullscreen?: () => void;
+}
+
 export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElementWithWebkit>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentQuality, setCurrentQuality] = useState<string>("auto");

@@ -18,6 +18,8 @@ export interface Grade {
   totalScore: number;
   date: string;
   lessonNumber: number;
+  group: string;
+  performanceIndicator: "excellent" | "good" | "average" | "poor";
 }
 
 export interface Video {

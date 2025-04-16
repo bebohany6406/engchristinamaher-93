@@ -33,6 +33,7 @@ const GradesByGrade = () => {
   const [score, setScore] = useState(0);
   const [totalScore, setTotalScore] = useState(100);
   const [lessonNumber, setLessonNumber] = useState(1);
+  const [group, setGroup] = useState("A"); // Default group
   
   useEffect(() => {
     // Get all students for this grade
@@ -62,7 +63,8 @@ const GradesByGrade = () => {
       examName,
       score,
       totalScore,
-      lessonNumber
+      lessonNumber,
+      group // Pass the group parameter
     );
     
     // Reset form
@@ -71,6 +73,7 @@ const GradesByGrade = () => {
     setScore(0);
     setTotalScore(100);
     setLessonNumber(1);
+    setGroup("A");
     setShowAddForm(false);
   };
   
@@ -168,6 +171,7 @@ const GradesByGrade = () => {
                     <TableHead className="text-center">الدرجة</TableHead>
                     <TableHead className="text-center">من</TableHead>
                     <TableHead className="text-right">رقم الحصة</TableHead>
+                    <TableHead className="text-right">المجموعة</TableHead>
                     <TableHead className="text-right">التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -183,6 +187,7 @@ const GradesByGrade = () => {
                         <TableCell className="text-center text-white">{grade.score}</TableCell>
                         <TableCell className="text-center text-white">{grade.totalScore}</TableCell>
                         <TableCell className="text-white">الحصة {grade.lessonNumber || 1}</TableCell>
+                        <TableCell className="text-white">{grade.group || "A"}</TableCell>
                         <TableCell className="text-white">{formatDate(grade.date)}</TableCell>
                       </TableRow>
                     );
@@ -241,23 +246,40 @@ const GradesByGrade = () => {
                 />
               </div>
               
-              <div>
-                <label className="block text-white mb-1">رقم الحصة</label>
-                <select
-                  className="inputField"
-                  value={lessonNumber}
-                  onChange={(e) => setLessonNumber(Number(e.target.value))}
-                  required
-                >
-                  <option value={1}>الحصة الأولى</option>
-                  <option value={2}>الحصة الثانية</option>
-                  <option value={3}>الحصة الثالثة</option>
-                  <option value={4}>الحصة الرابعة</option>
-                  <option value={5}>الحصة الخامسة</option>
-                  <option value={6}>الحصة السادسة</option>
-                  <option value={7}>الحصة السابعة</option>
-                  <option value={8}>الحصة الثامنة</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white mb-1">رقم الحصة</label>
+                  <select
+                    className="inputField"
+                    value={lessonNumber}
+                    onChange={(e) => setLessonNumber(Number(e.target.value))}
+                    required
+                  >
+                    <option value={1}>الحصة الأولى</option>
+                    <option value={2}>الحصة الثانية</option>
+                    <option value={3}>الحصة الثالثة</option>
+                    <option value={4}>الحصة الرابعة</option>
+                    <option value={5}>الحصة الخامسة</option>
+                    <option value={6}>الحصة السادسة</option>
+                    <option value={7}>الحصة السابعة</option>
+                    <option value={8}>الحصة الثامنة</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-white mb-1">المجموعة</label>
+                  <select
+                    className="inputField"
+                    value={group}
+                    onChange={(e) => setGroup(e.target.value)}
+                    required
+                  >
+                    <option value="A">المجموعة A</option>
+                    <option value="B">المجموعة B</option>
+                    <option value="C">المجموعة C</option>
+                    <option value="D">المجموعة D</option>
+                  </select>
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
