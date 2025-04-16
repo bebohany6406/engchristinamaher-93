@@ -1,0 +1,18 @@
+
+{
+  "name": "Eng. Christina Maher - Physics App",
+  "short_name": "Physics App",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#091138",
+  "theme_color": "#091138",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/lovable-uploads/a52131bb-7f7d-443c-b5b7-e512216d157f.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -4,11 +4,11 @@ import { Phone, MessageCircle } from "lucide-react";
 
 export function PhoneContact() {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const phoneNumber = "+201001678965";
+  const phoneNumbers = ["01228895553", "01273994390"];
   
-  const handleWhatsAppClick = () => {
+  const handleWhatsAppClick = (phoneNumber: string) => {
     // Open WhatsApp with the phone number
-    const whatsappUrl = `https://wa.me/${phoneNumber.replace(/\+/g, '')}`;
+    const whatsappUrl = `https://wa.me/${phoneNumber}`;
     window.open(whatsappUrl, '_blank');
     setIsPopoverOpen(false);
     
@@ -40,28 +40,30 @@ export function PhoneContact() {
               </button>
             </div>
             
-            <div className="flex items-center justify-between border-b border-gray-700 pb-2 mb-2">
-              <span className="text-white font-tajawal">{phoneNumber}</span>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => {
-                    window.location.href = `tel:${phoneNumber}`;
-                    setIsPopoverOpen(false);
-                  }}
-                  className="bg-physics-gold text-physics-navy p-2 rounded-full hover:bg-yellow-500"
-                >
-                  <Phone size={16} />
-                </button>
-                <button
-                  onClick={handleWhatsAppClick}
-                  className="bg-green-500 text-white p-2 rounded-full hover:bg-green-600"
-                >
-                  <MessageCircle size={16} />
-                </button>
+            {phoneNumbers.map((phoneNumber, index) => (
+              <div key={phoneNumber} className={`flex items-center justify-between ${index !== phoneNumbers.length - 1 ? 'border-b border-gray-700 pb-2 mb-2' : ''}`}>
+                <span className="text-white font-tajawal">{phoneNumber}</span>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      window.location.href = `tel:${phoneNumber}`;
+                      setIsPopoverOpen(false);
+                    }}
+                    className="bg-physics-gold text-physics-navy p-2 rounded-full hover:bg-yellow-500"
+                  >
+                    <Phone size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleWhatsAppClick(phoneNumber)}
+                    className="bg-green-500 text-white p-2 rounded-full hover:bg-green-600"
+                  >
+                    <MessageCircle size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
+            ))}
             
-            <p className="text-white text-sm font-tajawal">يمكنك الاتصال بنا أو مراسلتنا عبر الواتساب للمزيد من المعلومات</p>
+            <p className="text-white text-sm font-tajawal mt-2">يمكنك الاتصال بنا أو مراسلتنا عبر الواتساب للمزيد من المعلومات</p>
           </div>
         )}
       </div>

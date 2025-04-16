@@ -16,19 +16,21 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, currentUser } = useAuth();
 
-  // Check if user is already logged in on component mount
   useEffect(() => {
+    if (currentUser) {
+      navigate("/dashboard");
+      return;
+    }
+    
     const userLoggedIn = localStorage.getItem("userLoggedIn");
     const storedUser = localStorage.getItem("currentUser");
     
-    if (userLoggedIn === "true" && storedUser && !currentUser) {
+    if (userLoggedIn === "true" && storedUser) {
       try {
-        // Auto-login user from localStorage if session exists
         const savedUser = JSON.parse(storedUser);
-        if (savedUser && savedUser.phone && savedUser.password) {
-          login(savedUser.phone, savedUser.password);
+        if (savedUser && savedUser.role) {
+          login(savedUser.phone || savedUser.id, savedUser.password || "");
           
-          // Play login success sound
           const audio = new Audio("/login-success.mp3");
           audio.volume = 0.5;
           audio.play().catch(e => console.error("Sound play failed:", e));
@@ -38,40 +40,33 @@ const Login = () => {
         }
       } catch (error) {
         console.error("Failed to parse stored user data:", error);
+        localStorage.removeItem("userLoggedIn");
+        localStorage.removeItem("currentUser");
       }
     }
     
-    if (currentUser) {
-      navigate("/dashboard");
-      return;
-    }
-    
-    // Check for saved login information on component mount
     const savedLoginType = localStorage.getItem("loginType");
     const savedPhone = localStorage.getItem("userPhone");
-    const savedPassword = localStorage.getItem("userPassword");
     
     if (savedLoginType) {
       setLoginType(savedLoginType as "" | "student" | "parent" | "admin");
       setPhone(savedPhone || "");
-      setPassword(savedPassword || "");
     }
   }, [currentUser, navigate, login]);
 
-  // Function to request notification permission
   const requestNotificationPermission = async () => {
     if ('Notification' in window) {
       try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          // Play notification sound
           const audio = new Audio("/notification-sound.mp3");
           audio.volume = 0.5;
           audio.play().catch(e => console.error("Sound play failed:", e));
           
           toast({
             title: "تم تفعيل الإشعارات",
-            description: "سوف تتلقى تنبيهات مهمة من التطبيق"
+            description: "سوف تتلقى تنبيهات مهمة من التطبيق",
+            variant: "default"
           });
         }
       } catch (error) {
@@ -84,7 +79,6 @@ const Login = () => {
     e.preventDefault();
     setLoginError("");
     
-    // Validate login based on login type
     if (loginType === "admin" && !phone.startsWith("AdminAPP")) {
       setLoginError("اسم المستخدم غير صحيح لحساب المسؤول");
       return;
@@ -99,30 +93,28 @@ const Login = () => {
     const success = login(phone, password);
     
     if (success) {
-      // Request notification permission based on login type
       await requestNotificationPermission();
       
-      // Always save login information if successful to maintain persistent sessions
       localStorage.setItem("userLoggedIn", "true");
       
-      // Additional saved info if "Remember Me" is checked
       if (rememberMe) {
         localStorage.setItem("loginType", loginType);
         localStorage.setItem("userPhone", phone);
-        localStorage.setItem("userPassword", password);
       } else {
-        // Clear any saved form data but keep the session active
         localStorage.removeItem("loginType");
         localStorage.removeItem("userPhone");
         localStorage.removeItem("userPassword");
       }
       
-      // Play login success sound
       const audio = new Audio("/login-success.mp3");
       audio.volume = 0.5;
       audio.play().catch(e => console.error("Sound play failed:", e));
       
       navigate("/dashboard");
+    } else {
+      const audio = new Audio("/error-sound.mp3");
+      audio.volume = 0.3;
+      audio.play().catch(e => console.error("Sound play failed:", e));
     }
   };
 

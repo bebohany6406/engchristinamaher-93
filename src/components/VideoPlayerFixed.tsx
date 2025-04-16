@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from "react";
-import { Play } from "lucide-react";
+import { Play, Download } from "lucide-react";
 
 interface VideoPlayerProps {
   src: string;
@@ -10,6 +10,9 @@ interface VideoPlayerProps {
 // Extended interface for HTMLVideoElement with webkit properties
 interface HTMLVideoElementWithWebkit extends HTMLVideoElement {
   webkitEnterFullscreen?: () => void;
+  webkitDisplayingFullscreen?: boolean;
+  webkitSupportsFullscreen?: boolean;
+  webkitExitFullscreen?: () => void;
 }
 
 export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
@@ -66,10 +69,13 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       const video = videoRef.current;
       
       if (video.paused) {
-        // Fix for iOS: Request fullscreen first to bypass autoplay restrictions
-        if (video.webkitEnterFullscreen && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        // Fix for iOS by forcing fullscreen first if available
+        if (video.webkitSupportsFullscreen && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
           try {
-            video.webkitEnterFullscreen();
+            // Only try to enter fullscreen if available and not already fullscreen
+            if (video.webkitEnterFullscreen && !video.webkitDisplayingFullscreen) {
+              video.webkitEnterFullscreen();
+            }
           } catch (e) {
             console.log("Failed to enter fullscreen:", e);
           }
@@ -123,6 +129,23 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     videoRef.current.addEventListener("canplay", resumePlayback);
   };
   
+  // Handle video download
+  const handleDownload = () => {
+    if (src) {
+      const link = document.createElement('a');
+      link.href = src;
+      link.download = `${title || 'video'}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Play sound effect
+      const audio = new Audio("/click-sound.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(e => console.error("Sound play failed:", e));
+    }
+  };
+  
   return (
     <div className="relative w-full h-full bg-physics-dark rounded-lg overflow-hidden">
       {isLoading && (
@@ -169,16 +192,30 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         متصفحك لا يدعم تشغيل الفيديو
       </video>
       
-      {/* Clear play button for video */}
+      {/* Enhanced play button with improved style */}
       {!isPlaying && !isLoading && !error && (
         <div 
           className="absolute inset-0 flex items-center justify-center cursor-pointer"
           onClick={handlePlayVideo}
         >
-          <div className="bg-physics-gold/90 p-6 rounded-full hover:bg-physics-gold transition-colors shadow-lg">
-            <Play size={48} className="text-physics-navy" />
+          <div className="bg-physics-gold/90 p-6 rounded-full hover:bg-physics-gold transition-colors shadow-xl hover:scale-105 transform duration-200 flex items-center justify-center">
+            <Play size={48} className="text-physics-navy ml-2" />
           </div>
-          <div className="absolute bottom-6 left-6 text-lg text-white font-bold bg-physics-navy/70 px-3 py-1 rounded-full">
+          
+          <div className="absolute bottom-6 right-6 flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload();
+              }}
+              className="bg-physics-navy/90 hover:bg-physics-navy p-3 rounded-full text-physics-gold shadow-lg transition-all"
+              title="تحميل الفيديو"
+            >
+              <Download size={24} />
+            </button>
+          </div>
+          
+          <div className="absolute bottom-6 left-6 text-lg text-white font-bold bg-physics-navy/90 hover:bg-physics-navy px-4 py-2 rounded-full shadow-lg transition-all">
             اضغط للتشغيل
           </div>
         </div>
@@ -201,6 +238,22 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
               </button>
             ))}
           </div>
+        </div>
+      )}
+      
+      {/* Download button while playing */}
+      {isPlaying && (
+        <div 
+          className="absolute top-4 right-4 z-20"
+          style={{ display: isLoading ? 'none' : 'block' }}
+        >
+          <button
+            onClick={handleDownload}
+            className="bg-physics-navy/80 hover:bg-physics-navy p-2 rounded-full text-physics-gold shadow-lg transition-all"
+            title="تحميل الفيديو"
+          >
+            <Download size={20} />
+          </button>
         </div>
       )}
     </div>

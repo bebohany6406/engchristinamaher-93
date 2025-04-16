@@ -29,12 +29,12 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
       return;
     }
     
-    // Check file size (max 10GB)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
+    // Check file size (max 500MB to prevent memory issues)
+    const MAX_FILE_SIZE = 500 * 1024 * 1024; 
     if (file.size > MAX_FILE_SIZE) {
       toast({
         title: "حجم الملف كبير جداً",
-        description: "الحد الأقصى لحجم الملف هو 10 جيجابايت",
+        description: "الحد الأقصى لحجم الملف هو 500 ميجابايت",
         variant: "destructive"
       });
       return;
@@ -56,8 +56,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     }, 300);
     
     try {
-      // Create a temporary local URL for the video
-      // In a real app, this would be replaced with an actual upload to a server/CDN
+      // Create a temporary local URL for the video with revoke on unmount
       const url = URL.createObjectURL(file);
       
       // Generate a video preview
@@ -79,7 +78,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
         
         toast({
           title: "تم رفع الفيديو بنجاح",
-          description: "يمكنك الآن نسخ الرابط"
+          description: "يمكنك الآن نسخ الرابط أو إضافة المعلومات الإضافية"
         });
         
         setTimeout(() => {
@@ -138,23 +137,30 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
             className="hidden" 
             accept="video/*"
             onChange={handleFileChange}
+            capture="environment"
           />
           
           <Upload className="mx-auto text-physics-gold mb-2" size={36} />
           <p className="text-white">اضغط هنا لاختيار فيديو للرفع</p>
-          <p className="text-sm text-gray-400 mt-2">الحد الأقصى: 10 جيجابايت</p>
+          <p className="text-sm text-gray-400 mt-2">بحد أقصى 500 ميجابايت</p>
         </div>
       ) : (
-        <div className="border-2 border-physics-gold/50 rounded-lg overflow-hidden mb-4">
+        <div className="border-2 border-physics-gold/50 rounded-lg overflow-hidden mb-4 bg-black">
           <video 
             src={videoPreview} 
-            className="w-full h-40 object-contain bg-black"
+            className="w-full h-48 object-contain"
             controls
             playsInline
+            autoPlay
+            muted
           />
           <div className="p-2 bg-physics-navy">
+            <p className="text-sm text-white mb-1">معاينة الفيديو</p>
             <button
               onClick={() => {
+                // Clean up the preview URLs
+                if (videoPreview) URL.revokeObjectURL(videoPreview);
+                if (videoURL) URL.revokeObjectURL(videoURL);
                 setVideoPreview(null);
                 setVideoURL(null);
                 if (fileInputRef.current) fileInputRef.current.value = '';
@@ -189,12 +195,13 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
               type="text" 
               value={videoURL} 
               readOnly 
-              className="inputField flex-1 ml-2"
+              className="inputField flex-1 ml-2 text-xs"
               onClick={(e) => (e.target as HTMLInputElement).select()}
             />
             <button
               onClick={handleCopyLink}
               className="goldBtn p-2 flex items-center justify-center"
+              title={isCopied ? "تم النسخ" : "نسخ الرابط"}
             >
               {isCopied ? <Check size={20} /> : <Copy size={20} />}
             </button>
