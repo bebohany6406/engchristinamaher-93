@@ -1,6 +1,6 @@
 
 import { useState, useRef } from "react";
-import { Upload, Copy, Check } from "lucide-react";
+import { Upload, Copy, Check, Film, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface VideoUploaderProps {
@@ -13,6 +13,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
   const [videoURL, setVideoURL] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +44,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     setIsUploading(true);
     setUploadProgress(0);
     setVideoPreview(null);
+    setUploadSuccess(false);
     
     // Simulate upload with progress
     const interval = setInterval(() => {
@@ -69,6 +71,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
         clearInterval(interval);
         setUploadProgress(100);
         setVideoURL(url);
+        setUploadSuccess(true);
         onVideoURLGenerated(url);
         
         // Play sound effect
@@ -118,6 +121,18 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
       }, 2000);
     });
   };
+  
+  const handleVideoPreviewClick = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  };
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   return (
     <div className="bg-physics-dark p-6 rounded-lg">
@@ -146,29 +161,44 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
         </div>
       ) : (
         <div className="border-2 border-physics-gold/50 rounded-lg overflow-hidden mb-4 bg-black">
-          <video 
-            src={videoPreview} 
-            className="w-full h-48 object-contain"
-            controls
-            playsInline
-            autoPlay
-            muted
-          />
+          <div className="relative">
+            <video 
+              ref={videoRef}
+              src={videoPreview} 
+              className="w-full h-48 object-contain"
+              controls
+              playsInline
+              onClick={handleVideoPreviewClick}
+            />
+            {uploadSuccess && (
+              <div className="absolute top-2 right-2 bg-green-500 text-white p-1 px-3 rounded-full text-xs flex items-center">
+                <Check size={14} className="mr-1" />
+                تم التحميل بنجاح
+              </div>
+            )}
+          </div>
           <div className="p-2 bg-physics-navy">
-            <p className="text-sm text-white mb-1">معاينة الفيديو</p>
-            <button
-              onClick={() => {
-                // Clean up the preview URLs
-                if (videoPreview) URL.revokeObjectURL(videoPreview);
-                if (videoURL) URL.revokeObjectURL(videoURL);
-                setVideoPreview(null);
-                setVideoURL(null);
-                if (fileInputRef.current) fileInputRef.current.value = '';
-              }}
-              className="text-sm text-red-400 hover:text-red-300"
-            >
-              إزالة الفيديو واختيار آخر
-            </button>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white mb-1">معاينة الفيديو</p>
+                <Film className="text-physics-gold" size={16} />
+              </div>
+              <button
+                onClick={() => {
+                  // Clean up the preview URLs
+                  if (videoPreview) URL.revokeObjectURL(videoPreview);
+                  if (videoURL) URL.revokeObjectURL(videoURL);
+                  setVideoPreview(null);
+                  setVideoURL(null);
+                  setUploadSuccess(false);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                className="text-sm text-red-400 hover:text-red-300 flex items-center"
+              >
+                <X size={14} className="mr-1" />
+                إزالة الفيديو
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -179,9 +209,9 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
             <span>جاري الرفع...</span>
             <span>{uploadProgress}%</span>
           </div>
-          <div className="w-full bg-physics-navy rounded-full h-2">
+          <div className="w-full bg-physics-navy rounded-full h-3">
             <div 
-              className="bg-physics-gold h-2 rounded-full transition-all duration-300"
+              className={`h-3 rounded-full transition-all duration-300 ${uploadProgress === 100 ? 'bg-green-500' : 'bg-physics-gold'}`}
               style={{ width: `${uploadProgress}%` }}
             ></div>
           </div>

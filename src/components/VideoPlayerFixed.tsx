@@ -1,26 +1,19 @@
 
 import React, { useRef, useEffect, useState } from "react";
-import { Play, Download } from "lucide-react";
+import { Play, Download, Settings } from "lucide-react";
 
 interface VideoPlayerProps {
   src: string;
   title: string;
 }
 
-// Extended interface for HTMLVideoElement with webkit properties
-interface HTMLVideoElementWithWebkit extends HTMLVideoElement {
-  webkitEnterFullscreen?: () => void;
-  webkitDisplayingFullscreen?: boolean;
-  webkitSupportsFullscreen?: boolean;
-  webkitExitFullscreen?: () => void;
-}
-
 export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElementWithWebkit>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentQuality, setCurrentQuality] = useState<string>("auto");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   
   // Available video qualities with better mobile support
   const qualities = {
@@ -50,8 +43,6 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     
     // Ensure video loads properly on mobile
     video.setAttribute("playsinline", "true");
-    video.setAttribute("webkit-playsinline", "true");
-    video.setAttribute("x5-playsinline", "true");
     video.setAttribute("controls", "false");
     video.muted = false;
     video.preload = "auto";
@@ -69,20 +60,20 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       const video = videoRef.current;
       
       if (video.paused) {
-        // Fix for iOS by forcing fullscreen first if available
-        if (video.webkitSupportsFullscreen && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
-          try {
-            // Only try to enter fullscreen if available and not already fullscreen
-            if (video.webkitEnterFullscreen && !video.webkitDisplayingFullscreen) {
-              video.webkitEnterFullscreen();
-            }
-          } catch (e) {
-            console.log("Failed to enter fullscreen:", e);
-          }
-        }
-        
+        // Try to play video
         video.play().then(() => {
           setIsPlaying(true);
+          
+          // Try to request fullscreen on mobile
+          try {
+            if (video.requestFullscreen) {
+              video.requestFullscreen().catch(err => {
+                console.log("Failed fullscreen:", err);
+              });
+            }
+          } catch (e) {
+            console.log("Fullscreen error:", e);
+          }
         }).catch(e => {
           console.error("Failed to play video:", e);
           setError("فشل تشغيل الفيديو، يرجى النقر مرة أخرى أو التحقق من إعدادات المتصفح");
@@ -113,6 +104,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     setCurrentQuality(quality);
     videoRef.current.src = qualities[quality as keyof typeof qualities];
     videoRef.current.load();
+    setQualityMenuOpen(false);
     
     // Continue from the same point
     const resumePlayback = () => {
@@ -149,13 +141,13 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   return (
     <div className="relative w-full h-full bg-physics-dark rounded-lg overflow-hidden">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-physics-dark">
+        <div className="absolute inset-0 flex items-center justify-center bg-physics-dark z-20">
           <div className="w-12 h-12 border-4 border-physics-gold border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-physics-dark">
+        <div className="absolute inset-0 flex items-center justify-center bg-physics-dark z-20">
           <div className="text-white text-center px-4">
             <p className="text-red-400 mb-2">{error}</p>
             <p className="text-sm">تأكد من صحة الرابط وأنه يدعم التشغيل المباشر</p>
@@ -195,11 +187,11 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       {/* Enhanced play button with improved style */}
       {!isPlaying && !isLoading && !error && (
         <div 
-          className="absolute inset-0 flex items-center justify-center cursor-pointer"
+          className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/30 z-10"
           onClick={handlePlayVideo}
         >
-          <div className="bg-physics-gold/90 p-6 rounded-full hover:bg-physics-gold transition-colors shadow-xl hover:scale-105 transform duration-200 flex items-center justify-center">
-            <Play size={48} className="text-physics-navy ml-2" />
+          <div className="bg-physics-gold/90 p-8 rounded-full hover:bg-physics-gold transition-colors shadow-xl hover:scale-105 transform duration-200 flex items-center justify-center">
+            <Play size={56} className="text-physics-navy ml-2" fill="#091138" />
           </div>
           
           <div className="absolute bottom-6 right-6 flex items-center gap-2">
@@ -223,21 +215,35 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       
       {/* Quality selection button */}
       {isPlaying && (
-        <div className="absolute bottom-14 left-4 bg-physics-gold rounded-md overflow-hidden shadow-lg" style={{ display: isLoading ? 'none' : 'block' }}>
-          <div className="text-physics-navy text-xs font-bold p-2 bg-physics-gold">الجودة</div>
-          <div className="p-1">
-            {Object.keys(qualities).map((quality) => (
-              <button
-                key={quality}
-                onClick={() => changeQuality(quality)}
-                className={`block w-full text-xs text-left px-3 py-2 rounded ${currentQuality === quality ? 'bg-physics-navy text-physics-gold' : 'text-physics-navy hover:bg-physics-navy/10'}`}
-              >
-                {quality === 'auto' ? 'تلقائي' : 
-                 quality === 'high' ? 'عالية' : 
-                 quality === 'medium' ? 'متوسطة' : 'منخفضة'}
-              </button>
-            ))}
-          </div>
+        <div 
+          className="absolute bottom-16 left-4 z-20"
+          style={{ display: isLoading ? 'none' : 'block' }}
+        >
+          <button 
+            onClick={() => setQualityMenuOpen(!qualityMenuOpen)}
+            className="bg-physics-navy/80 hover:bg-physics-navy p-2 rounded-full text-physics-gold shadow-lg transition-all"
+          >
+            <Settings size={20} />
+          </button>
+          
+          {qualityMenuOpen && (
+            <div className="absolute bottom-0 left-10 bg-physics-gold rounded-md overflow-hidden shadow-lg mt-2">
+              <div className="text-physics-navy text-xs font-bold p-2 bg-physics-gold">الجودة</div>
+              <div className="p-1">
+                {Object.keys(qualities).map((quality) => (
+                  <button
+                    key={quality}
+                    onClick={() => changeQuality(quality)}
+                    className={`block w-full text-xs text-left px-3 py-2 rounded ${currentQuality === quality ? 'bg-physics-navy text-physics-gold' : 'text-physics-navy hover:bg-physics-navy/10'}`}
+                  >
+                    {quality === 'auto' ? 'تلقائي' : 
+                     quality === 'high' ? 'عالية' : 
+                     quality === 'medium' ? 'متوسطة' : 'منخفضة'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
       

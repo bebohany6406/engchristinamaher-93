@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { DataProvider } from "./context/DataContext";
 import PhysicsBackground from "./components/PhysicsBackground";
@@ -52,6 +52,14 @@ tajawalFontStyles.textContent = `
     background-color: #171E31 !important;
     border: 1px solid #D4AF37 !important;
     color: white !important;
+    opacity: 1 !important;
+  }
+  
+  /* Non-transparent notifications */
+  [data-sonner-toast] {
+    opacity: 1 !important;
+    background-color: #171E31 !important;
+    border: 1px solid #D4AF37 !important;
   }
   
   /* Rounded buttons */
@@ -78,13 +86,41 @@ const App = () => {
   // Request permissions on app load
   useEffect(() => {
     const requestPermissions = async () => {
-      // Check for saved credentials and restore session if needed
-      const userLoggedIn = localStorage.getItem("userLoggedIn");
-      if (userLoggedIn === "true") {
-        console.log("User session restored from storage");
+      // Request notification permission
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        try {
+          await Notification.requestPermission();
+        } catch (error) {
+          console.error("Error requesting notification permission:", error);
+        }
+      }
+      
+      // Try to detect device orientation for permissions
+      if (typeof DeviceOrientationEvent !== 'undefined' && 
+          typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        try {
+          await (DeviceOrientationEvent as any).requestPermission();
+        } catch (error) {
+          console.log("DeviceOrientation permission error:", error);
+        }
+      }
+      
+      // Request camera permission if available
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          // Just request audio/video permissions
+          await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+              // Stop all tracks to release the camera/mic
+              stream.getTracks().forEach(track => track.stop());
+            });
+        } catch (error) {
+          console.log("Media permissions error:", error);
+        }
       }
     };
     
+    // Call the permissions request function
     requestPermissions();
   }, []);
   

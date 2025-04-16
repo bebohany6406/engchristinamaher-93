@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/lovable-uploads/a52131bb-7f7d-443c-b5b7-e512216d157f.png",
+      "src": "/app-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
