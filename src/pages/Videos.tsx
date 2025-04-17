@@ -19,13 +19,13 @@ const Videos = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<"all" | "first" | "second" | "third">("all");
   
-  // Form state
+  // حالة النموذج
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [grade, setGrade] = useState<"first" | "second" | "third">("first");
   const [showUploader, setShowUploader] = useState(false);
   
-  // Edit state
+  // حالة التعديل
   const [editId, setEditId] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editUrl, setEditUrl] = useState("");
@@ -126,7 +126,7 @@ const Videos = () => {
             )}
           </div>
           
-          {/* Filter and search */}
+          {/* التصفية والبحث */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="w-full md:w-1/3">
               <select
@@ -153,7 +153,7 @@ const Videos = () => {
             </div>
           </div>
           
-          {/* Selected Video */}
+          {/* الفيديو المحدد */}
           {selectedVideo && (
             <div className="bg-physics-dark rounded-lg overflow-hidden mb-6">
               <VideoPlayerFixed 
@@ -200,7 +200,7 @@ const Videos = () => {
             </div>
           )}
           
-          {/* Videos List */}
+          {/* قائمة الفيديوهات */}
           {!selectedVideo && (
             <div className="bg-physics-dark rounded-lg overflow-hidden">
               {filteredVideos.length === 0 ? (
@@ -267,7 +267,7 @@ const Videos = () => {
         </div>
       </main>
       
-      {/* Add Video Modal */}
+      {/* نموذج إضافة فيديو */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
@@ -322,7 +322,7 @@ const Videos = () => {
                     required
                     placeholder="https://..."
                   />
-                  <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm)</p>
+                  <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm, mov, avi, 3gp)</p>
                 </div>
                 
                 <div>
@@ -391,7 +391,7 @@ const Videos = () => {
         </div>
       )}
       
-      {/* Edit Video Modal */}
+      {/* نموذج تعديل الفيديو */}
       {showEditForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
@@ -419,7 +419,7 @@ const Videos = () => {
                   required
                   placeholder="https://..."
                 />
-                <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm)</p>
+                <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm, mov, avi, 3gp)</p>
               </div>
               
               <div>

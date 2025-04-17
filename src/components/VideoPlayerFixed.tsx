@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from "react";
-import { Play, Download, Settings } from "lucide-react";
+import { Play, Download } from "lucide-react";
 
 interface VideoPlayerProps {
   src: string;
@@ -11,16 +11,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentQuality, setCurrentQuality] = useState<string>("auto");
   const [isPlaying, setIsPlaying] = useState(false);
-  
-  // Available video qualities with better mobile support
-  const qualities = {
-    auto: src,
-    high: src,
-    medium: src,
-    low: src
-  };
   
   useEffect(() => {
     if (!videoRef.current) return;
@@ -40,7 +31,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
     
-    // Ensure video loads properly on mobile
+    // تحسين تشغيل الفيديو على الموبايل
     video.setAttribute("playsinline", "true");
     video.setAttribute("controls", "false");
     video.muted = false;
@@ -53,17 +44,17 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     };
   }, [src]);
   
-  // Better video playback function for mobile
+  // تحسين وظيفة تشغيل الفيديو للموبايل
   const handlePlayVideo = () => {
     if (videoRef.current) {
       const video = videoRef.current;
       
       if (video.paused) {
-        // Try to play video
+        // محاولة تشغيل الفيديو
         video.play().then(() => {
           setIsPlaying(true);
           
-          // Try to request fullscreen on mobile
+          // محاولة طلب ملء الشاشة على الموبايل
           try {
             if (video.requestFullscreen) {
               video.requestFullscreen().catch(err => {
@@ -77,10 +68,10 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
           console.error("Failed to play video:", e);
           setError("فشل تشغيل الفيديو، يرجى النقر مرة أخرى أو التحقق من إعدادات المتصفح");
           
-          // Try playing muted if normal playback fails (browsers often allow muted autoplay)
+          // محاولة تشغيل الفيديو بدون صوت إذا فشل التشغيل العادي
           video.muted = true;
           video.play().then(() => {
-            video.muted = false; // Try to unmute after playback starts
+            video.muted = false; // محاولة إعادة الصوت بعد التشغيل
             setIsPlaying(true);
           }).catch(err => {
             console.error("Failed to play even when muted:", err);
@@ -93,33 +84,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
     }
   };
   
-  // Change video quality
-  const changeQuality = (quality: string) => {
-    if (!videoRef.current) return;
-    
-    const currentTime = videoRef.current.currentTime;
-    const wasPlaying = !videoRef.current.paused;
-    
-    setCurrentQuality(quality);
-    videoRef.current.src = qualities[quality as keyof typeof qualities];
-    videoRef.current.load();
-    
-    // Continue from the same point
-    const resumePlayback = () => {
-      if (!videoRef.current) return;
-      videoRef.current.removeEventListener("canplay", resumePlayback);
-      videoRef.current.currentTime = currentTime;
-      if (wasPlaying) {
-        videoRef.current.play()
-          .then(() => setIsPlaying(true))
-          .catch(e => console.error("Failed to resume video:", e));
-      }
-    };
-    
-    videoRef.current.addEventListener("canplay", resumePlayback);
-  };
-  
-  // Handle video download
+  // تنزيل الفيديو
   const handleDownload = () => {
     if (src) {
       const link = document.createElement('a');
@@ -129,7 +94,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
       link.click();
       document.body.removeChild(link);
       
-      // Play sound effect
+      // تشغيل مؤثر صوتي
       const audio = new Audio("/click-sound.mp3");
       audio.volume = 0.5;
       audio.play().catch(e => console.error("Sound play failed:", e));
@@ -179,6 +144,10 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         <source src={src} type="video/mp4" />
         <source src={src} type="video/webm" />
         <source src={src} type="video/x-matroska" />
+        <source src={src} type="video/quicktime" />
+        <source src={src} type="video/x-msvideo" />
+        <source src={src} type="video/3gpp" />
+        <source src={src} type="video/3gpp2" />
         <source src={src} type="application/x-mpegURL" />
         متصفحك لا يدعم تشغيل الفيديو
       </video>
@@ -212,7 +181,7 @@ export function VideoPlayerFixed({ src, title }: VideoPlayerProps) {
         </div>
       )}
       
-      {/* Download button while playing */}
+      {/* زر التنزيل أثناء التشغيل */}
       {isPlaying && (
         <div 
           className="absolute top-4 right-4 z-20"

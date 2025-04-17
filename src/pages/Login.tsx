@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { User, Lock, Bell } from "lucide-react";
+import { User, Lock } from "lucide-react";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
 import { toast } from "@/hooks/use-toast";
@@ -211,13 +212,6 @@ const Login = () => {
                 <label htmlFor="remember-me" className="mr-2 text-white font-tajawal">
                   تذكرني
                 </label>
-                
-                <div className="flex-1 flex justify-end">
-                  <div className="flex items-center text-physics-gold text-sm">
-                    <Bell size={16} className="ml-1" />
-                    <span className="font-tajawal">سيتم طلب الإشعارات بعد تسجيل الدخول</span>
-                  </div>
-                </div>
               </div>
 
               {loginError && (

@@ -14,5 +14,11 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "permissions": [
+    "notifications",
+    "camera",
+    "mediaDevices",
+    "storage"
   ]
 }

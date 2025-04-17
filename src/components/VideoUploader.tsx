@@ -20,7 +20,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check if file is a video
+    // التحقق من أن الملف هو فيديو
     if (!file.type.startsWith("video/")) {
       toast({
         title: "خطأ في الملف",
@@ -30,7 +30,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
       return;
     }
     
-    // Check file size (max 10GB)
+    // التحقق من حجم الملف (بحد أقصى 10 جيجابايت)
     const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB in bytes
     if (file.size > MAX_FILE_SIZE) {
       toast({
@@ -46,7 +46,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     setVideoPreview(null);
     setUploadSuccess(false);
     
-    // Simulate upload with progress
+    // محاكاة الرفع مع التقدم
     const interval = setInterval(() => {
       setUploadProgress(prev => {
         if (prev >= 95) {
@@ -58,15 +58,15 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     }, 300);
     
     try {
-      // Create a temporary local URL for the video with revoke on unmount
+      // إنشاء رابط مؤقت محلي للفيديو مع إلغاء عند إلغاء التحميل
       const url = URL.createObjectURL(file);
       
-      // Generate a video preview
+      // إنشاء معاينة للفيديو
       const videoPreviewUrl = URL.createObjectURL(file);
       setVideoPreview(videoPreviewUrl);
       
-      // In a production app, we'd upload to a server here
-      // For demo purposes, we'll use the local URL
+      // في تطبيق حقيقي، سنرفع إلى خادم هنا
+      // لأغراض العرض التوضيحي، سنستخدم عنوان URL محلي
       setTimeout(() => {
         clearInterval(interval);
         setUploadProgress(100);
@@ -74,7 +74,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
         setUploadSuccess(true);
         onVideoURLGenerated(url);
         
-        // Play sound effect
+        // تشغيل مؤثر صوتي
         const audio = new Audio("/upload-complete.mp3");
         audio.volume = 0.5;
         audio.play().catch(e => console.error("Sound play failed:", e));
@@ -106,7 +106,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
     navigator.clipboard.writeText(videoURL).then(() => {
       setIsCopied(true);
       
-      // Play sound effect
+      // تشغيل مؤثر صوتي
       const audio = new Audio("/copy-sound.mp3");
       audio.volume = 0.5;
       audio.play().catch(e => console.error("Sound play failed:", e));
@@ -152,7 +152,6 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
             className="hidden" 
             accept="video/*"
             onChange={handleFileChange}
-            capture="environment"
           />
           
           <Upload className="mx-auto text-physics-gold mb-2" size={36} />
@@ -185,7 +184,7 @@ export function VideoUploader({ onVideoURLGenerated }: VideoUploaderProps) {
               </div>
               <button
                 onClick={() => {
-                  // Clean up the preview URLs
+                  // تنظيف عناوين URL للمعاينة
                   if (videoPreview) URL.revokeObjectURL(videoPreview);
                   if (videoURL) URL.revokeObjectURL(videoURL);
                   setVideoPreview(null);

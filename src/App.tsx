@@ -29,12 +29,12 @@ import StudentGrades from "./pages/StudentGrades";
 import { useEffect } from "react";
 import "./App.css";
 
-// Import Tajawal font for Arabic text
+// استيراد خط Tajawal للنص العربي
 import "@fontsource/tajawal/400.css"; 
 import "@fontsource/tajawal/500.css";
 import "@fontsource/tajawal/700.css";
 
-// Create a styles element for the font
+// إنشاء عنصر أنماط للخط
 const tajawalFontStyles = document.createElement("style");
 tajawalFontStyles.textContent = `
   @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
@@ -47,7 +47,7 @@ tajawalFontStyles.textContent = `
     font-family: 'Tajawal', sans-serif;
   }
   
-  /* Override notification styling */
+  /* تجاوز تصميم الإخطارات - جعلها غير شفافة */
   .toast-root {
     background-color: #171E31 !important;
     border: 1px solid #D4AF37 !important;
@@ -55,25 +55,25 @@ tajawalFontStyles.textContent = `
     opacity: 1 !important;
   }
   
-  /* Non-transparent notifications */
+  /* إشعارات غير شفافة */
   [data-sonner-toast] {
     opacity: 1 !important;
     background-color: #171E31 !important;
     border: 1px solid #D4AF37 !important;
   }
   
-  /* Rounded buttons */
+  /* أزرار مستديرة */
   .goldBtn {
     border-radius: 24px !important;
   }
   
-  /* Improved image quality */
+  /* تحسين جودة الصورة */
   img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
   
-  /* Better video player */
+  /* مشغل فيديو أفضل */
   video {
     object-fit: contain;
   }
@@ -83,44 +83,45 @@ document.head.appendChild(tajawalFontStyles);
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Request permissions on app load
+  // طلب الأذونات عند تحميل التطبيق
   useEffect(() => {
     const requestPermissions = async () => {
-      // Request notification permission
+      // طلب إذن الإشعارات
       if ('Notification' in window && Notification.permission !== 'granted') {
         try {
-          await Notification.requestPermission();
+          const permission = await Notification.requestPermission();
+          console.log("Notification permission:", permission);
         } catch (error) {
-          console.error("Error requesting notification permission:", error);
+          console.error("خطأ في طلب إذن الإشعارات:", error);
         }
       }
       
-      // Try to detect device orientation for permissions
+      // محاولة اكتشاف اتجاه الجهاز للحصول على الأذونات
       if (typeof DeviceOrientationEvent !== 'undefined' && 
           typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
         try {
           await (DeviceOrientationEvent as any).requestPermission();
         } catch (error) {
-          console.log("DeviceOrientation permission error:", error);
+          console.log("خطأ في إذن توجيه الجهاز:", error);
         }
       }
       
-      // Request camera permission if available
+      // طلب إذن الكاميرا إذا كان متاحًا
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
-          // Just request audio/video permissions
+          // طلب أذونات الصوت/الفيديو
           await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
-              // Stop all tracks to release the camera/mic
+              // إيقاف جميع المسارات لتحرير الكاميرا/الميكروفون
               stream.getTracks().forEach(track => track.stop());
             });
         } catch (error) {
-          console.log("Media permissions error:", error);
+          console.log("خطأ في أذونات الوسائط:", error);
         }
       }
     };
     
-    // Call the permissions request function
+    // استدعاء وظيفة طلب الأذونات
     requestPermissions();
   }, []);
   
@@ -130,15 +131,18 @@ const App = () => {
         <DataProvider>
           <TooltipProvider>
             <Toaster />
-            <Sonner toastOptions={{
-              style: {
-                background: '#171E31',
-                color: 'white',
-                border: '1px solid #D4AF37',
-                borderRadius: '12px',
-                opacity: '1',
-              }
-            }} />
+            <Sonner 
+              toastOptions={{
+                style: {
+                  background: '#171E31',
+                  color: 'white',
+                  border: '1px solid #D4AF37',
+                  borderRadius: '12px',
+                  opacity: '1',
+                },
+                duration: 6000 // جعل الإشعارات تظهر لمدة 6 ثوانٍ
+              }} 
+            />
             <BrowserRouter>
               <div className="relative min-h-screen font-tajawal">
                 <PhysicsBackground />
