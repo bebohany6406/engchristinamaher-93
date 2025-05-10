@@ -212,9 +212,7 @@ const Videos = () => {
             </div>
             
             <div className="flex justify-between mb-4">
-              <button className={`flex-1 text-center py-2 px-4 rounded-t-lg ${!showUploader ? 'bg-physics-gold text-physics-navy' : 'bg-physics-navy text-white'}`} onClick={() => setShowUploader(false)}>
-                إدخال رابط
-              </button>
+              
               
             </div>
             
