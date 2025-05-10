@@ -96,10 +96,7 @@ const Books = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">الكتب والملفات</h1>
             {currentUser?.role === "admin" && <div className="flex gap-2">
-                <button onClick={() => setShowUploader(true)} className="goldBtn flex items-center gap-2">
-                  <FilePlus size={18} />
-                  <span>رفع ملف</span>
-                </button>
+                
                 
               </div>}
           </div>
