@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode } from "@/lib/utils";
@@ -42,7 +41,7 @@ const adminUser: User = {
   name: "admin",
   phone: "AdminAPPEng.Christina Maher",
   password: "Eng.Christina Maher0022",
-  role: "admin",
+  role: "admin"
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
