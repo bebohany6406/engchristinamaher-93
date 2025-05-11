@@ -225,7 +225,7 @@ const Videos = () => {
                 <div>
                   <label className="block text-white mb-1">رابط الفيديو</label>
                   <input type="text" className="inputField" value={url} onChange={e => setUrl(e.target.value)} required placeholder="https://..." />
-                  <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للفيديو (mp4, webm, mov, avi, 3gp)</p>
+                  <p className="text-gray-300 mt-1 text-base font-light">ادخل رابط لفديو من اليوتيوب</p>
                 </div>
                 
                 <div>
