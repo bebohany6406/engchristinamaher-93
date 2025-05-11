@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
@@ -104,17 +103,17 @@ const AttendanceListByGrade = () => {
               <p className="text-white mt-1">{getGradeTitle()}</p>
             </div>
             
-            {/* Filter */}
-            <div className="flex items-center gap-2 bg-physics-dark rounded-lg p-2">
+            {/* Darker Filter */}
+            <div className="flex items-center gap-2 bg-physics-dark border border-physics-gold/30 rounded-lg py-2 px-4 shadow-lg">
               <Filter className="text-physics-gold" size={20} />
               <select 
-                className="bg-transparent text-white border-none outline-none"
+                className="bg-transparent text-white text-lg font-bold border-none outline-none"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as any)}
               >
-                <option value="all">الكل</option>
-                <option value="present">الحاضرين</option>
-                <option value="absent">الغائبين</option>
+                <option value="all" className="bg-physics-dark text-white">الكل</option>
+                <option value="present" className="bg-physics-dark text-white">الحاضرين</option>
+                <option value="absent" className="bg-physics-dark text-white">الغائبين</option>
               </select>
             </div>
           </div>

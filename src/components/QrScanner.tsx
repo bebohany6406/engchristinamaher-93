@@ -15,49 +15,48 @@ export function QrScanner() {
   const { getStudentByCode } = useAuth();
   const { addAttendance } = useData();
   
-  const requestCameraPermission = async () => {
-    try {
-      // Request camera permission explicitly
-      const result = await navigator.mediaDevices.getUserMedia({ video: true });
-      
-      // If we get here, permission was granted
-      return true;
-    } catch (err) {
-      console.error("Error accessing camera:", err);
-      setPermissionDenied(true);
-      toast({
-        variant: "destructive",
-        title: "❌ تم رفض الوصول للكاميرا",
-        description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز",
-      });
-      return false;
-    }
-  };
-  
   const startScanner = async () => {
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
-    
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      });
+      // Reset permission state before trying
+      setPermissionDenied(false);
+      
+      const constraints = { 
+        video: { 
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setScanning(true);
-        setPermissionDenied(false);
-        scanCode();
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+          setScanning(true);
+          scanCode();
+        };
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
       setPermissionDenied(true);
-      toast({
-        variant: "destructive",
-        title: "❌ فشل الوصول للكاميرا",
-        description: "يرجى التأكد من السماح للتطبيق باستخدام الكاميرا",
-      });
+      
+      // Check for specific permission errors
+      if (err instanceof DOMException && 
+         (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
+        toast({
+          variant: "destructive",
+          title: "❌ تم رفض الوصول للكاميرا",
+          description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز أو المتصفح"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "❌ تعذر الوصول للكاميرا",
+          description: "تأكد من وجود كاميرا متصلة وتعمل بشكل صحيح"
+        });
+      }
     }
   };
 
@@ -164,19 +163,26 @@ export function QrScanner() {
           <div className="relative">
             <video 
               ref={videoRef} 
-              className="w-full rounded-lg"
+              className="w-full h-[300px] rounded-lg object-cover"
               playsInline
               muted
               autoPlay
             ></video>
             <canvas ref={canvasRef} className="hidden"></canvas>
+            <div className="absolute inset-0 pointer-events-none border-2 border-physics-gold rounded-lg flex items-center justify-center">
+              <div className="w-48 h-48 border-2 border-physics-gold/70 rounded-lg relative">
+                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-physics-gold"></div>
+                <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-physics-gold"></div>
+                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-physics-gold"></div>
+                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-physics-gold"></div>
+              </div>
+            </div>
             <button 
               onClick={stopScanner}
               className="absolute top-2 right-2 p-2 bg-physics-navy rounded-full"
             >
               <X className="text-white" size={24} />
             </button>
-            <div className="absolute inset-0 border-2 border-physics-gold rounded-lg"></div>
           </div>
         ) : (
           <div className="flex flex-col items-center p-6">
@@ -189,8 +195,8 @@ export function QrScanner() {
             </button>
             
             {permissionDenied && (
-              <div className="mt-4 p-3 bg-red-500/20 text-white rounded-lg text-sm text-center">
-                تم رفض الوصول للكاميرا. يرجى تفعيل الكاميرا من إعدادات الجهاز ثم المحاولة مرة أخرى.
+              <div className="mt-4 p-3 bg-red-500/30 text-white rounded-lg text-sm text-center border border-red-500/50">
+                تم رفض الوصول للكاميرا. يرجى تفعيل الكاميرا من إعدادات الجهاز أو المتصفح ثم المحاولة مرة أخرى.
               </div>
             )}
             
