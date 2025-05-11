@@ -34,13 +34,28 @@ export function generateRandomCode(): string {
 }
 
 export function generateRandomPassword(): string {
-  // Generate a random password with 8 characters
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  // Generate a stronger random password with 8 characters including letters, numbers, and symbols
+  const uppercaseChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';  // Avoiding confusing characters
+  const lowercaseChars = 'abcdefghjkmnpqrstuvwxyz';   // Avoiding confusing characters
+  const numberChars = '23456789';                     // Avoiding confusing numbers
+  const symbolChars = '!@#$%^&*';
+  
+  const allChars = uppercaseChars + lowercaseChars + numberChars + symbolChars;
   let password = '';
-  for (let i = 0; i < 8; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  
+  // Ensure at least one character from each category
+  password += uppercaseChars.charAt(Math.floor(Math.random() * uppercaseChars.length));
+  password += lowercaseChars.charAt(Math.floor(Math.random() * lowercaseChars.length));
+  password += numberChars.charAt(Math.floor(Math.random() * numberChars.length));
+  password += symbolChars.charAt(Math.floor(Math.random() * symbolChars.length));
+  
+  // Fill the rest of the password
+  for (let i = 0; i < 4; i++) {
+    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
   }
-  return password;
+  
+  // Shuffle the password characters
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
 }
 
 export function getPerformanceClass(performanceIndicator: string): string {
