@@ -18,22 +18,19 @@ export function QrScanner() {
   const requestCameraPermission = async () => {
     try {
       // Request camera permission explicitly
-      const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      const result = await navigator.mediaDevices.getUserMedia({ video: true });
       
-      if (result.state === 'denied') {
-        setPermissionDenied(true);
-        toast({
-          variant: "destructive",
-          title: "تم رفض الوصول للكاميرا",
-          description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز",
-        });
-        return false;
-      }
-      
+      // If we get here, permission was granted
       return true;
     } catch (err) {
-      console.error("Error checking camera permission:", err);
-      return true; // Continue anyway since some browsers don't support permissions API
+      console.error("Error accessing camera:", err);
+      setPermissionDenied(true);
+      toast({
+        variant: "destructive",
+        title: "❌ تم رفض الوصول للكاميرا",
+        description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز",
+      });
+      return false;
     }
   };
   
@@ -58,7 +55,7 @@ export function QrScanner() {
       setPermissionDenied(true);
       toast({
         variant: "destructive",
-        title: "فشل الوصول للكاميرا",
+        title: "❌ فشل الوصول للكاميرا",
         description: "يرجى التأكد من السماح للتطبيق باستخدام الكاميرا",
       });
     }
@@ -117,13 +114,13 @@ export function QrScanner() {
       audio.play().catch(e => console.error("Sound play failed:", e));
       
       toast({
-        title: "تم تسجيل الحضور",
+        title: "✅ تم تسجيل الحضور",
         description: `تم تسجيل حضور الطالب ${student.name}`
       });
     } else {
       toast({
         variant: "destructive",
-        title: "كود غير صالح",
+        title: "❌ كود غير صالح",
         description: "لم يتم العثور على طالب بهذا الكود"
       });
     }
@@ -146,14 +143,14 @@ export function QrScanner() {
         audio.play().catch(e => console.error("Sound play failed:", e));
         
         toast({
-          title: "تم تسجيل الحضور",
+          title: "✅ تم تسجيل الحضور",
           description: `تم تسجيل حضور الطالب ${student.name}`
         });
         setScannedCode("");
       } else {
         toast({
           variant: "destructive",
-          title: "كود غير صالح",
+          title: "❌ كود غير صالح",
           description: "لم يتم العثور على طالب بهذا الكود"
         });
       }
@@ -208,7 +205,7 @@ export function QrScanner() {
                   value={scannedCode}
                   onChange={(e) => setScannedCode(e.target.value)}
                   placeholder="أدخل كود الطالب يدوياً"
-                  className="inputField"
+                  className="inputField bg-physics-navy/60 border-physics-gold/50 text-white"
                 />
               </div>
               <button 

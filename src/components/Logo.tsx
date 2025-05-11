@@ -12,7 +12,8 @@ export function Logo() {
             src="/lovable-uploads/d3fa3125-e6e6-4060-ac05-fa22706c8cb2.jpg" 
             className="h-16 w-16 rounded-full object-cover shadow-inner" 
             style={{
-              objectFit: "cover"
+              objectFit: "cover",
+              imageRendering: "auto"
             }}
           />
         </Avatar>

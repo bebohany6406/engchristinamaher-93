@@ -1,10 +1,10 @@
 
-import { useState } from "react";
-import { X, Search, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { usePayments } from "@/hooks/use-payments";
-import { useData } from "@/context/DataContext";
-import { toast } from "@/hooks/use-toast";
 import { Student } from "@/types";
+import { Search, X } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface PaymentFormProps {
   onClose: () => void;
@@ -14,63 +14,55 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [month, setMonth] = useState("");
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [showResults, setShowResults] = useState(false);
-
+  const [searchResults, setSearchResults] = useState<Student[]>([]);
+  
+  const { getAllStudents } = useAuth();
   const { addPayment } = usePayments();
-  const { getStudentLessonCount } = useData();
-
-  // دالة البحث عن الطالب
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    
-    if (query.trim() === "") {
-      setFilteredStudents([]);
+  
+  // Handle search
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      const results = getAllStudents().filter(
+        student => 
+          student.name.includes(searchQuery) || 
+          student.code.includes(searchQuery)
+      );
+      setSearchResults(results);
+      setShowResults(true);
+    } else {
+      setSearchResults([]);
       setShowResults(false);
-      return;
     }
-
-    // بحث وهمي عن الطلاب (يجب استبداله بالبحث الفعلي)
-    const storedStudents = localStorage.getItem("students");
-    let students: Student[] = [];
-    
-    if (storedStudents) {
-      try {
-        students = JSON.parse(storedStudents);
-        const filtered = students.filter(student => 
-          student.name.includes(query) || 
-          student.code.includes(query) ||
-          student.group.includes(query)
-        );
-        setFilteredStudents(filtered);
-        setShowResults(true);
-      } catch (error) {
-        console.error("Failed to parse students:", error);
-      }
-    }
-  };
-
-  // اختيار طالب
+  }, [searchQuery, getAllStudents]);
+  
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
-    setSearchQuery(student.name);
+    setSearchQuery("");
     setShowResults(false);
   };
-
-  // حفظ الدفعة
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedStudent || !month.trim()) {
+    if (!selectedStudent) {
       toast({
-        title: "بيانات غير مكتملة",
-        description: "يرجى اختيار الطالب وإدخال الشهر",
+        title: "خطأ",
+        description: "يرجى اختيار طالب أولا",
         variant: "destructive",
       });
       return;
     }
     
-    // إضافة الدفعة
+    if (!month) {
+      toast({
+        title: "خطأ",
+        description: "يرجى كتابة اسم الشهر",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const result = addPayment(
       selectedStudent.id,
       selectedStudent.name,
@@ -81,7 +73,7 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
     
     if (result.success) {
       toast({
-        title: "تم بنجاح",
+        title: "تم تسجيل الدفعة",
         description: result.message,
       });
       onClose();
@@ -93,122 +85,102 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
       });
     }
   };
-
-  const getMonthSuggestions = () => {
-    const months = [
-      "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-      "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
-    ];
-    return months;
-  };
-
+  
   return (
-    <div className="bg-physics-dark p-6 rounded-lg shadow-lg">
+    <div className="bg-physics-dark rounded-lg p-4 shadow-lg mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-physics-gold">دفع شهر جديد</h2>
-        <button 
-          onClick={onClose}
-          className="text-gray-400 hover:text-white"
-        >
-          <X size={24} />
+        <h3 className="text-xl text-physics-gold font-bold">دفع شهر جديد</h3>
+        <button onClick={onClose} className="text-white hover:text-physics-gold">
+          <X size={20} />
         </button>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* بحث عن طالب */}
-        <div>
-          <label className="block text-white mb-1">بحث عن الطالب</label>
+        {/* بحث عن الطالب */}
+        {!selectedStudent && (
           <div className="relative">
-            <input 
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="inputField pr-10"
-              placeholder="اكتب اسم الطالب أو الكود"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-          </div>
-          
-          {/* نتائج البحث */}
-          {showResults && filteredStudents.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full bg-physics-navy border border-physics-gold rounded-md overflow-auto max-h-60">
-              {filteredStudents.map((student) => (
-                <div 
-                  key={student.id}
-                  className="p-2 hover:bg-physics-dark cursor-pointer flex items-center justify-between"
-                  onClick={() => handleSelectStudent(student)}
-                >
-                  <div>
-                    <div>{student.name}</div>
-                    <div className="text-sm text-gray-400">
-                      كود: {student.code} | مجموعة: {student.group}
-                    </div>
-                  </div>
-                  {selectedStudent?.id === student.id && (
-                    <Check size={18} className="text-green-500" />
-                  )}
-                </div>
-              ))}
+            <label className="block text-white mb-2 text-sm">بحث عن الطالب (بالاسم أو الكود)</label>
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+              <input
+                type="text"
+                className="inputField pr-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="اكتب اسم الطالب أو الكود..."
+              />
             </div>
-          )}
-        </div>
+            
+            {/* نتائج البحث */}
+            {showResults && searchResults.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-physics-navy border border-physics-gold rounded-md shadow-lg max-h-60 overflow-auto">
+                {searchResults.map(student => (
+                  <div 
+                    key={student.id} 
+                    className="p-2 hover:bg-physics-dark cursor-pointer text-white border-b border-physics-navy/50"
+                    onClick={() => handleSelectStudent(student)}
+                  >
+                    <div>{student.name}</div>
+                    <div className="text-xs text-physics-gold">كود: {student.code} | مجموعة: {student.group}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {showResults && searchResults.length === 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-physics-navy border border-red-500 rounded-md p-2 text-center text-white">
+                لا توجد نتائج
+              </div>
+            )}
+          </div>
+        )}
         
-        {/* بيانات الطالب */}
+        {/* بيانات الطالب المحدد */}
         {selectedStudent && (
-          <div className="bg-physics-navy/50 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-white mb-2">بيانات الطالب</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-gray-400">الاسم:</span>
-                <span className="text-white mr-2">{selectedStudent.name}</span>
-              </div>
-              <div>
-                <span className="text-gray-400">الكود:</span>
-                <span className="text-white mr-2">{selectedStudent.code}</span>
-              </div>
-              <div>
-                <span className="text-gray-400">المجموعة:</span>
-                <span className="text-white mr-2">{selectedStudent.group}</span>
-              </div>
-              <div>
-                <span className="text-gray-400">عدد الحصص:</span>
-                <span className="text-white mr-2">{getStudentLessonCount(selectedStudent.id)}</span>
-              </div>
+          <div className="bg-physics-navy/50 p-3 rounded-lg">
+            <div className="flex justify-between mb-2">
+              <h4 className="text-physics-gold font-bold">بيانات الطالب</h4>
+              <button 
+                type="button" 
+                className="text-xs text-red-400 hover:text-red-300"
+                onClick={() => setSelectedStudent(null)}
+              >
+                تغيير الطالب
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="text-white">الاسم: <span className="text-physics-gold">{selectedStudent.name}</span></div>
+              <div className="text-white">الكود: <span className="text-physics-gold">{selectedStudent.code}</span></div>
+              <div className="text-white">المجموعة: <span className="text-physics-gold">{selectedStudent.group}</span></div>
             </div>
           </div>
         )}
         
-        {/* اختيار الشهر */}
+        {/* حقل الشهر - مدخل نصي */}
         <div>
-          <label className="block text-white mb-1">اسم الشهر</label>
-          <input 
+          <label className="block text-white mb-1 text-sm">اسم الشهر</label>
+          <input
             type="text"
+            className="inputField"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="inputField"
-            placeholder="مثال: يناير 2023"
-            list="month-suggestions"
+            placeholder="مثال: يناير 2024"
+            required
           />
-          <datalist id="month-suggestions">
-            {getMonthSuggestions().map((month, index) => (
-              <option key={index} value={`${month} ${new Date().getFullYear()}`} />
-            ))}
-          </datalist>
         </div>
         
-        {/* أزرار */}
-        <div className="flex gap-4 pt-4">
+        <div className="pt-2 flex gap-2">
           <button 
             type="submit" 
             className="goldBtn flex-1"
-            disabled={!selectedStudent || !month.trim()}
+            disabled={!selectedStudent || !month}
           >
             تسجيل الدفعة
           </button>
           <button 
             type="button" 
-            className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
             onClick={onClose}
+            className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
           >
             إلغاء
           </button>
