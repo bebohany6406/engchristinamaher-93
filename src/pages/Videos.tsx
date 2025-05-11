@@ -229,9 +229,7 @@ const Videos = () => {
             <div className="flex justify-between mb-4">
               <div className="flex gap-4">
                 
-                <button className={`px-4 py-2 rounded-lg ${useYouTube ? 'bg-physics-gold text-physics-dark' : 'bg-physics-navy text-white'}`} onClick={() => setUseYouTube(true)}>
-                  فيديو يوتيوب
-                </button>
+                
               </div>
             </div>
             
@@ -244,9 +242,7 @@ const Videos = () => {
                 <div>
                   <label className="block text-white mb-1">رابط فيديو يوتيوب</label>
                   <input type="text" className="inputField" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." required />
-                  <p className="text-xs text-gray-400 mt-1">
-                    أدخل رابط فيديو يوتيوب صالح (watch, embed, shorts)
-                  </p>
+                  <p className="text-xs text-gray-400 mt-1">أدخل رابط فيديو يوتيوب </p>
                 </div>
                 
                 <div>
