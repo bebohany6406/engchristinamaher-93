@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
+import { ArrowRight, FilePlus, Calendar, Search, Edit, Trash, X, FileText, Download } from "lucide-react";
 import { FileUploader } from "@/components/FileUploader";
-import { ArrowRight, FilePlus, Calendar, Search, FileText, Edit, Trash } from "lucide-react";
-import PhysicsBackground from "@/components/PhysicsBackground";
+
 const Books = () => {
   const navigate = useNavigate();
   const {
@@ -16,45 +16,53 @@ const Books = () => {
     deleteBook,
     updateBook
   } = useData();
-  const {
-    currentUser
-  } = useAuth();
+  
+  const { currentUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showUploader, setShowUploader] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGrade, setSelectedGrade] = useState<"all" | "first" | "second" | "third">("all");
 
-  // Form state
+  // حالة النموذج
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [grade, setGrade] = useState<"first" | "second" | "third">("first");
 
-  // Edit state
+  // حالة التعديل
   const [editId, setEditId] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [editGrade, setEditGrade] = useState<"first" | "second" | "third">("first");
+  
   const books = selectedGrade === "all" ? getAllBooks() : getBooksByGrade(selectedGrade);
   const filteredBooks = books.filter(book => book.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  
   const handleAddBook = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) return;
     addBook(title, url, grade);
     setTitle("");
     setUrl("");
     setGrade("first");
     setShowAddForm(false);
   };
+  
+  const handleFileURLGenerated = (generatedUrl: string) => {
+    setUrl(generatedUrl);
+  };
+  
   const handleEditBook = (e: React.FormEvent) => {
     e.preventDefault();
     updateBook(editId, editTitle, editUrl, editGrade);
     setShowEditForm(false);
   };
+  
   const handleDeleteBook = (id: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا الكتاب/الملف؟")) {
+    if (window.confirm("هل أنت متأكد من حذف هذا الملف؟")) {
       deleteBook(id);
     }
   };
+  
   const openEditForm = (book: any) => {
     setEditId(book.id);
     setEditTitle(book.title);
@@ -62,9 +70,7 @@ const Books = () => {
     setEditGrade(book.grade);
     setShowEditForm(true);
   };
-  const handleFileURLGenerated = (fileURL: string) => {
-    setUrl(fileURL);
-  };
+  
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-EG', {
       year: 'numeric',
@@ -72,15 +78,13 @@ const Books = () => {
       day: 'numeric'
     });
   };
-  const openBook = (url: string) => {
-    window.open(url, '_blank');
-  };
-  return <div className="min-h-screen bg-physics-navy flex flex-col relative">
-      <PhysicsBackground />
+
+  return (
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
       <PhoneContact />
       
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
           <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
             <ArrowRight size={20} />
@@ -91,17 +95,17 @@ const Books = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 relative z-10">
+      <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-physics-gold">الكتب والملفات</h1>
-            {currentUser?.role === "admin" && <div className="flex gap-2">
-                
-                
-              </div>}
+            <h1 className="text-2xl font-bold text-physics-gold">الكتب والملفات التعليمية</h1>
+            {currentUser?.role === "admin" && <button onClick={() => setShowAddForm(true)} className="goldBtn flex items-center gap-2">
+                <FilePlus size={18} />
+                <span>إضافة ملف</span>
+              </button>}
           </div>
           
-          {/* Filter and search */}
+          {/* التصفية والبحث */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="w-full md:w-1/3">
               <select className="inputField" value={selectedGrade} onChange={e => setSelectedGrade(e.target.value as "all" | "first" | "second" | "third")}>
@@ -118,18 +122,20 @@ const Books = () => {
             </div>
           </div>
           
-          {/* Books List */}
+          {/* قائمة الكتب والملفات */}
           <div className="bg-physics-dark rounded-lg overflow-hidden">
             {filteredBooks.length === 0 ? <div className="p-8 text-center">
-                <p className="text-white text-lg">لا توجد كتب أو ملفات متاحة</p>
+                <p className="text-white text-lg">لا توجد ملفات متاحة</p>
               </div> : <div className="divide-y divide-physics-navy">
                 {filteredBooks.map(book => <div key={book.id} className="p-4 hover:bg-physics-navy/30">
                     <div className="flex items-center">
-                      <div className="mr-4 bg-physics-navy p-3 rounded-full cursor-pointer" onClick={() => openBook(book.url)}>
+                      <div className="mr-4 bg-physics-navy p-3 rounded-full">
                         <FileText size={24} className="text-physics-gold" />
                       </div>
-                      <div className="flex-1 cursor-pointer" onClick={() => openBook(book.url)}>
-                        <h3 className="text-lg font-medium text-white">{book.title}</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center">
+                          <h3 className="text-lg font-medium text-white">{book.title}</h3>
+                        </div>
                         <div className="flex items-center text-sm text-gray-300 mt-1">
                           <Calendar size={14} className="ml-1" />
                           <span>{formatDate(book.uploadDate)}</span>
@@ -142,15 +148,21 @@ const Books = () => {
                         </div>
                       </div>
                       
-                      {currentUser?.role === "admin" && <div className="flex">
-                          <button onClick={() => openEditForm(book)} className="p-2 text-physics-gold hover:text-white">
-                            <Edit size={18} />
-                          </button>
-                          
-                          <button onClick={() => handleDeleteBook(book.id)} className="p-2 text-red-500 hover:text-white">
-                            <Trash size={18} />
-                          </button>
-                        </div>}
+                      <div className="flex items-center gap-2">
+                        <a href={book.url} target="_blank" rel="noopener noreferrer" className="p-2 text-physics-gold hover:text-white">
+                          <Download size={18} />
+                        </a>
+                        
+                        {currentUser?.role === "admin" && <div className="flex">
+                            <button onClick={() => openEditForm(book)} className="p-2 text-physics-gold hover:text-white">
+                              <Edit size={18} />
+                            </button>
+                            
+                            <button onClick={() => handleDeleteBook(book.id)} className="p-2 text-red-500 hover:text-white">
+                              <Trash size={18} />
+                            </button>
+                          </div>}
+                      </div>
                     </div>
                   </div>)}
               </div>}
@@ -158,36 +170,28 @@ const Books = () => {
         </div>
       </main>
       
-      {/* File Uploader Modal */}
-      {showUploader && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">رفع ملف جديد</h2>
-            
-            <FileUploader onFileURLGenerated={handleFileURLGenerated} />
-            
-            <div className="flex gap-4 mt-6">
-              <button type="button" className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1" onClick={() => setShowUploader(false)}>
-                إغلاق
-              </button>
-            </div>
-          </div>
-        </div>}
-      
-      {/* Add Book Modal */}
+      {/* نموذج إضافة كتاب */}
       {showAddForm && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">إضافة كتاب/ملف جديد</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-physics-gold">إضافة ملف جديد</h2>
+              <button type="button" className="text-gray-400 hover:text-white" onClick={() => setShowAddForm(false)}>
+                <X size={24} />
+              </button>
+            </div>
             
             <form onSubmit={handleAddBook} className="space-y-4">
               <div>
-                <label className="block text-white mb-1">عنوان الكتاب/الملف</label>
+                <label className="block text-white mb-1">عنوان الملف</label>
                 <input type="text" className="inputField" value={title} onChange={e => setTitle(e.target.value)} required />
               </div>
               
               <div>
-                <label className="block text-white mb-1">رابط الكتاب/الملف</label>
-                <input type="text" className="inputField" value={url} onChange={e => setUrl(e.target.value)} required placeholder="https://..." />
-                <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للكتاب أو الملف (PDF, DOCX, etc.)</p>
+                <label className="block text-white mb-1">رابط الملف</label>
+                <FileUploader onFileURLGenerated={handleFileURLGenerated} />
+                {url && <p className="text-xs text-gray-400 mt-1">
+                    تم رفع الملف بنجاح: {url}
+                  </p>}
               </div>
               
               <div>
@@ -200,8 +204,8 @@ const Books = () => {
               </div>
               
               <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1">
-                  إضافة الكتاب/الملف
+                <button type="submit" className="goldBtn flex-1" disabled={!url || !title}>
+                  إضافة الملف
                 </button>
                 <button type="button" className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1" onClick={() => setShowAddForm(false)}>
                   إلغاء
@@ -211,21 +215,20 @@ const Books = () => {
           </div>
         </div>}
       
-      {/* Edit Book Modal */}
+      {/* نموذج تعديل الكتاب */}
       {showEditForm && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">تعديل الكتاب/الملف</h2>
+            <h2 className="text-xl font-bold text-physics-gold mb-6">تعديل الملف</h2>
             
             <form onSubmit={handleEditBook} className="space-y-4">
               <div>
-                <label className="block text-white mb-1">عنوان الكتاب/الملف</label>
+                <label className="block text-white mb-1">عنوان الملف</label>
                 <input type="text" className="inputField" value={editTitle} onChange={e => setEditTitle(e.target.value)} required />
               </div>
               
               <div>
-                <label className="block text-white mb-1">رابط الكتاب/الملف</label>
-                <input type="text" className="inputField" value={editUrl} onChange={e => setEditUrl(e.target.value)} required placeholder="https://..." />
-                <p className="text-sm text-gray-300 mt-1">أدخل رابط مباشر للكتاب أو الملف (PDF, DOCX, etc.)</p>
+                <label className="block text-white mb-1">رابط الملف</label>
+                <input type="text" className="inputField" value={editUrl} onChange={e => setEditUrl(e.target.value)} required />
               </div>
               
               <div>
@@ -248,6 +251,8 @@ const Books = () => {
             </form>
           </div>
         </div>}
-    </div>;
+    </div>
+  );
 };
+
 export default Books;

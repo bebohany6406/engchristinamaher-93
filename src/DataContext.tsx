@@ -35,11 +35,18 @@ interface DataContextType {
   ) => void;
   deleteAttendanceRecord: (id: string) => void;
   getStudentAttendance: (studentId: string) => Attendance[];
+  getStudentLessonCount: (studentId: string) => number;
   getVideos: () => {title: string, url: string}[];
-  addVideo: (title: string, url: string) => void;
+  getAllVideos: () => {id: string, title: string, url: string, grade: string, uploadDate: string, isYouTube?: boolean}[];
+  getVideosByGrade: (grade: string) => {id: string, title: string, url: string, grade: string, uploadDate: string, isYouTube?: boolean}[];
+  addVideo: (title: string, url: string, grade: string) => void;
+  updateVideo: (id: string, title: string, url: string, grade: string) => void;
   deleteVideo: (url: string) => void;
   getBooks: () => {title: string, url: string}[];
+  getAllBooks: () => {id: string, title: string, url: string, grade: string, uploadDate: string}[];
+  getBooksByGrade: (grade: string) => {id: string, title: string, url: string, grade: string, uploadDate: string}[];
   addBook: (title: string, url: string) => void;
+  updateBook: (id: string, title: string, url: string, grade: string) => void;
   deleteBook: (url: string) => void;
 }
 
@@ -48,8 +55,8 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [videos, setVideos] = useState<{title: string, url: string}[]>([]);
-  const [books, setBooks] = useState<{title: string, url: string}[]>([]);
+  const [videos, setVideos] = useState<{id: string, title: string, url: string, grade: string, uploadDate: string, isYouTube?: boolean}[]>([]);
+  const [books, setBooks] = useState<{id: string, title: string, url: string, grade: string, uploadDate: string}[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   
   // Load from localStorage on mount
@@ -110,7 +117,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       totalScore,
       lessonNumber,
       group,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      performanceIndicator: calculatePerformance(score, totalScore)
     };
     
     setGrades(prevGrades => [...prevGrades, newGrade]);
@@ -135,11 +143,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               totalScore, 
               lessonNumber,
               group,
-              date: new Date().toISOString() // تحديث التاريخ عند التعديل
+              date: new Date().toISOString(), // تحديث التاريخ عند التعديل
+              performanceIndicator: calculatePerformance(score, totalScore)
             }
           : grade
       )
     );
+  };
+
+  // Function to calculate performance indicator
+  const calculatePerformance = (score: number, total: number): string => {
+    const percentage = (score / total) * 100;
+    if (percentage >= 90) return 'excellent';
+    if (percentage >= 80) return 'very-good';
+    if (percentage >= 70) return 'good';
+    if (percentage >= 60) return 'fair';
+    return 'needs-improvement';
   };
 
   // حذف درجة
@@ -179,6 +198,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAttendance(prevAttendance => prevAttendance.filter(record => record.id !== id));
   };
   
+  // Get lesson count for a student
+  const getStudentLessonCount = (studentId: string): number => {
+    const studentAttendance = attendance.filter(record => record.studentId === studentId);
+    if (studentAttendance.length === 0) return 0;
+    
+    // Find the highest lesson number
+    return Math.max(...studentAttendance.map(record => record.lessonNumber || 0));
+  };
+  
   // الحصول على سجل حضور لطالب محدد
   const getStudentAttendance = (studentId: string): Attendance[] => {
     return attendance.filter(record => record.studentId === studentId);
@@ -187,25 +215,76 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // إدارة الفيديوهات
   const getVideos = () => videos;
   
-  const addVideo = (title: string, url: string) => {
-    const newVideo = { title, url };
+  const getAllVideos = () => videos;
+  
+  const getVideosByGrade = (grade: string) => {
+    return videos.filter(video => video.grade === grade);
+  };
+  
+  const addVideo = (title: string, url: string, grade: string) => {
+    // Check if URL is a YouTube URL
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+    
+    const newVideo = { 
+      id: `video-${Date.now()}`,
+      title, 
+      url,
+      grade,
+      uploadDate: new Date().toISOString(),
+      isYouTube
+    };
     setVideos(prevVideos => [...prevVideos, newVideo]);
   };
   
-  const deleteVideo = (url: string) => {
-    setVideos(prevVideos => prevVideos.filter(video => video.url !== url));
+  const updateVideo = (id: string, title: string, url: string, grade: string) => {
+    // Check if URL is a YouTube URL
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+    
+    setVideos(prevVideos => 
+      prevVideos.map(video => 
+        video.id === id 
+          ? { ...video, title, url, grade, isYouTube }
+          : video
+      )
+    );
+  };
+  
+  const deleteVideo = (id: string) => {
+    setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
   };
   
   // إدارة الكتب
   const getBooks = () => books;
   
-  const addBook = (title: string, url: string) => {
-    const newBook = { title, url };
+  const getAllBooks = () => books;
+  
+  const getBooksByGrade = (grade: string) => {
+    return books.filter(book => book.grade === grade);
+  };
+  
+  const addBook = (title: string, url: string, grade: string) => {
+    const newBook = { 
+      id: `book-${Date.now()}`,
+      title, 
+      url,
+      grade,
+      uploadDate: new Date().toISOString()
+    };
     setBooks(prevBooks => [...prevBooks, newBook]);
   };
   
-  const deleteBook = (url: string) => {
-    setBooks(prevBooks => prevBooks.filter(book => book.url !== url));
+  const updateBook = (id: string, title: string, url: string, grade: string) => {
+    setBooks(prevBooks => 
+      prevBooks.map(book => 
+        book.id === id 
+          ? { ...book, title, url, grade }
+          : book
+      )
+    );
+  };
+  
+  const deleteBook = (id: string) => {
+    setBooks(prevBooks => prevBooks.filter(book => book.id !== id));
   };
   
   const value = {
@@ -220,11 +299,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addAttendance,
     deleteAttendanceRecord,
     getStudentAttendance,
+    getStudentLessonCount,
     getVideos,
+    getAllVideos,
+    getVideosByGrade,
     addVideo,
+    updateVideo,
     deleteVideo,
     getBooks,
+    getAllBooks,
+    getBooksByGrade,
     addBook,
+    updateBook,
     deleteBook
   };
   

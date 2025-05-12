@@ -8,6 +8,7 @@ import { ArrowRight, FilePlus, Calendar, Search, Play, Edit, Trash, X, Check } f
 import { VideoPlayerFixed } from "@/components/VideoPlayerFixed";
 import { VideoUploader } from "@/components/VideoUploader";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
+
 const Videos = () => {
   const navigate = useNavigate();
   const {
@@ -17,9 +18,8 @@ const Videos = () => {
     deleteVideo,
     updateVideo
   } = useData();
-  const {
-    currentUser
-  } = useAuth();
+  
+  const { currentUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,8 +40,10 @@ const Videos = () => {
   const [editUrl, setEditUrl] = useState("");
   const [editGrade, setEditGrade] = useState<"first" | "second" | "third">("first");
   const [editIsYouTube, setEditIsYouTube] = useState(false);
+  
   const videos = selectedGrade === "all" ? getAllVideos() : getVideosByGrade(selectedGrade);
   const filteredVideos = videos.filter(video => video.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  
   const handleAddVideo = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -58,14 +60,17 @@ const Videos = () => {
     setShowUploader(false);
     setUseYouTube(false);
   };
+  
   const handleVideoURLGenerated = (generatedUrl: string) => {
     setUrl(generatedUrl);
   };
+  
   const handleEditVideo = (e: React.FormEvent) => {
     e.preventDefault();
     updateVideo(editId, editTitle, editUrl, editGrade);
     setShowEditForm(false);
   };
+  
   const handleDeleteVideo = (id: string) => {
     if (window.confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
       deleteVideo(id);
@@ -74,6 +79,7 @@ const Videos = () => {
       }
     }
   };
+  
   const openEditForm = (video: any) => {
     setEditId(video.id);
     setEditTitle(video.title);
@@ -82,10 +88,12 @@ const Videos = () => {
     setEditIsYouTube(video.isYouTube || false);
     setShowEditForm(true);
   };
+  
   const handleSelectVideo = (video: any) => {
     setSelectedVideo(video.url);
     setSelectedVideoIsYouTube(video.isYouTube || false);
   };
+  
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-EG', {
       year: 'numeric',
@@ -93,6 +101,7 @@ const Videos = () => {
       day: 'numeric'
     });
   };
+
   return <div className="min-h-screen bg-physics-navy flex flex-col relative">
       <PhoneContact />
       
@@ -339,4 +348,5 @@ const Videos = () => {
         </div>}
     </div>;
 };
+
 export default Videos;
