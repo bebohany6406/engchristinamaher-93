@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
@@ -67,7 +67,7 @@ const Books = () => {
   };
   
   // استدعاء البيانات عند تحميل الصفحة أو تغيير التصفية
-  useState(() => {
+  useEffect(() => {
     fetchBooks();
   }, [selectedGrade]);
   
