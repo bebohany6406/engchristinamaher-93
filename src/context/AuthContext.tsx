@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateUniquePassword } from "@/lib/utils";
@@ -28,6 +27,8 @@ interface AuthContextType {
   ) => void;
   deleteStudent: (id: string) => void;
   createParent: (phone: string, studentCode: string) => Parent;
+  updateParent: (id: string, phone: string, studentCode: string, password: string) => void;
+  deleteParent: (id: string) => void;
   getStudentByCode: (code: string) => Student | undefined;
   getAllStudents: () => Student[];
   getAllParents: () => Parent[];
@@ -268,6 +269,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newParent;
   };
 
+  const updateParent = (id: string, phone: string, studentCode: string, password: string): void => {
+    const student = students.find(s => s.code === studentCode);
+    
+    if (!student) {
+      toast({
+        variant: "destructive",
+        title: "❌ خطأ",
+        description: "كود الطالب غير صحيح",
+      });
+      throw new Error("Student code invalid");
+    }
+
+    const parentIndex = parents.findIndex(p => p.id === id);
+    if (parentIndex !== -1) {
+      const updatedParent = {
+        ...parents[parentIndex],
+        phone,
+        studentCode,
+        studentName: student.name,
+        password
+      };
+
+      const newParents = [...parents];
+      newParents[parentIndex] = updatedParent;
+      setParents(newParents);
+      
+      // إذا كان هذا ولي الأمر هو المستخدم الحالي، تحديث بيانات المستخدم أيضًا
+      if (currentUser && currentUser.id === id && currentUser.role === "parent") {
+        setCurrentUser({
+          ...currentUser,
+          name: `ولي أمر ${student.name}`,
+          phone,
+          password,
+          childrenIds: [student.id]
+        });
+      }
+    }
+  };
+
+  const deleteParent = (id: string): void => {
+    // إذا كان هذا ولي الأمر هو المستخدم الحالي، تسجيل الخروج أولاً
+    if (currentUser && currentUser.id === id && currentUser.role === "parent") {
+      logout();
+    }
+    
+    setParents(prev => prev.filter(parent => parent.id !== id));
+  };
+
   const getStudentByCode = (code: string): Student | undefined => {
     return students.find(student => student.code === code);
   };
@@ -290,6 +339,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateStudent,
     deleteStudent,
     createParent,
+    updateParent,
+    deleteParent,
     getStudentByCode,
     getAllStudents,
     getAllParents,

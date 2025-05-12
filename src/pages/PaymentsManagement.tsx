@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign } from "lucide-react";
+import { ArrowRight, DollarSign, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
@@ -14,7 +14,7 @@ import { Payment } from "@/types";
 const PaymentsManagement = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { payments, debugPaymentsState } = usePayments();
+  const { payments, debugPaymentsState, deletePayment } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
@@ -62,6 +62,20 @@ const PaymentsManagement = () => {
     setRecentPayment(payment);
     // سنحتاج لتحديث قائمة المدفوعات يدوياً هنا لعرض التغييرات على الفور
     debugPaymentsState(); // للتحقق من البيانات في الكونسول
+  };
+  
+  const handleDeletePayment = (paymentId: string) => {
+    if (window.confirm("هل أنت متأكد من حذف سجل الدفع هذا؟ لا يمكن التراجع عن هذه العملية.")) {
+      deletePayment(paymentId);
+      // تحديث القائمة بعد الحذف
+      const updatedPayments = payments.filter(p => p.id !== paymentId);
+      setFilteredPayments(updatedPayments);
+      
+      toast({
+        title: "✅ تم الحذف",
+        description: "تم حذف سجل الدفع بنجاح",
+      });
+    }
   };
 
   return (
@@ -142,7 +156,10 @@ const PaymentsManagement = () => {
           
           {/* قائمة المدفوعات */}
           <div className="bg-physics-dark rounded-lg overflow-hidden mt-6">
-            <PaymentsList payments={filteredPayments} />
+            <PaymentsList 
+              payments={filteredPayments} 
+              onDeletePayment={currentUser?.role === "admin" ? handleDeletePayment : undefined} 
+            />
           </div>
         </div>
       </main>

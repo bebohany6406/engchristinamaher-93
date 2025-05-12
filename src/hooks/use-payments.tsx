@@ -106,6 +106,19 @@ export function usePayments() {
     }
   };
 
+  // Delete a payment record
+  const deletePayment = (paymentId: string) => {
+    const updatedPayments = payments.filter(payment => payment.id !== paymentId);
+    setPayments(updatedPayments);
+    // Save to localStorage immediately to ensure data persistence
+    localStorage.setItem("payments", JSON.stringify(updatedPayments));
+    
+    return {
+      success: true,
+      message: "تم حذف سجل الدفع بنجاح"
+    };
+  };
+
   // Get all payment records
   const getAllPayments = () => {
     return payments;
@@ -145,6 +158,7 @@ export function usePayments() {
   return {
     payments,
     addPayment,
+    deletePayment,
     getAllPayments,
     getStudentPayments,
     hasStudentPaidForCurrentLesson,

@@ -3,15 +3,17 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, UserPlus, Search, Trash2 } from "lucide-react";
+import { ArrowRight, UserPlus, Search, Trash2, Edit, X } from "lucide-react";
 import { Parent, Student } from "@/types";
 import { toast } from "@/hooks/use-toast";
 import { sanitizeSearchText } from "@/lib/utils";
+import { PhoneContact } from "@/components/PhoneContact";
 
 const ParentsManagement = () => {
   const navigate = useNavigate();
-  const { getAllParents, createParent, getStudentByCode, getAllStudents } = useAuth();
+  const { getAllParents, createParent, getStudentByCode, getAllStudents, updateParent, deleteParent } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchField, setSearchField] = useState<"all" | "name" | "phone" | "code" | "group">("all");
   const [parents, setParents] = useState<Parent[]>([]);
@@ -20,6 +22,12 @@ const ParentsManagement = () => {
   // Form state
   const [phone, setPhone] = useState("");
   const [studentCode, setStudentCode] = useState("");
+  
+  // Edit state
+  const [editId, setEditId] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editStudentCode, setEditStudentCode] = useState("");
+  const [editPassword, setEditPassword] = useState("");
   
   useEffect(() => {
     // Load parents and students when component mounts
@@ -94,17 +102,77 @@ const ParentsManagement = () => {
     }
   };
   
+  const openEditForm = (parent: Parent) => {
+    setEditId(parent.id);
+    setEditPhone(parent.phone);
+    setEditStudentCode(parent.studentCode);
+    setEditPassword(parent.password);
+    setShowEditForm(true);
+  };
+  
+  const handleEditParent = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Validate student code exists
+      const student = getStudentByCode(editStudentCode);
+      if (!student) {
+        toast({
+          title: "❌ كود غير صالح",
+          description: "لم يتم العثور على طالب بهذا الكود",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update parent
+      updateParent(editId, editPhone, editStudentCode, editPassword);
+      
+      // Update list
+      setParents(getAllParents());
+      
+      // Reset form and close
+      setShowEditForm(false);
+      
+      toast({
+        title: "✅ تم التحديث",
+        description: "تم تحديث بيانات ولي الأمر بنجاح",
+      });
+      
+    } catch (error) {
+      console.error("Error updating parent:", error);
+      toast({
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء تحديث حساب ولي الأمر",
+        variant: "destructive",
+      });
+    }
+  };
+  
   const handleDeleteParent = (parentId: string) => {
-    // Note: This requires implementing deleteParent in AuthContext
-    // But for now we'll just show a toast that this functionality is coming soon
-    toast({
-      title: "⚠️ قادم قريبًا",
-      description: "سيتم إضافة وظيفة حذف ولي الأمر قريبًا",
-    });
+    if (window.confirm("هل أنت متأكد من حذف حساب ولي الأمر؟ لا يمكن التراجع عن هذه العملية.")) {
+      try {
+        deleteParent(parentId);
+        setParents(getAllParents());
+        toast({
+          title: "✅ تم الحذف",
+          description: "تم حذف حساب ولي الأمر بنجاح",
+        });
+      } catch (error) {
+        console.error("Error deleting parent:", error);
+        toast({
+          title: "❌ خطأ",
+          description: "حدث خطأ أثناء حذف حساب ولي الأمر",
+          variant: "destructive",
+        });
+      }
+    }
   };
   
   return (
     <div className="min-h-screen bg-transparent flex flex-col">
+      <PhoneContact />
+      
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
@@ -193,8 +261,16 @@ const ParentsManagement = () => {
                         <td className="py-3 px-4 text-white text-center">
                           <div className="flex justify-center gap-2">
                             <button 
+                              className="p-1 text-physics-gold hover:text-yellow-300"
+                              onClick={() => openEditForm(parent)}
+                              title="تعديل"
+                            >
+                              <Edit size={18} />
+                            </button>
+                            <button 
                               className="p-1 text-red-400 hover:text-red-500"
                               onClick={() => handleDeleteParent(parent.id)}
+                              title="حذف"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -214,7 +290,15 @@ const ParentsManagement = () => {
       {showAddForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">إضافة ولي أمر جديد</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-physics-gold">إضافة ولي أمر جديد</h2>
+              <button 
+                onClick={() => setShowAddForm(false)} 
+                className="text-gray-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
             
             <form onSubmit={handleAddParent} className="space-y-4">
               <div>
@@ -250,6 +334,74 @@ const ParentsManagement = () => {
                   type="button" 
                   className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
                   onClick={() => setShowAddForm(false)}
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Parent Modal */}
+      {showEditForm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-physics-gold">تعديل بيانات ولي الأمر</h2>
+              <button 
+                onClick={() => setShowEditForm(false)} 
+                className="text-gray-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditParent} className="space-y-4">
+              <div>
+                <label className="block text-white mb-1">رقم الهاتف</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">كود الطالب</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={editStudentCode}
+                  onChange={(e) => setEditStudentCode(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">كلمة المرور</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="pt-2 flex gap-2">
+                <button 
+                  type="submit" 
+                  className="goldBtn flex-1"
+                >
+                  تحديث البيانات
+                </button>
+                <button 
+                  type="button" 
+                  className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
+                  onClick={() => setShowEditForm(false)}
                 >
                   إلغاء
                 </button>

@@ -10,6 +10,7 @@ export function YouTubeEmbed({ videoUrl, title }: YouTubeEmbedProps) {
   const [embedUrl, setEmbedUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInteractive, setIsInteractive] = useState(false);
 
   useEffect(() => {
     try {
@@ -43,8 +44,8 @@ export function YouTubeEmbed({ videoUrl, title }: YouTubeEmbedProps) {
       }
 
       if (videoId) {
-        // Enhanced embed URL with maximum restrictions to prevent interaction
-        setEmbedUrl(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1&fs=0&disablekb=1&controls=1&iv_load_policy=3&start=0&origin=${window.location.origin}&playsinline=1&mute=0&loop=0&cc_load_policy=0&enablejsapi=0&color=white`);
+        // إنشاء رابط التضمين مع ضوابط مناسبة حسب حالة التفاعل
+        setEmbedUrl(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1&fs=1&disablekb=0&controls=1&iv_load_policy=3&start=0&origin=${window.location.origin}&playsinline=1&mute=0&loop=0&cc_load_policy=0&enablejsapi=1&color=white`);
         setIsLoading(false);
       } else {
         setError("الرابط غير صالح. يرجى استخدام رابط يوتيوب صحيح");
@@ -87,17 +88,32 @@ export function YouTubeEmbed({ videoUrl, title }: YouTubeEmbedProps) {
         loading="lazy"
       ></iframe>
       
-      {/* طبقة شفافة لمنع التفاعل مع الفيديو */}
-      <div 
-        className="absolute inset-0 z-10 hidden md:block"
-        style={{ pointerEvents: "auto" }}
-        onClick={(e) => {
-          // السماح بالضغط على زر التشغيل فقط
-          e.stopPropagation();
-        }}
-        onContextMenu={(e) => e.preventDefault()}
-      >
+      {/* تبديل وضع التفاعل مع الفيديو */}
+      <div className="absolute bottom-4 right-4 bg-physics-dark/80 rounded-full p-2 z-20">
+        <button 
+          onClick={() => setIsInteractive(!isInteractive)} 
+          className="text-sm px-3 py-1 rounded-full bg-physics-gold text-physics-dark hover:bg-physics-gold/80"
+        >
+          {isInteractive ? "إيقاف التفاعل" : "تفعيل التفاعل"}
+        </button>
       </div>
+      
+      {/* طبقة شفافة لمنع التفاعل مع الفيديو عند إيقاف التفاعل */}
+      {!isInteractive && (
+        <div 
+          className="absolute inset-0 z-10"
+          style={{ pointerEvents: "auto" }}
+          onClick={(e) => {
+            // السماح بالضغط على زر التفعيل فقط
+            if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+              setIsInteractive(true);
+            }
+            e.stopPropagation();
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+        </div>
+      )}
     </div>
   );
 }
