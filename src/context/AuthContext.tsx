@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateRandomPassword } from "@/lib/utils";
@@ -102,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (phoneNumber === adminUser.phone && password === adminUser.password) {
       setCurrentUser(adminUser);
       toast({
-        title: "تم تسجيل الدخول بنجاح",
+        title: "✅ تم تسجيل الدخول بنجاح",
         description: "مرحباً بك في لوحة التحكم",
       });
       return true;
@@ -122,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         grade: student.grade
       });
       toast({
-        title: "تم تسجيل الدخول بنجاح",
+        title: "✅ تم تسجيل الدخول بنجاح",
         description: `مرحباً ${student.name}`,
       });
       return true;
@@ -139,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: "parent"
       });
       toast({
-        title: "تم تسجيل الدخول بنجاح",
+        title: "✅ تم تسجيل الدخول بنجاح",
         description: `مرحباً بك`,
       });
       return true;
@@ -147,7 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     toast({
       variant: "destructive",
-      title: "فشل تسجيل الدخول",
+      title: "❌ فشل تسجيل الدخول",
       description: "رقم الهاتف أو كلمة المرور غير صحيحة",
     });
     return false;
@@ -158,7 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem("currentUser");
     localStorage.removeItem("userLoggedIn");
     toast({
-      title: "تم تسجيل الخروج",
+      title: "👋 تم تسجيل الخروج",
       description: "نراك قريباً!",
     });
     
@@ -191,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setStudents(prev => [...prev, newStudent]);
     toast({
-      title: "تم إنشاء حساب الطالب بنجاح",
+      title: "✅ تم إنشاء حساب الطالب بنجاح",
       description: `كود الطالب هو: ${code} | كلمة المرور: ${password}`,
     });
     return newStudent;
@@ -234,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!student) {
       toast({
         variant: "destructive",
-        title: "خطأ",
+        title: "❌ خطأ",
         description: "كود الطالب غير صحيح",
       });
       throw new Error("Student code invalid");
@@ -251,7 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setParents(prev => [...prev, newParent]);
     toast({
-      title: "تم إنشاء حساب ولي الأمر بنجاح",
+      title: "✅ تم إنشاء حساب ولي الأمر بنجاح",
       description: `مرتبط بالطالب: ${student.name} | كلمة المرور: ${password}`,
     });
     return newParent;
