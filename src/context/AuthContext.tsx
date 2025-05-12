@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateRandomPassword } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -179,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const code = generateRandomCode();
     const password = generateRandomPassword();
     const newStudent: Student = {
-      id: `student-${Date.now()}`,
+      id: `student-${uuidv4()}`,
       name,
       phone,
       password,
@@ -269,17 +271,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getAllParents = (): Parent[] => {
     return parents;
   };
-  
-  // Get all children for a specific parent
+
+  // New function to get children of a parent
   const getParentChildren = (parentId: string): Student[] => {
+    // Find the parent with the given ID
     const parent = parents.find(p => p.id === parentId);
     if (!parent) return [];
     
-    // Return all students linked to this parent's code
-    return students.filter(student => {
-      const parentWithStudentCode = parents.find(p => p.id === parentId && p.studentCode === student.code);
-      return !!parentWithStudentCode;
-    });
+    // Get all students with the parent's student code
+    return students.filter(student => student.code === parent.studentCode);
   };
 
   const value = {
