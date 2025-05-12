@@ -5,7 +5,7 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, Plus, Search, X } from "lucide-react";
+import { ArrowRight, Plus, Search, X, Edit, Trash2 } from "lucide-react";
 import { Student, Grade } from "@/types";
 import { getGradeDisplay, formatDate, sanitizeSearchText } from "@/lib/utils";
 import {
@@ -25,6 +25,7 @@ const GradesByGrade = () => {
   const { grades, addGrade } = useData();
   const [students, setStudents] = useState<Student[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchType, setSearchType] = useState<"name" | "code" | "group">("name");
 
@@ -35,6 +36,7 @@ const GradesByGrade = () => {
   const [totalScore, setTotalScore] = useState(100);
   const [lessonNumber, setLessonNumber] = useState(1);
   const [group, setGroup] = useState("");
+  const [editingGradeId, setEditingGradeId] = useState("");
   
   // Search in AddForm
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
@@ -125,6 +127,62 @@ const GradesByGrade = () => {
       title: "✅ تم إضافة الدرجة",
       description: `تم إضافة درجة للطالب ${student.name} بنجاح`,
     });
+  };
+
+  const handleEditGrade = (grade: Grade) => {
+    setEditingGradeId(grade.id);
+    setSelectedStudentId(grade.studentId);
+    setExamName(grade.examName);
+    setScore(grade.score);
+    setTotalScore(grade.totalScore);
+    setLessonNumber(grade.lessonNumber || 1);
+    setGroup(grade.group || "");
+    setShowEditForm(true);
+  };
+
+  const handleUpdateGrade = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const student = students.find(s => s.id === selectedStudentId);
+    if (!student || !editingGradeId) return;
+    
+    // Use the updated updateGrade method from DataContext
+    useData().updateGrade(
+      editingGradeId,
+      student.id,
+      student.name,
+      examName,
+      score,
+      totalScore,
+      lessonNumber,
+      group
+    );
+    
+    // Reset form and close modal
+    setEditingGradeId("");
+    setSelectedStudentId("");
+    setExamName("");
+    setScore(0);
+    setTotalScore(100);
+    setLessonNumber(1);
+    setGroup("");
+    setShowEditForm(false);
+    
+    toast({
+      title: "✅ تم تحديث الدرجة",
+      description: `تم تحديث درجة للطالب ${student.name} بنجاح`,
+    });
+  };
+
+  const handleDeleteGrade = (gradeId: string, studentName: string) => {
+    if (confirm(`هل أنت متأكد من حذف درجة الطالب ${studentName}؟`)) {
+      useData().deleteGrade(gradeId);
+      
+      toast({
+        title: "✅ تم حذف الدرجة",
+        description: `تم حذف درجة للطالب ${studentName} بنجاح`,
+      });
+    }
   };
   
   // Filter grades for the selected grade level
@@ -234,6 +292,7 @@ const GradesByGrade = () => {
                     <TableHead className="text-right">رقم الحصة</TableHead>
                     <TableHead className="text-right">المجموعة</TableHead>
                     <TableHead className="text-right">التاريخ</TableHead>
+                    <TableHead className="text-center">خيارات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -250,6 +309,24 @@ const GradesByGrade = () => {
                         <TableCell className="text-white">الحصة {grade.lessonNumber || 1}</TableCell>
                         <TableCell className="text-white">{grade.group || "—"}</TableCell>
                         <TableCell className="text-white">{formatDate(grade.date)}</TableCell>
+                        <TableCell>
+                          <div className="flex justify-center gap-2">
+                            <button 
+                              onClick={() => handleEditGrade(grade)}
+                              className="p-1 text-physics-gold hover:text-yellow-400"
+                              title="تعديل"
+                            >
+                              <Edit size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteGrade(grade.id, grade.studentName)}
+                              className="p-1 text-red-400 hover:text-red-500"
+                              title="حذف"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -404,6 +481,122 @@ const GradesByGrade = () => {
                   type="button" 
                   className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
                   onClick={() => setShowAddForm(false)}
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Grade Modal */}
+      {showEditForm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-physics-gold">تعديل الدرجة</h2>
+              <button 
+                onClick={() => setShowEditForm(false)}
+                className="text-white hover:text-physics-gold"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateGrade} className="space-y-4">
+              {/* عرض الطالب المختار (لا يمكن تغييره في التعديل) */}
+              <div>
+                <label className="block text-white mb-1">الطالب</label>
+                <div className="bg-physics-navy/50 p-3 rounded">
+                  <p className="text-physics-gold">
+                    {students.find(s => s.id === selectedStudentId)?.name}
+                    {" - كود: "}
+                    {students.find(s => s.id === selectedStudentId)?.code}
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">عنوان الاختبار</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={examName}
+                  onChange={(e) => setExamName(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">المجموعة</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={group}
+                  onChange={(e) => setGroup(e.target.value)}
+                  placeholder="أدخل اسم المجموعة"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white mb-1">رقم الحصة</label>
+                  <select
+                    className="inputField"
+                    value={lessonNumber}
+                    onChange={(e) => setLessonNumber(Number(e.target.value))}
+                    required
+                  >
+                    <option value={1}>الحصة الأولى</option>
+                    <option value={2}>الحصة الثانية</option>
+                    <option value={3}>الحصة الثالثة</option>
+                    <option value={4}>الحصة الرابعة</option>
+                    <option value={5}>الحصة الخامسة</option>
+                    <option value={6}>الحصة السادسة</option>
+                    <option value={7}>الحصة السابعة</option>
+                    <option value={8}>الحصة الثامنة</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-white mb-1">الدرجة الكلية</label>
+                  <input
+                    type="number"
+                    className="inputField"
+                    value={totalScore}
+                    onChange={(e) => setTotalScore(Number(e.target.value))}
+                    min={1}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">الدرجة المحصلة</label>
+                <input
+                  type="number"
+                  className="inputField"
+                  value={score}
+                  onChange={(e) => setScore(Number(e.target.value))}
+                  min={0}
+                  max={totalScore}
+                  required
+                />
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button 
+                  type="submit" 
+                  className="goldBtn flex-1"
+                >
+                  حفظ التعديلات
+                </button>
+                <button 
+                  type="button" 
+                  className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
+                  onClick={() => setShowEditForm(false)}
                 >
                   إلغاء
                 </button>

@@ -1,35 +1,48 @@
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, UserPlus, Search, Edit, Trash2, Filter } from "lucide-react";
-import { Student } from "@/types";
-import { getGradeDisplay, sanitizeSearchText } from "@/lib/utils";
+import { PhoneContact } from "@/components/PhoneContact";
+import { ArrowRight, Search, UserPlus, X } from "lucide-react";
+import { Student, Parent } from "@/types";
 import { toast } from "@/hooks/use-toast";
+import { sanitizeSearchText } from "@/lib/utils";
 
 const StudentsManagement = () => {
-  const { getAllStudents, createStudent, deleteStudent, updateStudent } = useAuth();
   const navigate = useNavigate();
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchField, setSearchField] = useState<"all" | "name" | "phone" | "code" | "group">("all");
+  const { createStudent, getAllStudents, getAllParents } = useAuth();
+  
   const [students, setStudents] = useState<Student[]>([]);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [parents, setParents] = useState<Parent[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState<"all" | "name" | "code" | "phone" | "group" | "grade">("all");
+  const [newStudentInfo, setNewStudentInfo] = useState<{
+    name: string;
+    code: string;
+    password: string;
+    grade: string;
+  } | null>(null);
   
   // Form state
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+  const [grade, setGrade] = useState<"first" | "second" | "third">("first");
   const [parentPhone, setParentPhone] = useState("");
   const [group, setGroup] = useState("");
-  const [grade, setGrade] = useState<"first" | "second" | "third">("first");
   
   useEffect(() => {
-    // Load students when component mounts
+    loadStudents();
+    loadParents();
+  }, []);
+  
+  const loadStudents = () => {
     setStudents(getAllStudents());
-  }, [getAllStudents]);
+  };
+  
+  const loadParents = () => {
+    setParents(getAllParents());
+  };
   
   const filteredStudents = students.filter(student => {
     const query = sanitizeSearchText(searchQuery);
@@ -38,85 +51,77 @@ const StudentsManagement = () => {
     switch (searchField) {
       case "name":
         return sanitizeSearchText(student.name).includes(query);
-      case "phone":
-        return student.phone ? sanitizeSearchText(student.phone).includes(query) : false;
       case "code":
-        return sanitizeSearchText(student.code).includes(query);
+        return student.code ? sanitizeSearchText(student.code).includes(query) : false;
+      case "phone":
+        return student.parentPhone ? sanitizeSearchText(student.parentPhone).includes(query) : false;
       case "group":
         return student.group ? sanitizeSearchText(student.group).includes(query) : false;
+      case "grade":
+        return student.grade === "first" && "الأول".includes(query) || 
+               student.grade === "second" && "الثاني".includes(query) ||
+               student.grade === "third" && "الثالث".includes(query);
       case "all":
       default:
         return (
           sanitizeSearchText(student.name).includes(query) ||
-          (student.phone ? sanitizeSearchText(student.phone).includes(query) : false) ||
-          sanitizeSearchText(student.code).includes(query) ||
-          (student.group ? sanitizeSearchText(student.group).includes(query) : false)
+          (student.code && sanitizeSearchText(student.code).includes(query)) ||
+          (student.parentPhone && sanitizeSearchText(student.parentPhone).includes(query)) ||
+          (student.group && sanitizeSearchText(student.group).includes(query)) ||
+          (student.grade === "first" && "الأول".includes(query)) ||
+          (student.grade === "second" && "الثاني".includes(query)) ||
+          (student.grade === "third" && "الثالث".includes(query))
         );
     }
   });
   
+  const getGradeDisplay = (grade: "first" | "second" | "third") => {
+    switch (grade) {
+      case "first": return "الأول الثانوي";
+      case "second": return "الثاني الثانوي";
+      case "third": return "الثالث الثانوي";
+      default: return "";
+    }
+  };
+  
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
-    const newStudent = createStudent(name, phone, parentPhone, group, grade);
-    setStudents(getAllStudents()); // Refresh list
-    setName("");
-    setPhone("");
-    setParentPhone("");
-    setGroup("");
-    setGrade("first");
-    setShowAddForm(false);
-  };
-  
-  const handleEditClick = (student: Student) => {
-    setEditingStudent(student);
-    setName(student.name);
-    setPhone(student.phone || "");
-    setPassword(student.password || "");
-    setParentPhone(student.parentPhone || "");
-    setGroup(student.group || "");
-    setGrade(student.grade);
-    setShowEditForm(true);
-  };
-  
-  const handleUpdateStudent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingStudent) return;
     
-    updateStudent(
-      editingStudent.id,
-      name,
-      phone,
-      password,
-      parentPhone,
-      group,
-      grade
-    );
-    
-    setStudents(getAllStudents()); // Refresh list
-    setShowEditForm(false);
-    setEditingStudent(null);
-    
-    toast({
-      title: "تم تحديث بيانات الطالب",
-      description: `تم تحديث بيانات الطالب ${name} بنجاح`,
-    });
-  };
-  
-  const handleDeleteStudent = (studentId: string, studentName: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف الطالب ${studentName}؟`)) {
-      deleteStudent(studentId);
-      setStudents(getAllStudents()); // Refresh list
+    try {
+      const newStudent = createStudent(name, grade, parentPhone, group);
       
+      // Show info about the newly created student
+      setNewStudentInfo({
+        name: newStudent.name,
+        code: newStudent.code || "",
+        password: newStudent.password || "",
+        grade: getGradeDisplay(newStudent.grade)
+      });
+      
+      // Update students list
+      loadStudents();
+      
+      // Reset form
+      setName("");
+      setGrade("first");
+      setParentPhone("");
+      setGroup("");
+      setShowAddForm(false);
+      
+    } catch (error) {
+      console.error("Error creating student:", error);
       toast({
-        title: "تم حذف الطالب",
-        description: `تم حذف الطالب ${studentName} بنجاح`,
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء إنشاء حساب الطالب",
         variant: "destructive",
       });
     }
   };
   
   return (
-    <div className="min-h-screen bg-transparent flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col">
+      <PhoneContact />
+      
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
@@ -132,8 +137,8 @@ const StudentsManagement = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 relative z-10">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-1 p-6">
+        <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة الطلاب</h1>
             <button 
@@ -141,7 +146,7 @@ const StudentsManagement = () => {
               className="goldBtn flex items-center gap-2"
             >
               <UserPlus size={18} />
-              <span>إضافة طالب</span>
+              <span>إضافة طالب جديد</span>
             </button>
           </div>
           
@@ -155,9 +160,10 @@ const StudentsManagement = () => {
               >
                 <option value="all">بحث في كل الحقول</option>
                 <option value="name">بحث بالاسم</option>
-                <option value="phone">بحث برقم الهاتف</option>
                 <option value="code">بحث بالكود</option>
+                <option value="phone">بحث برقم الهاتف</option>
                 <option value="group">بحث بالمجموعة</option>
+                <option value="grade">بحث بالصف</option>
               </select>
             </div>
             
@@ -185,39 +191,22 @@ const StudentsManagement = () => {
                   <thead>
                     <tr className="bg-physics-navy/50 text-physics-gold">
                       <th className="text-right py-3 px-4">الاسم</th>
-                      <th className="text-right py-3 px-4">الهاتف</th>
-                      <th className="text-right py-3 px-4">الكود</th>
-                      <th className="text-right py-3 px-4">المجموعة</th>
                       <th className="text-right py-3 px-4">الصف</th>
-                      <th className="text-right py-3 px-4">هاتف ولي الأمر</th>
-                      <th className="text-center py-3 px-4">خيارات</th>
+                      <th className="text-right py-3 px-4">كود الطالب</th>
+                      <th className="text-right py-3 px-4">كلمة المرور</th>
+                      <th className="text-right py-3 px-4">رقم ولي الأمر</th>
+                      <th className="text-right py-3 px-4">المجموعة</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredStudents.map((student) => (
                       <tr key={student.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
                         <td className="py-3 px-4 text-white">{student.name}</td>
-                        <td className="py-3 px-4 text-white">{student.phone}</td>
-                        <td className="py-3 px-4 text-white">{student.code}</td>
-                        <td className="py-3 px-4 text-white">{student.group || "—"}</td>
                         <td className="py-3 px-4 text-white">{getGradeDisplay(student.grade)}</td>
-                        <td className="py-3 px-4 text-white">{student.parentPhone}</td>
-                        <td className="py-3 px-4 text-white text-center">
-                          <div className="flex justify-center gap-2">
-                            <button 
-                              className="p-1 text-physics-gold hover:text-physics-lightgold"
-                              onClick={() => handleEditClick(student)}
-                            >
-                              <Edit size={18} />
-                            </button>
-                            <button 
-                              className="p-1 text-red-400 hover:text-red-500"
-                              onClick={() => handleDeleteStudent(student.id, student.name)}
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
+                        <td className="py-3 px-4 text-white">{student.code}</td>
+                        <td className="py-3 px-4 text-white font-bold text-physics-gold">{student.password}</td>
+                        <td className="py-3 px-4 text-white">{student.parentPhone || "—"}</td>
+                        <td className="py-3 px-4 text-white">{student.group || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -232,7 +221,15 @@ const StudentsManagement = () => {
       {showAddForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">إضافة طالب جديد</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-physics-gold">إضافة طالب جديد</h2>
+              <button 
+                onClick={() => setShowAddForm(false)}
+                className="text-white hover:text-physics-gold"
+              >
+                <X size={20} />
+              </button>
+            </div>
             
             <form onSubmit={handleAddStudent} className="space-y-4">
               <div>
@@ -247,13 +244,27 @@ const StudentsManagement = () => {
               </div>
               
               <div>
-                <label className="block text-white mb-1">رقم الهاتف</label>
+                <label className="block text-white mb-1">الصف</label>
+                <select
+                  className="inputField"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value as "first" | "second" | "third")}
+                  required
+                >
+                  <option value="first">الصف الأول الثانوي</option>
+                  <option value="second">الصف الثاني الثانوي</option>
+                  <option value="third">الصف الثالث الثانوي</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">المجموعة</label>
                 <input
                   type="text"
                   className="inputField"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
+                  value={group}
+                  onChange={(e) => setGroup(e.target.value)}
+                  placeholder="اختياري"
                 />
               </div>
               
@@ -264,46 +275,16 @@ const StudentsManagement = () => {
                   className="inputField"
                   value={parentPhone}
                   onChange={(e) => setParentPhone(e.target.value)}
-                  required
+                  placeholder="اختياري"
                 />
               </div>
               
-              <div>
-                <label className="block text-white mb-1">المجموعة</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={group}
-                  onChange={(e) => setGroup(e.target.value)}
-                  required
-                  placeholder="أدخل اسم المجموعة"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">الصف الدراسي</label>
-                <select
-                  className="inputField"
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value as any)}
-                  required
-                >
-                  <option value="first">الصف الأول الثانوي</option>
-                  <option value="second">الصف الثاني الثانوي</option>
-                  <option value="third">الصف الثالث الثانوي</option>
-                </select>
-              </div>
-              
-              <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1">
-                  إضافة الطالب
-                </button>
+              <div className="pt-4">
                 <button 
-                  type="button" 
-                  className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
-                  onClick={() => setShowAddForm(false)}
+                  type="submit" 
+                  className="goldBtn w-full"
                 >
-                  إلغاء
+                  إضافة الطالب
                 </button>
               </div>
             </form>
@@ -311,85 +292,37 @@ const StudentsManagement = () => {
         </div>
       )}
       
-      {/* Edit Student Modal */}
-      {showEditForm && editingStudent && (
+      {/* Show New Student Info Modal */}
+      {newStudentInfo && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">تعديل بيانات الطالب</h2>
+            <h2 className="text-xl font-bold text-physics-gold mb-4">تم إنشاء حساب الطالب بنجاح</h2>
             
-            <form onSubmit={handleUpdateStudent} className="space-y-4">
+            <div className="space-y-3 mb-6">
               <div>
-                <label className="block text-white mb-1">اسم الطالب</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+                <p className="text-sm text-gray-300">اسم الطالب:</p>
+                <p className="text-white font-bold">{newStudentInfo.name}</p>
               </div>
-              
               <div>
-                <label className="block text-white mb-1">رقم الهاتف</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
+                <p className="text-sm text-gray-300">الصف:</p>
+                <p className="text-white font-bold">{newStudentInfo.grade}</p>
               </div>
-              
               <div>
-                <label className="block text-white mb-1">رقم هاتف ولي الأمر</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={parentPhone}
-                  onChange={(e) => setParentPhone(e.target.value)}
-                  required
-                />
+                <p className="text-sm text-gray-300">كود الطالب:</p>
+                <p className="text-white font-bold">{newStudentInfo.code}</p>
               </div>
-              
               <div>
-                <label className="block text-white mb-1">المجموعة</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={group}
-                  onChange={(e) => setGroup(e.target.value)}
-                  required
-                  placeholder="أدخل اسم المجموعة"
-                />
+                <p className="text-sm text-gray-300">كلمة المرور:</p>
+                <p className="text-physics-gold text-xl font-bold">{newStudentInfo.password}</p>
               </div>
-              
-              <div>
-                <label className="block text-white mb-1">الصف الدراسي</label>
-                <select
-                  className="inputField"
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value as any)}
-                  required
-                >
-                  <option value="first">الصف الأول الثانوي</option>
-                  <option value="second">الصف الثاني الثانوي</option>
-                  <option value="third">الصف الثالث الثانوي</option>
-                </select>
-              </div>
-              
-              <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1">
-                  حفظ التغييرات
-                </button>
-                <button 
-                  type="button" 
-                  className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
-                  onClick={() => setShowEditForm(false)}
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
+            </div>
+            
+            <button 
+              className="goldBtn w-full"
+              onClick={() => setNewStudentInfo(null)}
+            >
+              موافق
+            </button>
           </div>
         </div>
       )}

@@ -16,6 +16,12 @@ const ParentsManagement = () => {
   const [searchField, setSearchField] = useState<"all" | "name" | "phone" | "code" | "group">("all");
   const [parents, setParents] = useState<Parent[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [newParentInfo, setNewParentInfo] = useState<{
+    name: string;
+    phone: string;
+    studentName: string;
+    password: string;
+  } | null>(null);
   
   // Form state
   const [phone, setPhone] = useState("");
@@ -76,6 +82,14 @@ const ParentsManagement = () => {
       // Create parent
       const newParent = createParent(phone, studentCode);
       
+      // Show info about the newly created parent
+      setNewParentInfo({
+        name: `ولي أمر ${student.name}`,
+        phone: phone,
+        studentName: student.name,
+        password: newParent.password
+      });
+      
       // Update list
       setParents(getAllParents());
       
@@ -83,6 +97,11 @@ const ParentsManagement = () => {
       setPhone("");
       setStudentCode("");
       setShowAddForm(false);
+      
+      toast({
+        title: "✅ تم إنشاء حساب ولي الأمر",
+        description: `تم إنشاء حساب ولي أمر للطالب ${student.name} بنجاح`,
+      });
       
     } catch (error) {
       console.error("Error creating parent:", error);
@@ -189,7 +208,7 @@ const ParentsManagement = () => {
                         <td className="py-3 px-4 text-white">{parent.studentCode}</td>
                         <td className="py-3 px-4 text-white">{parent.studentName}</td>
                         <td className="py-3 px-4 text-white">{getStudentGroupByCode(parent.studentCode) || "—"}</td>
-                        <td className="py-3 px-4 text-white">{parent.password}</td>
+                        <td className="py-3 px-4 text-white font-bold text-physics-gold">{parent.password}</td>
                         <td className="py-3 px-4 text-white text-center">
                           <div className="flex justify-center gap-2">
                             <button 
@@ -207,6 +226,41 @@ const ParentsManagement = () => {
               </div>
             )}
           </div>
+          
+          {/* Show New Parent Info Modal */}
+          {newParentInfo && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-xl font-bold text-physics-gold mb-4">تم إنشاء حساب ولي الأمر بنجاح</h2>
+                
+                <div className="space-y-3 mb-6">
+                  <div>
+                    <p className="text-sm text-gray-300">اسم المستخدم:</p>
+                    <p className="text-white font-bold">{newParentInfo.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300">رقم الهاتف:</p>
+                    <p className="text-white font-bold">{newParentInfo.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300">اسم الطالب:</p>
+                    <p className="text-white font-bold">{newParentInfo.studentName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300">كلمة المرور:</p>
+                    <p className="text-physics-gold text-xl font-bold">{newParentInfo.password}</p>
+                  </div>
+                </div>
+                
+                <button 
+                  className="goldBtn w-full"
+                  onClick={() => setNewParentInfo(null)}
+                >
+                  موافق
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
       
