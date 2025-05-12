@@ -1,222 +1,224 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import PhysicsBackground from "@/components/PhysicsBackground";
-import { 
-  BookOpen, Video, UserCheck, QrCode, Users, User, 
-  LogOut, BookCopy, CheckSquare, GraduationCap, DollarSign
+import {
+  Users,
+  UserPlus,
+  QrCode,
+  Video,
+  Book,
+  LogOut,
+  CheckSquare,
+  Award,
+  DollarSign,
+  UserCheck,
+  RefreshCcw
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import PhysicsBackground from "@/components/PhysicsBackground";
+
+const DashboardItem = ({
+  to,
+  icon,
+  title,
+  description,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) => {
+  return (
+    <Link
+      to={to}
+      className="bg-physics-dark rounded-lg p-6 hover:bg-physics-dark/70 transition-all flex flex-col items-center"
+    >
+      <div className="h-16 w-16 rounded-full bg-physics-navy flex items-center justify-center text-physics-gold mb-4">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold text-physics-gold mb-2">{title}</h3>
+      <p className="text-white text-center">{description}</p>
+    </Link>
+  );
+};
 
 const Dashboard = () => {
-  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [studentInfo, setStudentInfo] = useState({
-    name: "",
-    code: "",
-    group: "",
-    grade: ""
-  });
-
+  const { currentUser, logout } = useAuth();
+  
   useEffect(() => {
     if (!currentUser) {
       navigate("/login");
-      return;
-    }
-
-    // Load student information if the user is a student
-    if (currentUser.role === "student") {
-      setStudentInfo({
-        name: currentUser.name,
-        code: currentUser.code || "",
-        group: currentUser.group || "",
-        grade: currentUser.grade || "first"
-      });
     }
   }, [currentUser, navigate]);
 
   const handleLogout = () => {
-    // Instead of trying to play a sound that might not exist, just log out directly
     logout();
-    navigate("/login");
+    navigate("/");
   };
-
+  
   if (!currentUser) return null;
-
-  const getGradeDisplay = (grade?: "first" | "second" | "third") => {
-    switch (grade) {
-      case "first": return "الصف الأول الثانوي";
-      case "second": return "الصف الثاني الثانوي";
-      case "third": return "الصف الثالث الثانوي";
-      default: return "";
-    }
-  };
-
+  
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
       <PhysicsBackground />
       <PhoneContact />
       
-      {/* Header */}
-      <header className="bg-physics-dark/80 py-4 px-6 flex items-center justify-between relative z-10">
+      {/* Header with User Info */}
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
-          <Logo />
-        </div>
-        <div className="flex items-center">
-          <div className="text-white ml-4">
-            <p className="font-bold">{currentUser.name}</p>
-            <p className="text-sm opacity-80">
-              {currentUser.role === "admin" ? "مسؤول النظام" : 
-               currentUser.role === "student" ? "طالب" : "ولي أمر"}
-            </p>
-            {currentUser.role === "student" && (
-              <div className="text-sm opacity-80 flex flex-col sm:flex-row sm:gap-2">
-                <span>الكود: {studentInfo.code}</span>
-                <span>المجموعة: {studentInfo.group}</span>
-                <span>{getGradeDisplay(currentUser.grade)}</span>
-              </div>
-            )}
+          <div className="text-physics-gold font-bold text-lg ml-2">
+            {currentUser.name}
           </div>
-          <button 
-            onClick={handleLogout}
-            className="p-2 text-white hover:text-physics-gold"
-          >
-            <LogOut size={20} />
-          </button>
+          <div className="bg-physics-gold/20 rounded-full px-3 py-1 text-sm text-physics-gold">
+            {currentUser.role === "admin" ? "مسؤول النظام" : 
+             currentUser.role === "student" ? "طالب" : "ولي أمر"}
+          </div>
         </div>
+        
+        <Logo />
+        
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-physics-gold hover:opacity-80"
+        >
+          <span>تسجيل الخروج</span>
+          <LogOut size={20} />
+        </button>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - Dashboard */}
       <main className="flex-1 p-6 relative z-10">
-        <h1 className="text-3xl font-bold text-physics-gold mb-8 text-center">الصفحة الرئيسية</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-2xl font-bold text-physics-gold mb-8">لوحة التحكم</h1>
+          
           {currentUser.role === "admin" && (
             <>
-              <DashboardCard 
-                title="إدارة الطلاب"
-                icon={<Users className="h-10 w-10" />}
-                onClick={() => navigate("/students")}
-              />
+              <h2 className="text-xl font-bold text-white mb-4">إدارة النظام</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <DashboardItem
+                  to="/students"
+                  icon={<Users size={32} />}
+                  title="إدارة الطلاب"
+                  description="إضافة وتعديل وحذف بيانات الطلاب"
+                />
+                <DashboardItem
+                  to="/parents"
+                  icon={<UserPlus size={32} />}
+                  title="إدارة أولياء الأمور"
+                  description="إضافة حسابات لأولياء الأمور"
+                />
+                <DashboardItem
+                  to="/scan-code"
+                  icon={<QrCode size={32} />}
+                  title="تسجيل الحضور"
+                  description="مسح كود الطلاب وتسجيل الحضور"
+                />
+              </div>
               
-              <DashboardCard 
-                title="إدارة أولياء الأمور"
-                icon={<User className="h-10 w-10" />}
-                onClick={() => navigate("/parents")}
-              />
+              <h2 className="text-xl font-bold text-white mb-4">متابعة الطلاب</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <DashboardItem
+                  to="/attendance-list"
+                  icon={<UserCheck size={32} />}
+                  title="سجل الحضور"
+                  description="عرض وإدارة سجل حضور الطلاب"
+                />
+                <DashboardItem
+                  to="/grades-management"
+                  icon={<Award size={32} />}
+                  title="سجل الدرجات"
+                  description="إدخال وعرض درجات الطلاب"
+                />
+                <DashboardItem
+                  to="/payments"
+                  icon={<DollarSign size={32} />}
+                  title="إدارة المدفوعات"
+                  description="تسجيل ومتابعة مدفوعات الطلاب"
+                />
+              </div>
               
-              <DashboardCard 
-                title="تسجيل الحضور"
-                icon={<QrCode className="h-10 w-10" />}
-                onClick={() => navigate("/scan-code")}
-              />
-              
-              <DashboardCard 
-                title="سجلات الحضور"
-                icon={<CheckSquare className="h-10 w-10" />}
-                onClick={() => navigate("/attendance-list")}
-              />
-              
-              <DashboardCard 
-                title="سجلات الدرجات"
-                icon={<GraduationCap className="h-10 w-10" />}
-                onClick={() => navigate("/grades-management")}
-              />
-              
-              <DashboardCard 
-                title="إدارة المدفوعات"
-                icon={<DollarSign className="h-10 w-10" />}
-                onClick={() => navigate("/payments")}
-              />
-              
-              <DashboardCard 
-                title="الفيديوهات التعليمية"
-                icon={<Video className="h-10 w-10" />}
-                onClick={() => navigate("/videos")}
-              />
-              
-              <DashboardCard 
-                title="الكتب والملفات"
-                icon={<BookOpen className="h-10 w-10" />}
-                onClick={() => navigate("/books")}
-              />
+              <h2 className="text-xl font-bold text-white mb-4">المحتوى التعليمي</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <DashboardItem
+                  to="/videos"
+                  icon={<Video size={32} />}
+                  title="الفيديوهات"
+                  description="إدارة وعرض الدروس المرئية"
+                />
+                <DashboardItem
+                  to="/books"
+                  icon={<Book size={32} />}
+                  title="الكتب والملفات"
+                  description="رفع وإدارة الملفات التعليمية"
+                />
+                <DashboardItem
+                  to="/system-reset"
+                  icon={<RefreshCcw size={32} />}
+                  title="إعادة تعيين النظام"
+                  description="إعادة ضبط بيانات النظام حسب الصف"
+                />
+              </div>
             </>
           )}
           
           {currentUser.role === "student" && (
-            <>
-              <DashboardCard 
-                title="الكود الشخصي"
-                icon={<QrCode className="h-10 w-10" />}
-                onClick={() => navigate("/student-code")}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <DashboardItem
+                to="/student-code"
+                icon={<QrCode size={32} />}
+                title="كود الطالب"
+                description="عرض الكود الخاص بك لتسجيل الحضور"
               />
-              
-              <DashboardCard 
+              <DashboardItem
+                to="/student-grades"
+                icon={<Award size={32} />}
+                title="الدرجات"
+                description="عرض الدرجات والتقييمات"
+              />
+              <DashboardItem
+                to="/attendance-record"
+                icon={<CheckSquare size={32} />}
                 title="سجل الحضور"
-                icon={<CheckSquare className="h-10 w-10" />}
-                onClick={() => navigate("/attendance-record")}
+                description="عرض سجل الحضور الخاص بك"
               />
-              
-              <DashboardCard 
-                title="سجل الدرجات"
-                icon={<GraduationCap className="h-10 w-10" />}
-                onClick={() => navigate("/grades")}
+              <DashboardItem
+                to="/videos"
+                icon={<Video size={32} />}
+                title="الفيديوهات"
+                description="مشاهدة الفيديوهات التعليمية"
               />
-              
-              <DashboardCard 
-                title="الفيديوهات التعليمية"
-                icon={<Video className="h-10 w-10" />}
-                onClick={() => navigate("/videos")}
-              />
-              
-              <DashboardCard 
+              <DashboardItem
+                to="/books"
+                icon={<Book size={32} />}
                 title="الكتب والملفات"
-                icon={<BookOpen className="h-10 w-10" />}
-                onClick={() => navigate("/books")}
+                description="تحميل المذكرات والملفات التعليمية"
               />
-            </>
+            </div>
           )}
           
           {currentUser.role === "parent" && (
-            <>
-              <DashboardCard 
-                title="سجل حضور الطالب"
-                icon={<UserCheck className="h-10 w-10" />}
-                onClick={() => navigate("/attendance-record")}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <DashboardItem
+                to="/grades"
+                icon={<Award size={32} />}
+                title="الدرجات"
+                description="عرض درجات الطالب"
               />
-              
-              <DashboardCard 
-                title="سجل درجات الطالب"
-                icon={<BookCopy className="h-10 w-10" />}
-                onClick={() => navigate("/grades")}
+              <DashboardItem
+                to="/attendance-record"
+                icon={<CheckSquare size={32} />}
+                title="سجل الحضور"
+                description="عرض سجل حضور الطالب"
               />
-            </>
+            </div>
           )}
         </div>
       </main>
     </div>
-  );
-};
-
-interface DashboardCardProps {
-  title: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}
-
-const DashboardCard = ({ title, icon, onClick }: DashboardCardProps) => {
-  return (
-    <button
-      onClick={onClick}
-      className="bg-physics-dark/80 hover:bg-physics-dark rounded-xl p-6 flex flex-col items-center justify-center transition-transform transform hover:scale-105"
-    >
-      <div className="bg-physics-gold/20 p-4 rounded-full mb-4 text-physics-gold">
-        {icon}
-      </div>
-      <h2 className="text-xl font-bold text-white">{title}</h2>
-    </button>
   );
 };
 

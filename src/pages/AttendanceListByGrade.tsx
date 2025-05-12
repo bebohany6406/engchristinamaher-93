@@ -4,8 +4,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, CheckCircle, XCircle, Filter, Search } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { ArrowRight, CheckCircle, XCircle, Filter, Search, Trash2, Users } from "lucide-react";
+import { formatDate, getGradeDisplay } from "@/lib/utils";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
 import {
@@ -18,15 +18,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Student, Attendance } from "@/types";
+import { toast } from "@/hooks/use-toast";
 
 const AttendanceListByGrade = () => {
   const navigate = useNavigate();
   const { grade = "first" } = useParams<{ grade: "first" | "second" | "third" }>();
   const { currentUser, getAllStudents } = useAuth();
-  const { getStudentAttendance } = useData();
+  const { getStudentAttendance, deleteAttendanceRecord } = useData();
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
-  const [filter, setFilter] = useState<"all" | "present" | "absent">("all");
+  const [filter, setFilter] = useState<"all" | "present" | "absent" | "unregistered">("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
   
   useEffect(() => {
@@ -47,25 +48,47 @@ const AttendanceListByGrade = () => {
     setAttendanceRecords(records);
   }, [currentUser, getAllStudents, getStudentAttendance, grade]);
   
-  const filteredRecords = attendanceRecords.filter(record => {
-    // Apply status filter
-    if (filter !== "all" && record.status !== filter) {
-      return false;
-    }
-    
-    // Apply search filter if provided
-    if (searchTerm.trim() !== "") {
-      const student = students.find(s => s.id === record.studentId);
-      const searchLower = searchTerm.toLowerCase();
-      
-      return (
-        record.studentName.toLowerCase().includes(searchLower) ||
-        student?.code.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    return true;
+  // Check for unregistered students (students without attendance records)
+  const studentsWithoutAttendance = students.filter(student => {
+    return !attendanceRecords.some(record => record.studentId === student.id);
   });
+  
+  const handleDeleteRecord = (recordId: string, studentName: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف سجل الحضور للطالب ${studentName}؟`)) {
+      deleteAttendanceRecord(recordId);
+      
+      // تحديث القائمة بعد الحذف
+      setAttendanceRecords(prev => prev.filter(record => record.id !== recordId));
+      
+      toast({
+        title: "تم الحذف",
+        description: `تم حذف سجل الحضور للطالب ${studentName} بنجاح`,
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const filteredRecords = filter === "unregistered" 
+    ? [] // If filter is unregistered, we'll display a different view
+    : attendanceRecords.filter(record => {
+        // Apply status filter
+        if (filter !== "all" && record.status !== filter) {
+          return false;
+        }
+        
+        // Apply search filter if provided
+        if (searchTerm.trim() !== "") {
+          const student = students.find(s => s.id === record.studentId);
+          const searchLower = searchTerm.toLowerCase();
+          
+          return (
+            record.studentName.toLowerCase().includes(searchLower) ||
+            student?.code.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        return true;
+      });
 
   const getGradeTitle = () => {
     switch (grade) {
@@ -108,32 +131,70 @@ const AttendanceListByGrade = () => {
             <div className="flex items-center gap-2 bg-physics-dark rounded-lg p-2">
               <Filter className="text-physics-gold" size={20} />
               <select 
-                className="bg-transparent text-white border-none outline-none"
+                className="bg-physics-dark text-white border-none outline-none"
                 value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
+                onChange={(e) => setFilter(e.target.value as "all" | "present" | "absent" | "unregistered")}
               >
                 <option value="all">الكل</option>
                 <option value="present">الحاضرين</option>
                 <option value="absent">الغائبين</option>
+                <option value="unregistered">الطلاب الغير مسجلين</option>
               </select>
             </div>
           </div>
           
           {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="بحث باسم الطالب أو الكود..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="inputField pl-10"
-              />
-              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+          {filter !== "unregistered" && (
+            <div className="mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="بحث باسم الطالب أو الكود..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="inputField pl-10"
+                />
+                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+              </div>
             </div>
-          </div>
+          )}
           
-          {filteredRecords.length === 0 ? (
+          {filter === "unregistered" ? (
+            // عرض الطلاب الغير مسجلين
+            <div className="bg-physics-dark rounded-lg overflow-hidden">
+              <div className="p-4 bg-physics-navy/50 border-b border-physics-navy flex items-center">
+                <Users className="text-physics-gold mr-2" size={20} />
+                <h2 className="text-physics-gold">الطلاب الغير مسجلين</h2>
+              </div>
+              
+              {studentsWithoutAttendance.length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="text-white text-lg">جميع الطلاب مسجلين في سجل الحضور</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-physics-navy/50">
+                      <TableHead className="text-right text-physics-gold">اسم الطالب</TableHead>
+                      <TableHead className="text-right text-physics-gold">الكود</TableHead>
+                      <TableHead className="text-right text-physics-gold">المجموعة</TableHead>
+                      <TableHead className="text-right text-physics-gold">الصف الدراسي</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {studentsWithoutAttendance.map(student => (
+                      <TableRow key={student.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
+                        <TableCell className="text-white">{student.name}</TableCell>
+                        <TableCell className="text-white">{student.code}</TableCell>
+                        <TableCell className="text-white">{student.group || "غير محدد"}</TableCell>
+                        <TableCell className="text-white">{getGradeDisplay(student.grade)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          ) : filteredRecords.length === 0 ? (
             <div className="bg-physics-dark rounded-lg p-6 text-center">
               <p className="text-white text-lg">لا توجد سجلات حضور متاحة</p>
             </div>
@@ -144,11 +205,13 @@ const AttendanceListByGrade = () => {
                   <TableRow className="bg-physics-navy/50 text-physics-gold hover:bg-physics-navy/50">
                     <TableHead className="text-right">الطالب</TableHead>
                     <TableHead className="text-right">الكود</TableHead>
+                    <TableHead className="text-right">الصف الدراسي</TableHead>
                     <TableHead className="text-right">المجموعة</TableHead>
                     <TableHead className="text-right">التاريخ</TableHead>
                     <TableHead className="text-right">الوقت</TableHead>
                     <TableHead className="text-right">رقم الحصة</TableHead>
                     <TableHead className="text-center">الحالة</TableHead>
+                    <TableHead className="text-center">خيارات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -159,6 +222,7 @@ const AttendanceListByGrade = () => {
                       <TableRow key={record.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
                         <TableCell className="text-white">{record.studentName}</TableCell>
                         <TableCell className="text-white">{student?.code || ""}</TableCell>
+                        <TableCell className="text-white">{student ? getGradeDisplay(student.grade) : ""}</TableCell>
                         <TableCell className="text-white">{student?.group || "غير محدد"}</TableCell>
                         <TableCell className="text-white">{formatDate(record.date)}</TableCell>
                         <TableCell className="text-white">{record.time || "غير متاح"}</TableCell>
@@ -175,6 +239,15 @@ const AttendanceListByGrade = () => {
                               <span>غائب</span>
                             </div>
                           )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <button 
+                            onClick={() => handleDeleteRecord(record.id, record.studentName)}
+                            className="p-1 text-red-400 hover:text-red-500"
+                            title="حذف السجل"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </TableCell>
                       </TableRow>
                     );

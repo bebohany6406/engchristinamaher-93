@@ -32,9 +32,6 @@ export const usePayments = () => {
   ) => {
     const today = new Date().toISOString();
     
-    // Check if student has payments
-    const studentPayments = payments.filter(p => p.studentId === studentId);
-    
     // Create new payment
     const newPayment: Payment = {
       id: `payment-${Date.now()}`,
@@ -63,22 +60,42 @@ export const usePayments = () => {
       if (!monthAlreadyPaid) {
         existingPayment.paidMonths.push({ month, date: today });
         existingPayment.date = today; // Update last payment date
+        existingPayment.month = month; // تحديث الشهر الأخير المدفوع
         updatedPayments[existingPaymentIndex] = existingPayment;
         setPayments(updatedPayments);
+        
+        // Play sound effect
+        const audio = new Audio("/payment-success.mp3");
+        audio.volume = 0.5;
+        audio.play().catch(e => console.error("Sound play failed:", e));
+        
+        return { 
+          success: true, 
+          message: "تم تسجيل الدفعة بنجاح",
+          payment: existingPayment
+        };
       } else {
-        return { success: false, message: "هذا الشهر مدفوع بالفعل" };
+        return { 
+          success: false, 
+          message: "هذا الشهر مدفوع بالفعل",
+          payment: null
+        };
       }
     } else {
       // Add new payment record
-      setPayments([...payments, newPayment]);
+      setPayments(prevPayments => [...prevPayments, newPayment]);
+      
+      // Play sound effect
+      const audio = new Audio("/payment-success.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      
+      return { 
+        success: true, 
+        message: "تم تسجيل الدفعة بنجاح",
+        payment: newPayment
+      };
     }
-    
-    // Play sound effect
-    const audio = new Audio("/payment-success.mp3");
-    audio.volume = 0.5;
-    audio.play().catch(e => console.error("Sound play failed:", e));
-    
-    return { success: true, message: "تم تسجيل الدفعة بنجاح" };
   };
 
   // الحصول على مدفوعات طالب معين

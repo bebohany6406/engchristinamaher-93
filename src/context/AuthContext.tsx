@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
-import { generateRandomCode, generateUniquePassword } from "@/lib/utils";
+import { generateRandomCode } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
 interface AuthContextType {
@@ -42,6 +42,15 @@ const adminUser: User = {
   phone: "AdminAPPEng.Christina Maher",
   password: "Eng.Christina Maher0022",
   role: "admin"
+};
+
+// دالة لتوليد كلمة مرور من 5 أرقام
+const generatePassword = (): string => {
+  let password = "";
+  for (let i = 0; i < 5; i++) {
+    password += Math.floor(Math.random() * 10).toString();
+  }
+  return password;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -177,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     grade: "first" | "second" | "third"
   ): Student => {
     const code = generateRandomCode();
-    const password = generateUniquePassword(students, parents);
+    const password = generatePassword(); // استخدام دالة توليد كلمة مرور من 5 أرقام
     const newStudent: Student = {
       id: `student-${Date.now()}`,
       name,
@@ -241,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Student code invalid");
     }
 
-    const password = generateUniquePassword(students, parents);
+    const password = generatePassword(); // استخدام دالة توليد كلمة مرور من 5 أرقام
     const newParent: Parent = {
       id: `parent-${Date.now()}`,
       phone,

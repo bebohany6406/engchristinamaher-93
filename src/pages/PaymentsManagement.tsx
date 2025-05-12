@@ -17,6 +17,7 @@ const PaymentsManagement = () => {
   const { payments } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
+  const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -51,6 +52,15 @@ const PaymentsManagement = () => {
       navigate("/unauthorized");
     }
   }, [currentUser, navigate]);
+
+  const handlePaymentAdded = (payment: Payment) => {
+    // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
+    setRecentPayment(payment);
+    // تحديث قائمة المدفوعات
+    if (currentUser?.role === "admin") {
+      setFilteredPayments([...payments, payment]);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
@@ -87,7 +97,35 @@ const PaymentsManagement = () => {
           
           {/* نموذج إضافة دفعة (للمدير فقط) */}
           {showAddForm && currentUser?.role === "admin" && (
-            <PaymentForm onClose={() => setShowAddForm(false)} />
+            <PaymentForm 
+              onClose={() => setShowAddForm(false)} 
+              onPaymentAdded={handlePaymentAdded}
+            />
+          )}
+          
+          {/* عرض أحدث دفعة تم إضافتها */}
+          {recentPayment && (
+            <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6 animate-pulse">
+              <h2 className="text-physics-gold font-bold mb-2">تم إضافة دفعة جديدة</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <span className="text-gray-400 block text-sm">الطالب:</span>
+                  <span className="text-white">{recentPayment.studentName}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-sm">كود الطالب:</span>
+                  <span className="text-white">{recentPayment.studentCode}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-sm">المجموعة:</span>
+                  <span className="text-white">{recentPayment.group}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-sm">الشهر المدفوع:</span>
+                  <span className="text-white">{recentPayment.month}</span>
+                </div>
+              </div>
+            </div>
           )}
           
           {/* قائمة المدفوعات */}

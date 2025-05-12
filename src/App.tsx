@@ -27,6 +27,7 @@ import GradesManagement from "./pages/GradesManagement";
 import GradesByGrade from "./pages/GradesByGrade";
 import StudentGrades from "./pages/StudentGrades";
 import PaymentsManagement from "./pages/PaymentsManagement";
+import SystemReset from "./pages/SystemReset";
 import { useEffect } from "react";
 import "./App.css";
 
@@ -162,6 +163,7 @@ const App = () => {
                     <Route path="/grades-management" element={<RequireAuth allowedRoles={["admin"]} children={<GradesManagement />} />} />
                     <Route path="/grades-management/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<GradesByGrade />} />} />
                     <Route path="/payments" element={<RequireAuth allowedRoles={["admin"]} children={<PaymentsManagement />} />} />
+                    <Route path="/system-reset" element={<RequireAuth allowedRoles={["admin"]} children={<SystemReset />} />} />
                     
                     {/* Student Routes */}
                     <Route path="/student-code" element={<RequireAuth allowedRoles={["student"]} children={<StudentCode />} />} />

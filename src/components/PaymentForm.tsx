@@ -2,16 +2,17 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { usePayments } from "@/hooks/use-payments";
-import { Student } from "@/types";
+import { Student, Payment } from "@/types";
 import { Search, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { sanitizeSearchText } from "@/lib/utils";
 
 interface PaymentFormProps {
   onClose: () => void;
+  onPaymentAdded: (payment: Payment) => void;
 }
 
-export function PaymentForm({ onClose }: PaymentFormProps) {
+export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchField, setSearchField] = useState<"name" | "code" | "group">("name");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -77,11 +78,25 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
       selectedStudent.id,
       selectedStudent.name,
       selectedStudent.code,
-      selectedStudent.group,
+      selectedStudent.group || "",
       month
     );
     
     if (result.success) {
+      // بعد إضافة الدفعة بنجاح، نقوم بإرسال بيانات الدفعة للدالة onPaymentAdded
+      const newPayment: Payment = {
+        id: `payment-${Date.now()}`,
+        studentId: selectedStudent.id,
+        studentName: selectedStudent.name,
+        studentCode: selectedStudent.code,
+        group: selectedStudent.group || "",
+        month,
+        date: new Date().toISOString(),
+        paidMonths: [{ month, date: new Date().toISOString() }]
+      };
+      
+      onPaymentAdded(newPayment);
+      
       toast({
         title: "✅ تم تسجيل الدفعة",
         description: result.message,
