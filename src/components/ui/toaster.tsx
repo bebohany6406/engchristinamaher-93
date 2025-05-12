@@ -15,11 +15,13 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
-        // Determine if this is a success, destructive, or regular toast
-        const isSuccess = String(title).includes("✓") || String(title).includes("✅");
-        const isError = props.variant === "destructive" || String(title).includes("❌");
+        // تحديد ما إذا كانت رسالة نجاح أو خطأ
+        const isSuccess = String(title).includes("✓") || String(title).includes("✅") || 
+                         String(title).toLowerCase().includes("تم") || String(title).toLowerCase().includes("نجاح");
+        const isError = props.variant === "destructive" || String(title).includes("❌") || 
+                       String(title).toLowerCase().includes("خطأ") || String(title).toLowerCase().includes("فشل");
         
-        // Apply custom styling based on toast type
+        // تطبيق التنسيق المخصص بناءً على نوع الرسالة
         const customClasses = isSuccess 
           ? "bg-green-900/95 border-green-500 text-white" 
           : isError

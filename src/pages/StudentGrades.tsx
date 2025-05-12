@@ -39,15 +39,15 @@ const StudentGrades = () => {
         setStudentId(studentData.id);
         setStudentName(studentData.name);
         setStudentCode(studentData.code);
-        setStudentGroup(studentData.group);
+        setStudentGroup(studentData.group || "");
         const records = getStudentGrades(studentData.id);
         setGradeRecords(records);
       }
     } else if (currentUser.role === "student") {
       setStudentId(currentUser.id);
       setStudentName(currentUser.name);
-      setStudentCode(currentUser.code);
-      setStudentGroup(currentUser.group);
+      setStudentCode(currentUser.code || "");
+      setStudentGroup(currentUser.group || "");
       const records = getStudentGrades(currentUser.id);
       setGradeRecords(records);
     }
@@ -87,7 +87,7 @@ const StudentGrades = () => {
                 </div>
                 <div>
                   <p className="text-physics-gold text-sm">المجموعة</p>
-                  <p>{studentGroup}</p>
+                  <p>{studentGroup || "—"}</p>
                 </div>
               </div>
             </div>
@@ -106,6 +106,7 @@ const StudentGrades = () => {
                     <TableHead className="text-center">الدرجة</TableHead>
                     <TableHead className="text-center">من</TableHead>
                     <TableHead className="text-right">رقم الحصة</TableHead>
+                    <TableHead className="text-right">المجموعة</TableHead>
                     <TableHead className="text-right">التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -121,6 +122,7 @@ const StudentGrades = () => {
                       </TableCell>
                       <TableCell className="text-center text-white">{record.totalScore}</TableCell>
                       <TableCell className="text-white">الحصة {record.lessonNumber || 1}</TableCell>
+                      <TableCell className="text-white">{record.group || "—"}</TableCell>
                       <TableCell className="text-white">{formatDate(record.date)}</TableCell>
                     </TableRow>
                   ))}

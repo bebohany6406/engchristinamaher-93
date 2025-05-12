@@ -4,30 +4,59 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { ArrowRight, UserPlus, Search, Trash2 } from "lucide-react";
-import { Parent } from "@/types";
+import { Parent, Student } from "@/types";
 import { toast } from "@/hooks/use-toast";
+import { sanitizeSearchText } from "@/lib/utils";
 
 const ParentsManagement = () => {
   const navigate = useNavigate();
-  const { getAllParents, createParent, getStudentByCode } = useAuth();
+  const { getAllParents, createParent, getStudentByCode, getAllStudents } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState<"all" | "name" | "phone" | "code" | "group">("all");
   const [parents, setParents] = useState<Parent[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   
   // Form state
   const [phone, setPhone] = useState("");
   const [studentCode, setStudentCode] = useState("");
   
   useEffect(() => {
-    // Load parents when component mounts
+    // Load parents and students when component mounts
     setParents(getAllParents());
-  }, [getAllParents]);
+    setStudents(getAllStudents());
+  }, [getAllParents, getAllStudents]);
   
-  const filteredParents = parents.filter(parent => 
-    parent.phone.includes(searchQuery) || 
-    parent.studentCode.includes(searchQuery) ||
-    parent.studentName.includes(searchQuery)
-  );
+  const getStudentGroupByCode = (code: string): string => {
+    const student = students.find(s => s.code === code);
+    return student?.group || "";
+  };
+  
+  const filteredParents = parents.filter(parent => {
+    const query = sanitizeSearchText(searchQuery);
+    if (!query) return true;
+    
+    const studentGroup = getStudentGroupByCode(parent.studentCode);
+    
+    switch (searchField) {
+      case "name":
+        return sanitizeSearchText(parent.studentName).includes(query);
+      case "phone":
+        return sanitizeSearchText(parent.phone).includes(query);
+      case "code":
+        return sanitizeSearchText(parent.studentCode).includes(query);
+      case "group":
+        return sanitizeSearchText(studentGroup).includes(query);
+      case "all":
+      default:
+        return (
+          sanitizeSearchText(parent.studentName).includes(query) ||
+          sanitizeSearchText(parent.phone).includes(query) ||
+          sanitizeSearchText(parent.studentCode).includes(query) ||
+          sanitizeSearchText(studentGroup).includes(query)
+        );
+    }
+  });
   
   const handleAddParent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,16 +133,32 @@ const ParentsManagement = () => {
             </button>
           </div>
           
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
-            <input
-              type="text"
-              className="inputField pr-12"
-              placeholder="ابحث عن ولي أمر بالاسم أو رقم الهاتف أو كود الطالب"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          {/* Search with filter */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="md:w-1/4">
+              <select
+                className="inputField w-full"
+                value={searchField}
+                onChange={(e) => setSearchField(e.target.value as any)}
+              >
+                <option value="all">بحث في كل الحقول</option>
+                <option value="name">بحث باسم الطالب</option>
+                <option value="phone">بحث برقم الهاتف</option>
+                <option value="code">بحث بكود الطالب</option>
+                <option value="group">بحث بالمجموعة</option>
+              </select>
+            </div>
+            
+            <div className="relative md:w-3/4">
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
+              <input
+                type="text"
+                className="inputField pr-12 w-full"
+                placeholder="ابحث عن ولي أمر..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
           
           {/* Parents List */}
@@ -131,6 +176,7 @@ const ParentsManagement = () => {
                       <th className="text-right py-3 px-4">رقم الهاتف</th>
                       <th className="text-right py-3 px-4">كود الطالب</th>
                       <th className="text-right py-3 px-4">اسم الطالب</th>
+                      <th className="text-right py-3 px-4">المجموعة</th>
                       <th className="text-right py-3 px-4">كلمة المرور</th>
                       <th className="text-center py-3 px-4">خيارات</th>
                     </tr>
@@ -142,6 +188,7 @@ const ParentsManagement = () => {
                         <td className="py-3 px-4 text-white">{parent.phone}</td>
                         <td className="py-3 px-4 text-white">{parent.studentCode}</td>
                         <td className="py-3 px-4 text-white">{parent.studentName}</td>
+                        <td className="py-3 px-4 text-white">{getStudentGroupByCode(parent.studentCode) || "—"}</td>
                         <td className="py-3 px-4 text-white">{parent.password}</td>
                         <td className="py-3 px-4 text-white text-center">
                           <div className="flex justify-center gap-2">

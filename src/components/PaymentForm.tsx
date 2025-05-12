@@ -5,6 +5,7 @@ import { usePayments } from "@/hooks/use-payments";
 import { Student } from "@/types";
 import { Search, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { sanitizeSearchText } from "@/lib/utils";
 
 interface PaymentFormProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ interface PaymentFormProps {
 
 export function PaymentForm({ onClose }: PaymentFormProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState<"name" | "code" | "group">("name");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [month, setMonth] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -20,21 +22,29 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
   const { getAllStudents } = useAuth();
   const { addPayment } = usePayments();
   
-  // Handle search
+  // Handle search with field type
   useEffect(() => {
     if (searchQuery.length > 0) {
-      const results = getAllStudents().filter(
-        student => 
-          student.name.includes(searchQuery) || 
-          student.code.includes(searchQuery)
-      );
+      const query = sanitizeSearchText(searchQuery);
+      const results = getAllStudents().filter(student => {
+        switch (searchField) {
+          case "name":
+            return sanitizeSearchText(student.name).includes(query);
+          case "code":
+            return sanitizeSearchText(student.code).includes(query);
+          case "group":
+            return student.group ? sanitizeSearchText(student.group).includes(query) : false;
+          default:
+            return false;
+        }
+      });
       setSearchResults(results);
       setShowResults(true);
     } else {
       setSearchResults([]);
       setShowResults(false);
     }
-  }, [searchQuery, getAllStudents]);
+  }, [searchQuery, searchField, getAllStudents]);
   
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
@@ -73,13 +83,13 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
     
     if (result.success) {
       toast({
-        title: "تم تسجيل الدفعة",
+        title: "✅ تم تسجيل الدفعة",
         description: result.message,
       });
       onClose();
     } else {
       toast({
-        title: "خطأ",
+        title: "❌ خطأ",
         description: result.message,
         variant: "destructive",
       });
@@ -98,22 +108,37 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* بحث عن الطالب */}
         {!selectedStudent && (
-          <div className="relative">
-            <label className="block text-white mb-2 text-sm">بحث عن الطالب (بالاسم أو الكود)</label>
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
-              <input
-                type="text"
-                className="inputField pr-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="اكتب اسم الطالب أو الكود..."
-              />
+          <div>
+            <div className="flex mb-2 gap-2">
+              <select 
+                className="inputField w-1/3"
+                value={searchField}
+                onChange={(e) => setSearchField(e.target.value as "name" | "code" | "group")}
+              >
+                <option value="name">بحث بالاسم</option>
+                <option value="code">بحث بالكود</option>
+                <option value="group">بحث بالمجموعة</option>
+              </select>
+              
+              <div className="relative w-2/3">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+                <input
+                  type="text"
+                  className="inputField pr-10 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={
+                    searchField === "name" ? "اكتب اسم الطالب..." :
+                    searchField === "code" ? "اكتب كود الطالب..." :
+                    "اكتب اسم المجموعة..."
+                  }
+                />
+              </div>
             </div>
             
             {/* نتائج البحث */}
             {showResults && searchResults.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-physics-navy border border-physics-gold rounded-md shadow-lg max-h-60 overflow-auto">
+              <div className="absolute z-10 mt-1 w-full max-w-md bg-physics-navy border border-physics-gold rounded-md shadow-lg max-h-60 overflow-auto">
                 {searchResults.map(student => (
                   <div 
                     key={student.id} 
@@ -128,7 +153,7 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
             )}
             
             {showResults && searchResults.length === 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-physics-navy border border-red-500 rounded-md p-2 text-center text-white">
+              <div className="absolute z-10 mt-1 w-full max-w-md bg-physics-navy border border-red-500 rounded-md p-2 text-center text-white">
                 لا توجد نتائج
               </div>
             )}

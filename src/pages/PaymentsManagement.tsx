@@ -9,19 +9,43 @@ import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
+import { Payment } from "@/types";
 
 const PaymentsManagement = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { payments } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
+  
+  // فلترة المدفوعات حسب نوع المستخدم
+  useEffect(() => {
+    if (!currentUser) {
+      setFilteredPayments([]);
+      return;
+    }
+
+    if (currentUser.role === "admin") {
+      // المدير يرى جميع المدفوعات
+      setFilteredPayments(payments);
+    } else if (currentUser.role === "student") {
+      // الطالب يرى مدفوعاته فقط
+      const studentPayments = payments.filter(payment => payment.studentId === currentUser.id);
+      setFilteredPayments(studentPayments);
+    } else if (currentUser.role === "parent") {
+      // ولي الأمر يرى مدفوعات الطالب التابع له
+      const associatedStudent = currentUser.name.replace("ولي أمر ", "");
+      const studentPayments = payments.filter(payment => payment.studentName === associatedStudent);
+      setFilteredPayments(studentPayments);
+    }
+  }, [currentUser, payments]);
   
   // التحقق من صلاحيات المستخدم
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "admin") {
+    if (!currentUser) {
       toast({
         title: "غير مصرح",
-        description: "ليس لديك صلاحية الوصول لهذه الصفحة",
+        description: "يجب تسجيل الدخول للوصول لهذه الصفحة",
         variant: "destructive",
       });
       navigate("/unauthorized");
@@ -48,23 +72,27 @@ const PaymentsManagement = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
-            <button 
-              onClick={() => setShowAddForm(true)} 
-              className="goldBtn flex items-center gap-2"
-            >
-              <DollarSign size={18} />
-              <span>دفع شهر جديد</span>
-            </button>
+            
+            {/* إظهار زر إضافة دفع جديد للمدير فقط */}
+            {currentUser?.role === "admin" && (
+              <button 
+                onClick={() => setShowAddForm(true)} 
+                className="goldBtn flex items-center gap-2"
+              >
+                <DollarSign size={18} />
+                <span>دفع شهر جديد</span>
+              </button>
+            )}
           </div>
           
-          {/* نموذج إضافة دفعة */}
-          {showAddForm && (
+          {/* نموذج إضافة دفعة (للمدير فقط) */}
+          {showAddForm && currentUser?.role === "admin" && (
             <PaymentForm onClose={() => setShowAddForm(false)} />
           )}
           
           {/* قائمة المدفوعات */}
           <div className="bg-physics-dark rounded-lg overflow-hidden mt-6">
-            <PaymentsList payments={payments} />
+            <PaymentsList payments={filteredPayments} />
           </div>
         </div>
       </main>

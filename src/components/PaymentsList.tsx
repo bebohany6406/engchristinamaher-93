@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Calendar, Search } from "lucide-react";
 import { Payment } from "@/types";
+import { sanitizeSearchText } from "@/lib/utils";
 
 interface PaymentsListProps {
   payments: Payment[];
@@ -9,6 +10,7 @@ interface PaymentsListProps {
 
 export function PaymentsList({ payments }: PaymentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState<"name" | "code" | "group">("name");
   
   // تنسيق التاريخ
   const formatDate = (dateString: string) => {
@@ -20,25 +22,53 @@ export function PaymentsList({ payments }: PaymentsListProps) {
   };
 
   // تصفية المدفوعات حسب البحث
-  const filteredPayments = payments.filter(payment => 
-    payment.studentName.includes(searchQuery) || 
-    payment.studentCode.includes(searchQuery) ||
-    payment.group.includes(searchQuery)
-  );
+  const filteredPayments = payments.filter(payment => {
+    const query = sanitizeSearchText(searchQuery);
+    if (!query) return true;
+    
+    switch (searchField) {
+      case "name":
+        return sanitizeSearchText(payment.studentName).includes(query);
+      case "code":
+        return sanitizeSearchText(payment.studentCode).includes(query);
+      case "group":
+        return sanitizeSearchText(payment.group).includes(query);
+      default:
+        return true;
+    }
+  });
 
   return (
     <div>
-      {/* حقل البحث */}
+      {/* حقل البحث مع اختيار نوع البحث */}
       <div className="p-4">
-        <div className="relative">
-          <input
-            type="text"
-            className="inputField pr-10"
-            placeholder="بحث عن طالب..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="w-full md:w-1/4">
+            <select
+              className="inputField w-full"
+              value={searchField}
+              onChange={(e) => setSearchField(e.target.value as "name" | "code" | "group")}
+            >
+              <option value="name">بحث بالاسم</option>
+              <option value="code">بحث بالكود</option>
+              <option value="group">بحث بالمجموعة</option>
+            </select>
+          </div>
+          
+          <div className="relative w-full md:w-3/4">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              className="inputField pr-10 w-full"
+              placeholder={
+                searchField === "name" ? "بحث عن طالب بالاسم..." : 
+                searchField === "code" ? "بحث عن طالب بالكود..." :
+                "بحث عن مجموعة..."
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 

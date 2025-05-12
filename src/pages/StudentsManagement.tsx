@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, UserPlus, Search, Edit, Trash2 } from "lucide-react";
+import { ArrowRight, UserPlus, Search, Edit, Trash2, Filter } from "lucide-react";
 import { Student } from "@/types";
-import { getGradeDisplay } from "@/lib/utils";
+import { getGradeDisplay, sanitizeSearchText } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
 const StudentsManagement = () => {
@@ -13,6 +14,7 @@ const StudentsManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState<"all" | "name" | "phone" | "code" | "group">("all");
   const [students, setStudents] = useState<Student[]>([]);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   
@@ -29,11 +31,29 @@ const StudentsManagement = () => {
     setStudents(getAllStudents());
   }, [getAllStudents]);
   
-  const filteredStudents = students.filter(student => 
-    student.name.includes(searchQuery) || 
-    student.phone?.includes(searchQuery) ||
-    student.code.includes(searchQuery)
-  );
+  const filteredStudents = students.filter(student => {
+    const query = sanitizeSearchText(searchQuery);
+    if (!query) return true;
+    
+    switch (searchField) {
+      case "name":
+        return sanitizeSearchText(student.name).includes(query);
+      case "phone":
+        return student.phone ? sanitizeSearchText(student.phone).includes(query) : false;
+      case "code":
+        return sanitizeSearchText(student.code).includes(query);
+      case "group":
+        return student.group ? sanitizeSearchText(student.group).includes(query) : false;
+      case "all":
+      default:
+        return (
+          sanitizeSearchText(student.name).includes(query) ||
+          (student.phone ? sanitizeSearchText(student.phone).includes(query) : false) ||
+          sanitizeSearchText(student.code).includes(query) ||
+          (student.group ? sanitizeSearchText(student.group).includes(query) : false)
+        );
+    }
+  });
   
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,16 +145,32 @@ const StudentsManagement = () => {
             </button>
           </div>
           
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
-            <input
-              type="text"
-              className="inputField pr-12"
-              placeholder="ابحث عن طالب بالاسم أو رقم الهاتف أو الكود"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          {/* Search with filter */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="md:w-1/4">
+              <select
+                className="inputField w-full"
+                value={searchField}
+                onChange={(e) => setSearchField(e.target.value as any)}
+              >
+                <option value="all">بحث في كل الحقول</option>
+                <option value="name">بحث بالاسم</option>
+                <option value="phone">بحث برقم الهاتف</option>
+                <option value="code">بحث بالكود</option>
+                <option value="group">بحث بالمجموعة</option>
+              </select>
+            </div>
+            
+            <div className="relative md:w-3/4">
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
+              <input
+                type="text"
+                className="inputField pr-12 w-full"
+                placeholder="ابحث عن طالب..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
           
           {/* Students List */}
@@ -240,6 +276,7 @@ const StudentsManagement = () => {
                   value={group}
                   onChange={(e) => setGroup(e.target.value)}
                   required
+                  placeholder="أدخل اسم المجموعة"
                 />
               </div>
               
@@ -322,6 +359,7 @@ const StudentsManagement = () => {
                   value={group}
                   onChange={(e) => setGroup(e.target.value)}
                   required
+                  placeholder="أدخل اسم المجموعة"
                 />
               </div>
               
