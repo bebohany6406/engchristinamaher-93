@@ -1,52 +1,53 @@
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { FileText, Download } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import { PhoneContact } from "@/components/PhoneContact";
+import { ArrowRight, Calendar, Search, FileText, Download } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Book } from "@/types";
-import { useToast } from "@/hooks/use-toast";
 
 const StudentBooks = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const { currentUser } = useAuth();
 
+  // استدعاء البيانات من Supabase
   useEffect(() => {
     const fetchBooks = async () => {
-      if (!currentUser?.grade) {
-        setIsLoading(false);
-        return;
-      }
-
+      if (!currentUser) return;
+      
+      setIsLoading(true);
       try {
+        // استعلام لجلب الكتب الخاصة بصف الطالب فقط
         const { data, error } = await supabase
-          .from("books")
-          .select("*")
-          .eq("grade", currentUser.grade);
-
-        if (error) {
-          throw error;
+          .from('books')
+          .select('*')
+          .eq('grade', currentUser.grade || "")
+          .order('upload_date', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (data) {
+          const mappedBooks = data.map(book => ({
+            id: book.id,
+            title: book.title,
+            url: book.url,
+            grade: book.grade,
+            uploadDate: book.upload_date || new Date().toISOString()
+          }));
+          setBooks(mappedBooks);
         }
-
-        // Map the data to match the Book type
-        const typedBooks: Book[] = data.map((book: any) => ({
-          id: book.id,
-          title: book.title,
-          url: book.url,
-          uploadDate: book.uploadDate,
-          grade: book.grade as "first" | "second" | "third"
-        }));
-
-        setBooks(typedBooks);
       } catch (error) {
         console.error("Error fetching books:", error);
         toast({
-          title: "خطأ",
-          description: "حدث خطأ أثناء تحميل الكتب والملفات",
-          variant: "destructive"
+          variant: "destructive",
+          title: "خطأ في تحميل البيانات",
+          description: "حدث خطأ أثناء محاولة تحميل الكتب والملفات"
         });
       } finally {
         setIsLoading(false);
@@ -54,57 +55,111 @@ const StudentBooks = () => {
     };
 
     fetchBooks();
-  }, [currentUser, toast]);
-
-  const handleDownload = (url: string, title: string) => {
-    window.open(url, "_blank");
+  }, [currentUser]);
+  
+  // تصفية البيانات حسب البحث
+  const filteredBooks = books.filter(book => 
+    book.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-EG', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold text-center mb-8 text-physics-gold">
-        الكتب والملفات
-      </h1>
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhoneContact />
+      
+      {/* Header */}
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+        <div className="flex items-center">
+          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
+            <ArrowRight size={20} />
+            <span>العودة للرئيسية</span>
+          </button>
+        </div>
+        <Logo />
+      </header>
 
-      {isLoading ? (
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-physics-gold"></div>
-        </div>
-      ) : books.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {books.map((book) => (
-            <Card key={book.id} className="bg-physics-dark border-physics-gold/20">
-              <div className="p-4 flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-physics-navy p-2 rounded-full">
-                    <FileText className="text-physics-gold" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold">{book.title}</h3>
-                    <p className="text-sm text-gray-400">
-                      تاريخ الإضافة: {new Date(book.uploadDate).toLocaleDateString('ar-EG')}
-                    </p>
-                  </div>
+      {/* Main Content */}
+      <main className="flex-1 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-physics-gold">الكتب والملفات التعليمية</h1>
+          </div>
+          
+          {/* البحث */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
+              <input 
+                type="text" 
+                className="inputField pr-12 w-full" 
+                placeholder="ابحث عن كتاب أو ملف" 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+              />
+            </div>
+          </div>
+          
+          {/* حالة التحميل */}
+          {isLoading && (
+            <div className="bg-physics-dark rounded-lg p-8 text-center">
+              <div className="inline-block w-8 h-8 border-4 border-physics-gold border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-white mt-3">جاري تحميل البيانات...</p>
+            </div>
+          )}
+          
+          {/* قائمة الكتب والملفات */}
+          {!isLoading && (
+            <div className="bg-physics-dark rounded-lg overflow-hidden">
+              {filteredBooks.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-white text-lg">لا توجد ملفات متاحة لصفك الدراسي</p>
                 </div>
-                <div className="mt-auto">
-                  <Button
-                    variant="outline"
-                    className="w-full flex items-center gap-2 bg-physics-navy hover:bg-physics-navy/80 text-physics-gold border-physics-gold/20"
-                    onClick={() => handleDownload(book.url, book.title)}
-                  >
-                    <Download size={16} />
-                    <span>تحميل الملف</span>
-                  </Button>
+              ) : (
+                <div className="divide-y divide-physics-navy">
+                  {filteredBooks.map(book => (
+                    <div key={book.id} className="p-4 hover:bg-physics-navy/30">
+                      <div className="flex items-center">
+                        <div className="mr-4 bg-physics-navy p-3 rounded-full">
+                          <FileText size={24} className="text-physics-gold" />
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            <h3 className="text-lg font-medium text-white">{book.title}</h3>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-300 mt-1">
+                            <Calendar size={14} className="ml-1" />
+                            <span>{formatDate(book.uploadDate)}</span>
+                            <span className="mx-2">•</span>
+                            <span>
+                              {book.grade === "first" && "الصف الأول الثانوي"}
+                              {book.grade === "second" && "الصف الثاني الثانوي"}
+                              {book.grade === "third" && "الصف الثالث الثانوي"}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <a href={book.url} target="_blank" rel="noopener noreferrer" className="p-2 text-physics-gold hover:text-white">
+                            <Download size={18} />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </Card>
-          ))}
+              )}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-white">لا توجد كتب أو ملفات متاحة لصفك الدراسي حالياً</p>
-        </div>
-      )}
+      </main>
     </div>
   );
 };
