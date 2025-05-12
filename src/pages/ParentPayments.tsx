@@ -5,15 +5,15 @@ import { useAuth } from "@/context/AuthContext";
 import { usePayments } from "@/hooks/use-payments";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, Calendar, User } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Payment } from "@/types";
+import { Payment, Student } from "@/types";
 
 const ParentPayments = () => {
   const navigate = useNavigate();
   const { currentUser, getParentChildren } = useAuth();
   const { getStudentPayments } = usePayments();
-  const [childrenPayments, setChildrenPayments] = useState<Payment[]>([]);
+  const [childrenPayments, setChildrenPayments] = useState<{student: Student, payment: Payment | null}[]>([]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -36,19 +36,16 @@ const ParentPayments = () => {
       return;
     }
 
-    // الحصول على قائمة أبناء ولي الأمر
-    const children = getParentChildren(currentUser.id);
+    // الحصول على أبناء ولي الأمر
+    const children = getParentChildren(currentUser.phone);
     
-    // الحصول على مدفوعات كل طالب
-    const payments: Payment[] = [];
-    children.forEach(child => {
-      const payment = getStudentPayments(child.id);
-      if (payment) {
-        payments.push(payment);
-      }
-    });
+    // الحصول على مدفوعات كل طفل
+    const paymentsData = children.map(child => ({
+      student: child,
+      payment: getStudentPayments(child.id)
+    }));
     
-    setChildrenPayments(payments);
+    setChildrenPayments(paymentsData);
   }, [currentUser, navigate, getParentChildren, getStudentPayments]);
 
   // تنسيق التاريخ
@@ -84,39 +81,38 @@ const ParentPayments = () => {
           </div>
           
           {/* عرض المدفوعات */}
-          <div className="bg-physics-dark rounded-lg overflow-hidden">
-            {childrenPayments.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-white text-lg">لا توجد مدفوعات مسجلة لأي من أبنائك</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-physics-navy">
-                {childrenPayments.map((payment, idx) => (
-                  <div key={idx} className="p-6">
-                    <div className="mb-4">
-                      <h2 className="text-xl font-medium text-physics-gold flex items-center">
-                        <User size={20} className="ml-2" />
-                        {payment.studentName}
-                      </h2>
-                      <div className="flex items-center text-sm text-gray-300">
-                        <span>كود: {payment.studentCode}</span>
-                        <span className="mx-2">|</span>
-                        <span>المجموعة: {payment.group}</span>
-                      </div>
+          {childrenPayments.length === 0 ? (
+            <div className="p-8 text-center bg-physics-dark rounded-lg">
+              <p className="text-white text-lg">لا يوجد أبناء مسجلين</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {childrenPayments.map((item, index) => (
+                <div key={index} className="bg-physics-dark rounded-lg overflow-hidden p-6">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-medium text-white">{item.student.name}</h2>
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span>كود: {item.student.code}</span>
+                      <span className="mx-2">|</span>
+                      <span>المجموعة: {item.student.group}</span>
                     </div>
-                    
+                  </div>
+                  
+                  {!item.payment ? (
+                    <p className="text-gray-400">لا توجد مدفوعات مسجلة لهذا الطالب</p>
+                  ) : (
                     <div>
-                      <h3 className="text-lg font-medium text-white flex items-center mb-3">
+                      <h3 className="text-lg font-medium text-physics-gold flex items-center mb-3">
                         <Calendar size={18} className="ml-2" />
                         الأشهر المدفوعة
                       </h3>
                       
-                      {payment.paidMonths.length === 0 ? (
+                      {item.payment.paidMonths.length === 0 ? (
                         <p className="text-gray-400">لا توجد أشهر مدفوعة حتى الآن</p>
                       ) : (
-                        <div className="space-y-2">
-                          {payment.paidMonths.map((paidMonth, index) => (
-                            <div key={index} className="bg-physics-navy/50 rounded-lg p-3">
+                        <div className="space-y-3">
+                          {item.payment.paidMonths.map((paidMonth, idx) => (
+                            <div key={idx} className="bg-physics-navy/50 rounded-lg p-3">
                               <div className="flex justify-between items-center">
                                 <span className="text-white font-medium">{paidMonth.month}</span>
                                 <span className="text-xs text-gray-400">تاريخ الدفع: {formatDate(paidMonth.date)}</span>
@@ -125,21 +121,21 @@ const ParentPayments = () => {
                           ))}
                         </div>
                       )}
-                    </div>
-                    
-                    <div className="mt-4 p-3 bg-physics-navy/30 rounded-lg">
-                      <div className="flex items-center text-physics-gold">
-                        <span className="mr-2">
-                          <Calendar size={16} />
-                        </span>
-                        <span>آخر دفعة: {formatDate(payment.date)}</span>
+                      
+                      <div className="mt-4 p-3 bg-physics-navy/30 rounded-lg">
+                        <div className="flex items-center text-physics-gold">
+                          <span className="mr-2">
+                            <Calendar size={18} />
+                          </span>
+                          <span>آخر دفعة: {formatDate(item.payment.date)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

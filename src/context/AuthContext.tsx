@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateRandomPassword } from "@/lib/utils";
@@ -31,6 +30,7 @@ interface AuthContextType {
   getStudentByCode: (code: string) => Student | undefined;
   getAllStudents: () => Student[];
   getAllParents: () => Parent[];
+  getParentChildren: (parentPhone: string) => Student[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -270,6 +270,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return parents;
   };
 
+  // إضافة وظيفة جديدة للحصول على أبناء ولي الأمر
+  const getParentChildren = (parentPhone: string): Student[] => {
+    return students.filter(student => student.parentPhone === parentPhone);
+  };
+
   const value = {
     currentUser,
     students,
@@ -283,6 +288,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getStudentByCode,
     getAllStudents,
     getAllParents,
+    getParentChildren,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
