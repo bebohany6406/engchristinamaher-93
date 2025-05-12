@@ -8,7 +8,7 @@ import { Users, UserPlus, QrCode, Video, Book, LogOut, CheckSquare, Award, Dolla
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { SupabaseSetup } from "@/components/SupabaseSetup";
-import { checkSupabaseConnection } from "@/lib/supabase";
+import { checkSupabaseConnection, reinitializeSupabase } from "@/lib/supabase";
 
 const DashboardItem = ({
   to,
@@ -46,6 +46,9 @@ const Dashboard = () => {
     
     // Check Supabase connection
     const checkConnection = async () => {
+      // Ensure we're using the latest credentials from localStorage
+      reinitializeSupabase();
+      
       const isConnected = await checkSupabaseConnection();
       setIsSupabaseConnected(isConnected);
     };
