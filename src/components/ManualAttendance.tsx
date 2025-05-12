@@ -5,6 +5,7 @@ import { useData } from "@/context/DataContext";
 import { usePayments } from "@/hooks/use-payments";
 import { toast } from "@/hooks/use-toast";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function ManualAttendance() {
   const [studentCode, setStudentCode] = useState("");
@@ -17,7 +18,7 @@ export function ManualAttendance() {
   const [isLoading, setIsLoading] = useState(false);
   
   const { getStudentByCode } = useAuth();
-  const { addAttendance, getStudentLessonCount } = useData();
+  const { getStudentLessonCount } = useData();
   const { hasStudentPaidForCurrentLesson } = usePayments();
 
   const handleLookup = async () => {
@@ -70,7 +71,26 @@ export function ManualAttendance() {
   const handleAbsence = async () => {
     if (studentInfo) {
       try {
-        await addAttendance(studentInfo.id, studentInfo.name, "absent", studentInfo.lessonNumber);
+        // Create the attendance record
+        const now = new Date();
+        const attendanceRecord = {
+          id: `attendance-${Date.now()}`,
+          student_id: studentInfo.id,
+          student_name: studentInfo.name,
+          status: "absent",
+          lesson_number: studentInfo.lessonNumber,
+          time: `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`,
+          date: now.toISOString()
+        };
+
+        // Save directly to Supabase
+        const { error } = await supabase
+          .from('attendance')
+          .insert([attendanceRecord]);
+
+        if (error) {
+          throw error;
+        }
         
         // Play sound effect
         const audio = new Audio("/attendance-absent.mp3");
