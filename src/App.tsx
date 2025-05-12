@@ -13,6 +13,8 @@ import AttendanceRecord from './pages/AttendanceRecord';
 import AttendanceRecordList from './pages/AttendanceRecordList';
 import ViewGrades from './pages/GradesByGrade';
 import Grades from './pages/Grades';
+import StudentPayments from './pages/StudentPayments';
+import ParentPayments from './pages/ParentPayments';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { Toaster } from "@/components/ui/toaster"
