@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Student, Parent } from "@/types";
@@ -129,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     toast({
       title: "✅ تم إنشاء حساب الطالب",
-      description: `تم إنشاء حساب الطالب ${name} بنجاح. كلمة المرور: ${newPassword}`,
+      description: `تم إنشاء حساب الطالب ${name} بنجاح`,
     });
     
     return newStudent;
@@ -165,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     toast({
       title: "✅ تم إنشاء حساب ولي الأمر",
-      description: `تم إنشاء حساب ولي الأمر بنجاح. كلمة المرور: ${newPassword}`,
+      description: `تم إنشاء حساب ولي الأمر بنجاح`,
     });
     
     return newParent;

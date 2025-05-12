@@ -103,28 +103,9 @@ export const usePayments = () => {
     return payments.find(payment => payment.studentId === studentId);
   };
 
-  // Get all payments
-  const getAllPayments = (): Payment[] => {
-    return payments;
-  };
-
-  // Reset payments for a specific grade
-  const resetPaymentsByGrade = (grade: "first" | "second" | "third"): number => {
-    // Filter out payments for students of the specified grade
-    const filteredPayments = payments.filter(payment => {
-      // Need to find the student grade, which we don't have in the payment object
-      // This will be handled by the system reset page instead
-      return true;
-    });
-    
-    return 0; // Return 0 since we don't handle this here
-  };
-
   return {
     payments,
     addPayment,
-    getStudentPayments,
-    getAllPayments,
-    resetPaymentsByGrade
+    getStudentPayments
   };
 };

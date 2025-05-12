@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Calendar, Search } from "lucide-react";
 import { Payment } from "@/types";
 import { sanitizeSearchText } from "@/lib/utils";
 import {
@@ -31,9 +31,8 @@ export function PaymentsList({ payments }: PaymentsListProps) {
 
   // تصفية المدفوعات حسب البحث
   const filteredPayments = payments.filter(payment => {
-    if (!searchQuery.trim()) return true;
-    
     const query = sanitizeSearchText(searchQuery);
+    if (!query) return true;
     
     switch (searchField) {
       case "name":
@@ -41,7 +40,7 @@ export function PaymentsList({ payments }: PaymentsListProps) {
       case "code":
         return sanitizeSearchText(payment.studentCode).includes(query);
       case "group":
-        return payment.group ? sanitizeSearchText(payment.group).includes(query) : false;
+        return sanitizeSearchText(payment.group).includes(query);
       default:
         return true;
     }

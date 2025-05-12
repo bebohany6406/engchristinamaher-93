@@ -27,7 +27,6 @@ const AttendanceRecord = () => {
   const [studentName, setStudentName] = useState("");
   const [studentCode, setStudentCode] = useState("");
   const [studentGroup, setStudentGroup] = useState("");
-  const [studentGrade, setStudentGrade] = useState("");
   const [lessonCount, setLessonCount] = useState(0);
   
   useEffect(() => {
@@ -36,7 +35,7 @@ const AttendanceRecord = () => {
     if (currentUser.role === "parent") {
       // Find the student ID associated with this parent
       const students = getAllStudents();
-      const parentPhone = (currentUser as any).phone;
+      const parentPhone = currentUser.phone;
       const studentData = students.find(s => s.parentPhone === parentPhone);
       
       if (studentData) {
@@ -44,20 +43,18 @@ const AttendanceRecord = () => {
         setStudentName(studentData.name);
         setStudentCode(studentData.code);
         setStudentGroup(studentData.group);
-        setStudentGrade(studentData.grade);
         const records = getStudentAttendance(studentData.id);
         setAttendanceRecords(records);
         setLessonCount(getStudentLessonCount(studentData.id));
       }
     } else if (currentUser.role === "student") {
-      setStudentId((currentUser as any).id);
-      setStudentName((currentUser as any).name);
-      setStudentCode((currentUser as any).code);
-      setStudentGroup((currentUser as any).group);
-      setStudentGrade((currentUser as any).grade);
-      const records = getStudentAttendance((currentUser as any).id);
+      setStudentId(currentUser.id);
+      setStudentName(currentUser.name);
+      setStudentCode(currentUser.code);
+      setStudentGroup(currentUser.group);
+      const records = getStudentAttendance(currentUser.id);
       setAttendanceRecords(records);
-      setLessonCount(getStudentLessonCount((currentUser as any).id));
+      setLessonCount(getStudentLessonCount(currentUser.id));
     }
   }, [currentUser, getAllStudents, getStudentAttendance, getStudentLessonCount]);
   
@@ -99,14 +96,6 @@ const AttendanceRecord = () => {
                 <div>
                   <p className="text-physics-gold text-sm">المجموعة</p>
                   <p>{studentGroup}</p>
-                </div>
-                <div>
-                  <p className="text-physics-gold text-sm">الصف</p>
-                  <p>
-                    {studentGrade === "first" ? "الأول الثانوي" : 
-                     studentGrade === "second" ? "الثاني الثانوي" : 
-                     studentGrade === "third" ? "الثالث الثانوي" : ""}
-                  </p>
                 </div>
                 <div>
                   <p className="text-physics-gold text-sm">الحصة الحالية</p>

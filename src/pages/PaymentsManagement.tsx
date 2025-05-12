@@ -14,7 +14,7 @@ import { Payment } from "@/types";
 const PaymentsManagement = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { payments, getAllPayments } = usePayments();
+  const { payments } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -35,23 +35,19 @@ const PaymentsManagement = () => {
       return;
     }
 
-    // Get fresh payments data
-    const latestPayments = getAllPayments();
-    console.log("Latest payments in PaymentsManagement:", latestPayments);
-
-    if ((currentUser as any).role === "admin") {
+    if (currentUser.role === "admin") {
       // المدير يرى جميع المدفوعات
-      console.log("Admin view - all payments:", latestPayments);
-      setFilteredPayments([...latestPayments]);
-    } else if ((currentUser as any).role === "student") {
+      console.log("Admin view - all payments:", payments);
+      setFilteredPayments([...payments]);
+    } else if (currentUser.role === "student") {
       // الطالب يرى مدفوعاته فقط
-      const studentPayments = latestPayments.filter(payment => payment.studentId === (currentUser as any).id);
+      const studentPayments = payments.filter(payment => payment.studentId === currentUser.id);
       console.log("Student view - filtered payments:", studentPayments);
       setFilteredPayments(studentPayments);
-    } else if ((currentUser as any).role === "parent") {
+    } else if (currentUser.role === "parent") {
       // ولي الأمر يرى مدفوعات الطالب التابع له
-      const associatedStudent = (currentUser as any).studentName;
-      const studentPayments = latestPayments.filter(payment => payment.studentName === associatedStudent);
+      const associatedStudent = currentUser.name.replace("ولي أمر ", "");
+      const studentPayments = payments.filter(payment => payment.studentName === associatedStudent);
       console.log("Parent view - filtered payments:", studentPayments);
       setFilteredPayments(studentPayments);
     }
@@ -91,7 +87,7 @@ const PaymentsManagement = () => {
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
             
             {/* إظهار زر إضافة دفع جديد للمدير فقط */}
-            {(currentUser as any)?.role === "admin" && (
+            {currentUser?.role === "admin" && (
               <button 
                 onClick={() => setShowAddForm(true)} 
                 className="goldBtn flex items-center gap-2"
@@ -103,7 +99,7 @@ const PaymentsManagement = () => {
           </div>
           
           {/* نموذج إضافة دفعة (للمدير فقط) */}
-          {showAddForm && (currentUser as any)?.role === "admin" && (
+          {showAddForm && currentUser?.role === "admin" && (
             <PaymentForm 
               onClose={() => setShowAddForm(false)} 
               onPaymentAdded={handlePaymentAdded}
