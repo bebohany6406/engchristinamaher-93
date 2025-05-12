@@ -5,16 +5,15 @@ import { useAuth } from "@/context/AuthContext";
 import { usePayments } from "@/hooks/use-payments";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, Calendar } from "lucide-react";
+import { ArrowRight, Calendar, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Payment, Student } from "@/types";
+import { Payment } from "@/types";
 
 const ParentPayments = () => {
   const navigate = useNavigate();
   const { currentUser, getParentChildren } = useAuth();
   const { getStudentPayments } = usePayments();
-  const [childrenPayments, setChildrenPayments] = useState<Array<Payment | null>>([]);
-  const [children, setChildren] = useState<Student[]>([]);
+  const [childrenPayments, setChildrenPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -33,22 +32,26 @@ const ParentPayments = () => {
         description: "هذه الصفحة متاحة لأولياء الأمور فقط",
         variant: "destructive",
       });
-      navigate("/dashboard");
+      navigate("/unauthorized");
       return;
     }
 
-    // Get children of the parent
-    const parentChildren = getParentChildren(currentUser.id);
-    setChildren(parentChildren);
-
-    // Get payments for each child
-    const payments = parentChildren.map(child => {
-      return getStudentPayments(child.id) || null;
+    // الحصول على قائمة أبناء ولي الأمر
+    const children = getParentChildren(currentUser.id);
+    
+    // الحصول على مدفوعات كل طالب
+    const payments: Payment[] = [];
+    children.forEach(child => {
+      const payment = getStudentPayments(child.id);
+      if (payment) {
+        payments.push(payment);
+      }
     });
+    
     setChildrenPayments(payments);
   }, [currentUser, navigate, getParentChildren, getStudentPayments]);
 
-  // Format date
+  // تنسيق التاريخ
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-EG', {
       year: 'numeric',
@@ -76,74 +79,67 @@ const ParentPayments = () => {
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-physics-gold">سجل المدفوعات</h1>
+            <h1 className="text-2xl font-bold text-physics-gold">سجل مدفوعات الأبناء</h1>
             <p className="text-gray-300 mt-2">يمكنك مراجعة سجل مدفوعات أبنائك هنا</p>
           </div>
           
-          {/* Display payments for each child */}
-          {children.length === 0 ? (
-            <div className="bg-physics-dark rounded-lg p-8 text-center">
-              <p className="text-white text-lg">لا يوجد أبناء مسجلين</p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {children.map((child, index) => {
-                const payment = childrenPayments[index];
-                
-                return (
-                  <div key={child.id} className="bg-physics-dark rounded-lg overflow-hidden">
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <h2 className="text-xl font-medium text-white">{child.name}</h2>
-                        <div className="flex items-center text-sm text-gray-300">
-                          <span>كود: {child.code}</span>
-                          <span className="mx-2">|</span>
-                          <span>المجموعة: {child.group}</span>
-                        </div>
+          {/* عرض المدفوعات */}
+          <div className="bg-physics-dark rounded-lg overflow-hidden">
+            {childrenPayments.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-white text-lg">لا توجد مدفوعات مسجلة لأي من أبنائك</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-physics-navy">
+                {childrenPayments.map((payment, idx) => (
+                  <div key={idx} className="p-6">
+                    <div className="mb-4">
+                      <h2 className="text-xl font-medium text-physics-gold flex items-center">
+                        <User size={20} className="ml-2" />
+                        {payment.studentName}
+                      </h2>
+                      <div className="flex items-center text-sm text-gray-300">
+                        <span>كود: {payment.studentCode}</span>
+                        <span className="mx-2">|</span>
+                        <span>المجموعة: {payment.group}</span>
                       </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium text-white flex items-center mb-3">
+                        <Calendar size={18} className="ml-2" />
+                        الأشهر المدفوعة
+                      </h3>
                       
-                      {!payment ? (
-                        <p className="text-gray-400">لا توجد مدفوعات مسجلة</p>
+                      {payment.paidMonths.length === 0 ? (
+                        <p className="text-gray-400">لا توجد أشهر مدفوعة حتى الآن</p>
                       ) : (
-                        <>
-                          <div>
-                            <h3 className="text-lg font-medium text-physics-gold flex items-center mb-3">
-                              <Calendar size={18} className="ml-2" />
-                              الأشهر المدفوعة
-                            </h3>
-                            
-                            {payment.paidMonths.length === 0 ? (
-                              <p className="text-gray-400">لا توجد أشهر مدفوعة حتى الآن</p>
-                            ) : (
-                              <div className="space-y-3">
-                                {payment.paidMonths.map((paidMonth, i) => (
-                                  <div key={i} className="bg-physics-navy/50 rounded-lg p-3">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-white font-medium">{paidMonth.month}</span>
-                                      <span className="text-xs text-gray-400">تاريخ الدفع: {formatDate(paidMonth.date)}</span>
-                                    </div>
-                                  </div>
-                                ))}
+                        <div className="space-y-2">
+                          {payment.paidMonths.map((paidMonth, index) => (
+                            <div key={index} className="bg-physics-navy/50 rounded-lg p-3">
+                              <div className="flex justify-between items-center">
+                                <span className="text-white font-medium">{paidMonth.month}</span>
+                                <span className="text-xs text-gray-400">تاريخ الدفع: {formatDate(paidMonth.date)}</span>
                               </div>
-                            )}
-                          </div>
-                          
-                          <div className="mt-6 p-4 bg-physics-navy/30 rounded-lg">
-                            <div className="flex items-center text-physics-gold">
-                              <span className="mr-2">
-                                <Calendar size={18} />
-                              </span>
-                              <span>آخر دفعة: {formatDate(payment.date)}</span>
                             </div>
-                          </div>
-                        </>
+                          ))}
+                        </div>
                       )}
                     </div>
+                    
+                    <div className="mt-4 p-3 bg-physics-navy/30 rounded-lg">
+                      <div className="flex items-center text-physics-gold">
+                        <span className="mr-2">
+                          <Calendar size={16} />
+                        </span>
+                        <span>آخر دفعة: {formatDate(payment.date)}</span>
+                      </div>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

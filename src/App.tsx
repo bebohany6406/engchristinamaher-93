@@ -13,8 +13,6 @@ import AttendanceRecord from './pages/AttendanceRecord';
 import AttendanceRecordList from './pages/AttendanceRecordList';
 import ViewGrades from './pages/GradesByGrade';
 import Grades from './pages/Grades';
-import StudentPayments from './pages/StudentPayments';
-import ParentPayments from './pages/ParentPayments';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { Toaster } from "@/components/ui/toaster"
@@ -49,7 +47,6 @@ function App() {
             <Route path="/add-payment" element={<PaymentsManagement />} />
             <Route path="/student-payments" element={<StudentPayments />} />
             <Route path="/parent-payments" element={<ParentPayments />} />
-            <Route path="/students" element={<StudentsManagement />} />
           </Routes>
         </Router>
         <Toaster />

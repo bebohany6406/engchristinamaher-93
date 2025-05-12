@@ -32,7 +32,7 @@ const StudentPayments = () => {
         description: "هذه الصفحة متاحة للطلاب فقط",
         variant: "destructive",
       });
-      navigate("/dashboard");
+      navigate("/unauthorized");
       return;
     }
 
