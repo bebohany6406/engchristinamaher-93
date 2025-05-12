@@ -1,8 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Grade, Attendance } from "@/types";
-import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
 
 interface DataContextType {
   grades: Grade[];
@@ -17,7 +15,7 @@ interface DataContextType {
     totalScore: number,
     lessonNumber: number,
     group: string
-  ) => Promise<void>;
+  ) => void;
   updateGrade: (
     id: string,
     examName: string,
@@ -25,8 +23,8 @@ interface DataContextType {
     totalScore: number,
     lessonNumber: number,
     group: string
-  ) => Promise<void>;
-  deleteGrade: (id: string) => Promise<void>;
+  ) => void;
+  deleteGrade: (id: string) => void;
   getStudentGrades: (studentId: string) => Grade[];
   addAttendance: (
     studentId: string,
@@ -34,24 +32,22 @@ interface DataContextType {
     status: "present" | "absent",
     lessonNumber?: number,
     time?: string
-  ) => Promise<void>;
-  deleteAttendanceRecord: (id: string) => Promise<void>;
+  ) => void;
+  deleteAttendanceRecord: (id: string) => void;
   getStudentAttendance: (studentId: string) => Attendance[];
   getStudentLessonCount: (studentId: string) => number;
   getVideos: () => {title: string, url: string}[];
   getAllVideos: () => {id: string, title: string, url: string, grade: string, uploadDate: string, isYouTube?: boolean}[];
   getVideosByGrade: (grade: string) => {id: string, title: string, url: string, grade: string, uploadDate: string, isYouTube?: boolean}[];
-  addVideo: (title: string, url: string, grade: string) => Promise<void>;
-  updateVideo: (id: string, title: string, url: string, grade: string) => Promise<void>;
-  deleteVideo: (id: string) => Promise<void>;
+  addVideo: (title: string, url: string, grade: string) => void;
+  updateVideo: (id: string, title: string, url: string, grade: string) => void;
+  deleteVideo: (url: string) => void;
   getBooks: () => {title: string, url: string}[];
   getAllBooks: () => {id: string, title: string, url: string, grade: string, uploadDate: string}[];
   getBooksByGrade: (grade: string) => {id: string, title: string, url: string, grade: string, uploadDate: string}[];
-  addBook: (title: string, url: string, grade: string) => Promise<void>;
-  updateBook: (id: string, title: string, url: string, grade: string) => Promise<void>;
-  deleteBook: (id: string) => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
+  addBook: (title: string, url: string, grade: string) => void; // Fixed to include grade param
+  updateBook: (id: string, title: string, url: string, grade: string) => void;
+  deleteBook: (url: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -61,192 +57,100 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [videos, setVideos] = useState<{id: string, title: string, url: string, grade: string, uploadDate: string, isYouTube?: boolean}[]>([]);
   const [books, setBooks] = useState<{id: string, title: string, url: string, grade: string, uploadDate: string}[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Load data from Supabase and localStorage on mount
+  // Load from localStorage on mount
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Load grades from Supabase
-        const { data: gradesData, error: gradesError } = await supabase
-          .from('grades')
-          .select('*');
-          
-        if (gradesError) {
-          console.error("Error loading grades from Supabase:", gradesError);
-          
-          // Try loading from localStorage as fallback
-          const storedGrades = localStorage.getItem("grades");
-          if (storedGrades) {
-            try {
-              const parsedGrades = JSON.parse(storedGrades);
-              setGrades(parsedGrades);
-              console.log("Loaded grades from localStorage (fallback)");
-              
-              // Try migrating localStorage data to Supabase
-              parsedGrades.forEach(async (grade: Grade) => {
-                try {
-                  await supabase.from('grades').upsert({
-                    id: grade.id,
-                    studentId: grade.studentId,
-                    studentName: grade.studentName,
-                    examName: grade.examName,
-                    score: grade.score,
-                    totalScore: grade.totalScore,
-                    lessonNumber: grade.lessonNumber,
-                    group: grade.group,
-                    date: grade.date,
-                    performanceIndicator: grade.performanceIndicator
-                  });
-                } catch (syncError) {
-                  console.error("Failed to sync grade to Supabase:", syncError);
-                }
-              });
-            } catch (parseError) {
-              console.error("Failed to parse grades from localStorage:", parseError);
-            }
-          }
-        } else {
-          setGrades(gradesData);
-          console.log("Loaded grades from Supabase:", gradesData);
-        }
-        
-        // Load attendance from Supabase
-        const { data: attendanceData, error: attendanceError } = await supabase
-          .from('attendance')
-          .select('*');
-          
-        if (attendanceError) {
-          console.error("Error loading attendance from Supabase:", attendanceError);
-          
-          // Try loading from localStorage as fallback
-          const storedAttendance = localStorage.getItem("attendance");
-          if (storedAttendance) {
-            try {
-              const parsedAttendance = JSON.parse(storedAttendance);
-              setAttendance(parsedAttendance);
-              console.log("Loaded attendance from localStorage (fallback)");
-              
-              // Try migrating localStorage data to Supabase
-              parsedAttendance.forEach(async (record: Attendance) => {
-                try {
-                  await supabase.from('attendance').upsert({
-                    id: record.id,
-                    studentId: record.studentId,
-                    studentName: record.studentName,
-                    status: record.status,
-                    lessonNumber: record.lessonNumber || 1,
-                    time: record.time,
-                    date: record.date
-                  });
-                } catch (syncError) {
-                  console.error("Failed to sync attendance to Supabase:", syncError);
-                }
-              });
-            } catch (parseError) {
-              console.error("Failed to parse attendance from localStorage:", parseError);
-            }
-          }
-        } else {
-          setAttendance(attendanceData);
-          console.log("Loaded attendance from Supabase:", attendanceData);
-        }
-        
-        // Load videos from Supabase
-        const { data: videosData, error: videosError } = await supabase
-          .from('videos')
-          .select('*');
-          
-        if (videosError) {
-          console.error("Error loading videos from Supabase:", videosError);
-          
-          // Try loading from localStorage as fallback
-          const storedVideos = localStorage.getItem("videos");
-          if (storedVideos) {
-            try {
-              const parsedVideos = JSON.parse(storedVideos);
-              setVideos(parsedVideos);
-              console.log("Loaded videos from localStorage (fallback)");
-              
-              // Try migrating localStorage data to Supabase
-              parsedVideos.forEach(async (video: any) => {
-                try {
-                  await supabase.from('videos').upsert({
-                    id: video.id,
-                    title: video.title,
-                    url: video.url,
-                    grade: video.grade,
-                    uploadDate: video.uploadDate,
-                    isYouTube: video.isYouTube || video.url.includes('youtube.com') || video.url.includes('youtu.be')
-                  });
-                } catch (syncError) {
-                  console.error("Failed to sync video to Supabase:", syncError);
-                }
-              });
-            } catch (parseError) {
-              console.error("Failed to parse videos from localStorage:", parseError);
-            }
-          }
-        } else {
-          setVideos(videosData);
-          console.log("Loaded videos from Supabase:", videosData);
-        }
-        
-        // Load books from Supabase
-        const { data: booksData, error: booksError } = await supabase
-          .from('books')
-          .select('*');
-          
-        if (booksError) {
-          console.error("Error loading books from Supabase:", booksError);
-          
-          // Try loading from localStorage as fallback
-          const storedBooks = localStorage.getItem("books");
-          if (storedBooks) {
-            try {
-              const parsedBooks = JSON.parse(storedBooks);
-              setBooks(parsedBooks);
-              console.log("Loaded books from localStorage (fallback)");
-              
-              // Try migrating localStorage data to Supabase
-              parsedBooks.forEach(async (book: any) => {
-                try {
-                  await supabase.from('books').upsert({
-                    id: book.id,
-                    title: book.title,
-                    url: book.url,
-                    grade: book.grade,
-                    uploadDate: book.uploadDate
-                  });
-                } catch (syncError) {
-                  console.error("Failed to sync book to Supabase:", syncError);
-                }
-              });
-            } catch (parseError) {
-              console.error("Failed to parse books from localStorage:", parseError);
-            }
-          }
-        } else {
-          setBooks(booksData);
-          console.log("Loaded books from Supabase:", booksData);
-        }
-        
-      } catch (error) {
-        console.error("Error loading data:", error);
-        setError("Failed to load data");
-      } finally {
-        setIsLoading(false);
-        setIsInitialized(true);
+    try {
+      const storedGrades = localStorage.getItem("grades");
+      if (storedGrades) {
+        setGrades(JSON.parse(storedGrades));
       }
-    };
+      
+      const storedAttendance = localStorage.getItem("attendance");
+      if (storedAttendance) {
+        setAttendance(JSON.parse(storedAttendance));
+      }
+      
+      const storedVideos = localStorage.getItem("videos");
+      if (storedVideos) {
+        setVideos(JSON.parse(storedVideos));
+      }
+      
+      const storedBooks = localStorage.getItem("books");
+      if (storedBooks) {
+        setBooks(JSON.parse(storedBooks));
+      }
+    } catch (error) {
+      console.error("Error loading data from localStorage:", error);
+    }
     
-    loadData();
+    setIsInitialized(true);
   }, []);
   
+  // Save to localStorage on change
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    localStorage.setItem("grades", JSON.stringify(grades));
+    localStorage.setItem("attendance", JSON.stringify(attendance));
+    localStorage.setItem("videos", JSON.stringify(videos));
+    localStorage.setItem("books", JSON.stringify(books));
+  }, [grades, attendance, videos, books, isInitialized]);
+  
+  // إضافة درجة جديدة
+  const addGrade = (
+    studentId: string,
+    studentName: string,
+    examName: string,
+    score: number,
+    totalScore: number,
+    lessonNumber: number,
+    group: string
+  ) => {
+    const newGrade: Grade = {
+      id: `grade-${Date.now()}`,
+      studentId,
+      studentName,
+      examName,
+      score,
+      totalScore,
+      lessonNumber,
+      group,
+      date: new Date().toISOString(),
+      performanceIndicator: calculatePerformance(score, totalScore)
+    };
+    
+    setGrades(prevGrades => [...prevGrades, newGrade]);
+  };
+
+  // تحديث درجة موجودة
+  const updateGrade = (
+    id: string,
+    examName: string,
+    score: number,
+    totalScore: number,
+    lessonNumber: number,
+    group: string
+  ) => {
+    setGrades(prevGrades => 
+      prevGrades.map(grade => 
+        grade.id === id 
+          ? { 
+              ...grade, 
+              examName, 
+              score, 
+              totalScore, 
+              lessonNumber,
+              group,
+              date: new Date().toISOString(), // تحديث التاريخ عند التعديل
+              performanceIndicator: calculatePerformance(score, totalScore)
+            } as Grade
+          : grade
+      )
+    );
+  };
+
   // Function to calculate performance indicator
   const calculatePerformance = (score: number, total: number): "excellent" | "very-good" | "good" | "fair" | "needs-improvement" => {
     const percentage = (score / total) * 100;
@@ -256,122 +160,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (percentage >= 60) return 'fair';
     return 'needs-improvement';
   };
-  
-  // إضافة درجة جديدة
-  const addGrade = async (
-    studentId: string,
-    studentName: string,
-    examName: string,
-    score: number,
-    totalScore: number,
-    lessonNumber: number,
-    group: string
-  ) => {
-    try {
-      const newGrade: Grade = {
-        id: `grade-${Date.now()}`,
-        studentId,
-        studentName,
-        examName,
-        score,
-        totalScore,
-        lessonNumber,
-        group,
-        date: new Date().toISOString(),
-        performanceIndicator: calculatePerformance(score, totalScore)
-      };
-      
-      const { error } = await supabase.from('grades').insert(newGrade);
-      
-      if (error) throw error;
-      
-      setGrades(prevGrades => [...prevGrades, newGrade]);
-    } catch (error) {
-      console.error("Error adding grade:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء إضافة الدرجة",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  // تحديث درجة موجودة
-  const updateGrade = async (
-    id: string,
-    examName: string,
-    score: number,
-    totalScore: number,
-    lessonNumber: number,
-    group: string
-  ) => {
-    try {
-      const performanceIndicator = calculatePerformance(score, totalScore);
-      const date = new Date().toISOString();
-      
-      const { error } = await supabase
-        .from('grades')
-        .update({ 
-          examName, 
-          score, 
-          totalScore, 
-          lessonNumber,
-          group,
-          date,
-          performanceIndicator
-        })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setGrades(prevGrades => 
-        prevGrades.map(grade => 
-          grade.id === id 
-            ? { 
-                ...grade, 
-                examName, 
-                score, 
-                totalScore, 
-                lessonNumber,
-                group,
-                date,
-                performanceIndicator
-              } as Grade
-            : grade
-        )
-      );
-    } catch (error) {
-      console.error("Error updating grade:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء تحديث الدرجة",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
 
   // حذف درجة
-  const deleteGrade = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('grades')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setGrades(prevGrades => prevGrades.filter(grade => grade.id !== id));
-    } catch (error) {
-      console.error("Error deleting grade:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء حذف الدرجة",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const deleteGrade = (id: string) => {
+    setGrades(prevGrades => prevGrades.filter(grade => grade.id !== id));
   };
   
   // الحصول على درجات طالب محدد
@@ -380,61 +172,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   // إضافة سجل حضور
-  const addAttendance = async (
+  const addAttendance = (
     studentId: string,
     studentName: string,
     status: "present" | "absent",
     lessonNumber: number = 1,
     time?: string
   ) => {
-    try {
-      const now = new Date();
-      const newAttendance: Attendance = {
-        id: `attendance-${Date.now()}`,
-        studentId,
-        studentName,
-        status,
-        lessonNumber,
-        time: time || `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`,
-        date: now.toISOString()
-      };
-      
-      const { error } = await supabase.from('attendance').insert(newAttendance);
-      
-      if (error) throw error;
-      
-      setAttendance(prevAttendance => [...prevAttendance, newAttendance]);
-    } catch (error) {
-      console.error("Error adding attendance:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء تسجيل الحضور",
-        variant: "destructive"
-      });
-      throw error;
-    }
+    const now = new Date();
+    const newAttendance: Attendance = {
+      id: `attendance-${Date.now()}`,
+      studentId,
+      studentName,
+      status,
+      lessonNumber,
+      time: time || `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`,
+      date: now.toISOString()
+    };
+    
+    setAttendance(prevAttendance => [...prevAttendance, newAttendance]);
   };
   
   // حذف سجل حضور
-  const deleteAttendanceRecord = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('attendance')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setAttendance(prevAttendance => prevAttendance.filter(record => record.id !== id));
-    } catch (error) {
-      console.error("Error deleting attendance record:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء حذف سجل الحضور",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const deleteAttendanceRecord = (id: string) => {
+    setAttendance(prevAttendance => prevAttendance.filter(record => record.id !== id));
   };
   
   // Get lesson count for a student
@@ -460,85 +221,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return videos.filter(video => video.grade === grade);
   };
   
-  const addVideo = async (title: string, url: string, grade: string) => {
-    try {
-      // Check if URL is a YouTube URL
-      const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
-      
-      const newVideo = { 
-        id: `video-${Date.now()}`,
-        title, 
-        url,
-        grade,
-        uploadDate: new Date().toISOString(),
-        isYouTube
-      };
-      
-      const { error } = await supabase.from('videos').insert(newVideo);
-      
-      if (error) throw error;
-      
-      setVideos(prevVideos => [...prevVideos, newVideo]);
-    } catch (error) {
-      console.error("Error adding video:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء إضافة الفيديو",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const addVideo = (title: string, url: string, grade: string) => {
+    // Check if URL is a YouTube URL
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+    
+    const newVideo = { 
+      id: `video-${Date.now()}`,
+      title, 
+      url,
+      grade,
+      uploadDate: new Date().toISOString(),
+      isYouTube
+    };
+    setVideos(prevVideos => [...prevVideos, newVideo]);
   };
   
-  const updateVideo = async (id: string, title: string, url: string, grade: string) => {
-    try {
-      // Check if URL is a YouTube URL
-      const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
-      
-      const { error } = await supabase
-        .from('videos')
-        .update({ title, url, grade, isYouTube })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setVideos(prevVideos => 
-        prevVideos.map(video => 
-          video.id === id 
-            ? { ...video, title, url, grade, isYouTube }
-            : video
-        )
-      );
-    } catch (error) {
-      console.error("Error updating video:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء تحديث الفيديو",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const updateVideo = (id: string, title: string, url: string, grade: string) => {
+    // Check if URL is a YouTube URL
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+    
+    setVideos(prevVideos => 
+      prevVideos.map(video => 
+        video.id === id 
+          ? { ...video, title, url, grade, isYouTube }
+          : video
+      )
+    );
   };
   
-  const deleteVideo = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('videos')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
-    } catch (error) {
-      console.error("Error deleting video:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء حذف الفيديو",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const deleteVideo = (id: string) => {
+    setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
   };
   
   // إدارة الكتب
@@ -550,78 +262,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return books.filter(book => book.grade === grade);
   };
   
-  const addBook = async (title: string, url: string, grade: string) => {
-    try {
-      const newBook = { 
-        id: `book-${Date.now()}`,
-        title, 
-        url,
-        grade,
-        uploadDate: new Date().toISOString()
-      };
-      
-      const { error } = await supabase.from('books').insert(newBook);
-      
-      if (error) throw error;
-      
-      setBooks(prevBooks => [...prevBooks, newBook]);
-    } catch (error) {
-      console.error("Error adding book:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء إضافة الكتاب",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const addBook = (title: string, url: string, grade: string) => {
+    const newBook = { 
+      id: `book-${Date.now()}`,
+      title, 
+      url,
+      grade,
+      uploadDate: new Date().toISOString()
+    };
+    setBooks(prevBooks => [...prevBooks, newBook]);
   };
   
-  const updateBook = async (id: string, title: string, url: string, grade: string) => {
-    try {
-      const { error } = await supabase
-        .from('books')
-        .update({ title, url, grade })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setBooks(prevBooks => 
-        prevBooks.map(book => 
-          book.id === id 
-            ? { ...book, title, url, grade }
-            : book
-        )
-      );
-    } catch (error) {
-      console.error("Error updating book:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء تحديث الكتاب",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const updateBook = (id: string, title: string, url: string, grade: string) => {
+    setBooks(prevBooks => 
+      prevBooks.map(book => 
+        book.id === id 
+          ? { ...book, title, url, grade }
+          : book
+      )
+    );
   };
   
-  const deleteBook = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('books')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setBooks(prevBooks => prevBooks.filter(book => book.id !== id));
-    } catch (error) {
-      console.error("Error deleting book:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء حذف الكتاب",
-        variant: "destructive"
-      });
-      throw error;
-    }
+  const deleteBook = (id: string) => {
+    setBooks(prevBooks => prevBooks.filter(book => book.id !== id));
   };
   
   const value = {
@@ -648,9 +311,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getBooksByGrade,
     addBook,
     updateBook,
-    deleteBook,
-    isLoading,
-    error
+    deleteBook
   };
   
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
@@ -7,8 +7,6 @@ import { PhoneContact } from "@/components/PhoneContact";
 import { Users, UserPlus, QrCode, Video, Book, LogOut, CheckSquare, Award, DollarSign, UserCheck, RefreshCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
-import { SupabaseSetup } from "@/components/SupabaseSetup";
-import { checkSupabaseConnection, reinitializeSupabase } from "@/lib/supabase";
 
 const DashboardItem = ({
   to,
@@ -37,23 +35,11 @@ const DashboardItem = ({
 const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
       navigate("/login");
     }
-    
-    // Check Supabase connection
-    const checkConnection = async () => {
-      // Ensure we're using the latest credentials from localStorage
-      reinitializeSupabase();
-      
-      const isConnected = await checkSupabaseConnection();
-      setIsSupabaseConnected(isConnected);
-    };
-    
-    checkConnection();
   }, [currentUser, navigate]);
 
   const handleLogout = () => {
@@ -91,11 +77,6 @@ const Dashboard = () => {
       <main className="flex-1 p-6 relative z-10">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-2xl font-bold text-physics-gold mb-8">لوحة التحكم</h1>
-          
-          {/* Show Supabase setup if connection is not established */}
-          {isSupabaseConnected === false && currentUser.role === "admin" && (
-            <SupabaseSetup />
-          )}
           
           {/* Admin Dashboard Items */}
           {currentUser.role === "admin" && (
