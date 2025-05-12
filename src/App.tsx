@@ -26,7 +26,7 @@ import RequireAuth from "@/components/RequireAuth";
 import { AuthProvider } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { Toaster } from "@/components/ui/toaster";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { useFont } from "@/hooks/use-font";
 
 function App() {
@@ -39,7 +39,7 @@ function App() {
           <DataProvider>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route element={<RequireAuth />}>
+              <Route element={<RequireAuth><Outlet /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/scan" element={<ScanCode />} />
                 <Route path="/grades" element={<Grades />} />
