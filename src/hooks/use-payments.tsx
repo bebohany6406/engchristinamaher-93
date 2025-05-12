@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Payment, PaidMonth } from '@/types';
 import { supabase } from '@/lib/supabase';
@@ -76,7 +75,11 @@ export function usePayments() {
     studentCode: string,
     group: string,
     month: string
-  ) => {
+  ): Promise<{ 
+    success: boolean; 
+    message: string; 
+    payment?: Payment 
+  }> => {
     try {
       const date = new Date().toISOString();
       const paidMonth: PaidMonth = {
@@ -113,14 +116,16 @@ export function usePayments() {
         if (error) throw error;
 
         // Update local state
+        const updatedPayment = {
+          ...existingPayment,
+          month,
+          date,
+          paidMonths: updatedPaidMonths
+        };
+        
         const updatedPayments = payments.map(payment => {
           if (payment.id === existingPayment.id) {
-            return {
-              ...payment,
-              month,
-              date,
-              paidMonths: updatedPaidMonths
-            };
+            return updatedPayment;
           }
           return payment;
         });
@@ -130,12 +135,7 @@ export function usePayments() {
         return {
           success: true,
           message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`,
-          payment: {
-            ...existingPayment,
-            month,
-            date,
-            paidMonths: updatedPaidMonths
-          }
+          payment: updatedPayment
         };
       } else {
         // Create new payment record for student
@@ -167,11 +167,6 @@ export function usePayments() {
       }
     } catch (error) {
       console.error("Error adding payment:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء تسجيل الدفع",
-        variant: "destructive"
-      });
       
       return {
         success: false,
