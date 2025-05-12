@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// تأخير تحميل التطبيق للتأكد من اكتمال تحميل السياق
+// Create the root once the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   createRoot(document.getElementById("root")!).render(<App />);
 });
