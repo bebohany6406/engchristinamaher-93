@@ -1,3 +1,4 @@
+
 export interface Attendance {
   id: string;
   studentId: string;
@@ -46,6 +47,9 @@ export interface Student {
   group: string;
   grade: "first" | "second" | "third";
   password?: string;
+  phone?: string;
+  parentPhone?: string;
+  role?: string;
 }
 
 export interface User {
@@ -56,6 +60,16 @@ export interface User {
   code?: string;
   group?: string;
   grade?: "first" | "second" | "third";
+  phone?: string;
+  password?: string;
+}
+
+export interface Parent {
+  id: string;
+  phone: string;
+  studentCode: string;
+  studentName: string;
+  password: string;
 }
 
 export interface PaidMonth {
