@@ -123,6 +123,8 @@ const Books = () => {
   const handleEditBook = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!editTitle.trim() || !editUrl.trim()) return;
+    
     try {
       // تحديث في Supabase
       const { error } = await supabase
@@ -374,7 +376,12 @@ const Books = () => {
       {showEditForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">تعديل الملف</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-physics-gold">تعديل الملف</h2>
+              <button type="button" className="text-gray-400 hover:text-white" onClick={() => setShowEditForm(false)}>
+                <X size={24} />
+              </button>
+            </div>
             
             <form onSubmit={handleEditBook} className="space-y-4">
               <div>
