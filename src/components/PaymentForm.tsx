@@ -27,7 +27,8 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
       const results = getAllStudents().filter(
         student => 
           student.name.includes(searchQuery) || 
-          student.code.includes(searchQuery)
+          student.code.includes(searchQuery) ||
+          (student.group && student.group.includes(searchQuery))
       );
       setSearchResults(results);
       setShowResults(true);
@@ -74,16 +75,22 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
       month
     );
     
-    if (result.success) {
+    if (result && result.success) {
       toast({
-        title: "تم تسجيل الدفعة",
+        title: "✅ تم تسجيل الدفعة",
         description: result.message,
       });
       onClose();
+    } else if (result) {
+      toast({
+        title: "❌ خطأ",
+        description: result.message,
+        variant: "destructive",
+      });
     } else {
       toast({
-        title: "خطأ",
-        description: result.message,
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء تسجيل الدفعة",
         variant: "destructive",
       });
     }
@@ -102,7 +109,7 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
         {/* بحث عن الطالب */}
         {!selectedStudent && (
           <div className="relative">
-            <label className="block text-white mb-2 text-sm">بحث عن الطالب (بالاسم أو الكود)</label>
+            <label className="block text-white mb-2 text-sm">بحث عن الطالب (بالاسم أو الكود أو المجموعة)</label>
             <div className="relative">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
               <input
@@ -110,7 +117,7 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
                 className="inputField pr-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="اكتب اسم الطالب أو الكود..."
+                placeholder="اكتب اسم الطالب أو الكود أو المجموعة..."
               />
             </div>
             
@@ -124,7 +131,7 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
                     onClick={() => handleSelectStudent(student)}
                   >
                     <div>{student.name}</div>
-                    <div className="text-xs text-physics-gold">كود: {student.code} | مجموعة: {student.group}</div>
+                    <div className="text-xs text-physics-gold">كود: {student.code} | مجموعة: {student.group || "غير محدد"}</div>
                   </div>
                 ))}
               </div>

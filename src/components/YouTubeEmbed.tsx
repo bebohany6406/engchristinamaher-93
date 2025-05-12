@@ -43,25 +43,8 @@ export function YouTubeEmbed({ videoUrl, title }: YouTubeEmbedProps) {
       }
 
       if (videoId) {
-        // تحسين إعدادات تضمين الفيديو لإزالة جميع خيارات التفاعل
-        // rel=0: يعطل الفيديوهات ذات الصلة
-        // modestbranding=1: يقلل من علامة YouTube التجارية
-        // controls=1: يعرض عناصر تحكم الفيديو (نحتاج هذا للتحكم في التشغيل)
-        // disablekb=1: يعطل عناصر تحكم لوحة المفاتيح
-        // iv_load_policy=3: يعطل التعليقات التوضيحية للفيديو
-        // fs=0: يعطل زر ملء الشاشة
-        // showinfo=0: يخفي معلومات الفيديو
-        // origin: يعين الأصل لتحسين الأمان
-        // playsinline=1: يتم تشغيله مضمنًا على iOS
-        // mute=0: لا يكتم الصوت
-        // loop=0: لا يكرر الفيديو
-        // cc_load_policy=0: لا يعرض التسميات التوضيحية بشكل افتراضي
-        // enablejsapi=0: يعطل API JS
-        // color=white: شريط تقدم أبيض
-        // annotations=0: إيقاف التعليقات
-        // autohide=1: إخفاء عناصر التحكم عند عدم النشاط
-        
-        setEmbedUrl(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1&fs=0&disablekb=1&controls=1&iv_load_policy=3&start=0&origin=${window.location.origin}&playsinline=1&mute=0&loop=0&cc_load_policy=0&enablejsapi=0&color=white&annotations=0&autohide=1`);
+        // تعطيل جميع خيارات التفاعل
+        setEmbedUrl(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1&fs=0&disablekb=1&controls=0&iv_load_policy=3&start=0&origin=${window.location.origin}&playsinline=1&mute=0&loop=0&cc_load_policy=0&enablejsapi=0&color=white&annotations=0&autohide=1`);
         setIsLoading(false);
       } else {
         setError("الرابط غير صالح. يرجى استخدام رابط يوتيوب صحيح");
@@ -103,17 +86,12 @@ export function YouTubeEmbed({ videoUrl, title }: YouTubeEmbedProps) {
         allowFullScreen={false}
         loading="lazy"
         style={{
-          pointerEvents: "auto"
+          pointerEvents: "none" // Disable all interactions
         }}
       ></iframe>
       
-      {/* غلاف شفاف لمنع التفاعل مع عناصر واجهة مستخدم YouTube خارج منطقة التشغيل */}
-      <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
-        <div className="absolute top-0 left-0 w-full h-12" style={{ pointerEvents: "none" }}></div>
-        <div className="absolute bottom-0 left-0 w-full h-12" style={{ pointerEvents: "none" }}></div>
-        <div className="absolute top-12 left-0 w-12 bottom-12" style={{ pointerEvents: "none" }}></div>
-        <div className="absolute top-12 right-0 w-12 bottom-12" style={{ pointerEvents: "none" }}></div>
-      </div>
+      {/* Overlay to completely prevent interactions */}
+      <div className="absolute inset-0 bg-transparent z-10"></div>
     </div>
   );
 }
