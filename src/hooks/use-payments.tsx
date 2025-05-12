@@ -23,6 +23,7 @@ export function usePayments() {
   useEffect(() => {
     if (!isInitialized) return;
     localStorage.setItem("payments", JSON.stringify(payments));
+    console.log("Saving payments to localStorage:", payments);
   }, [payments, isInitialized]);
 
   // إضافة دفعة جديدة
@@ -80,7 +81,13 @@ export function usePayments() {
         paidMonths: [paidMonth]
       };
 
-      setPayments([...payments, newPayment]);
+      setPayments(prevPayments => {
+        const updatedPayments = [...prevPayments, newPayment];
+        localStorage.setItem("payments", JSON.stringify(updatedPayments));
+        console.log("Added new payment and updated localStorage:", updatedPayments);
+        return updatedPayments;
+      });
+      
       return {
         success: true,
         message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`
@@ -98,10 +105,21 @@ export function usePayments() {
     return payments.filter(payment => payment.studentId === studentId);
   };
 
+  // فحص حالة الهوك
+  const debugPaymentsState = () => {
+    console.log("Current payments state:", payments);
+    console.log("Saved payments in localStorage:", localStorage.getItem("payments"));
+    return {
+      stateCount: payments.length,
+      localStorageCount: localStorage.getItem("payments") ? JSON.parse(localStorage.getItem("payments") || "[]").length : 0
+    };
+  };
+
   return {
     payments,
     addPayment,
     getAllPayments,
-    getStudentPayments
+    getStudentPayments,
+    debugPaymentsState
   };
 }

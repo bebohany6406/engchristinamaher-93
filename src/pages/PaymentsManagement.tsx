@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, Search, Calendar, User, DollarSign } from "lucide-react";
+import { ArrowRight, Search, Calendar, User, DollarSign, Bug } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
@@ -14,7 +14,7 @@ import { Payment } from "@/types";
 const PaymentsManagement = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { payments } = usePayments();
+  const { payments, debugPaymentsState } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
@@ -26,6 +26,10 @@ const PaymentsManagement = () => {
       return;
     }
 
+    // تأكد من تحميل البيانات من المخزن المحلي
+    const state = debugPaymentsState();
+    console.log("Payments data:", state);
+    
     if (currentUser.role === "admin") {
       // المدير يرى جميع المدفوعات
       setFilteredPayments(payments);
@@ -39,7 +43,7 @@ const PaymentsManagement = () => {
       const studentPayments = payments.filter(payment => payment.studentName === associatedStudent);
       setFilteredPayments(studentPayments);
     }
-  }, [currentUser, payments]);
+  }, [currentUser, payments, debugPaymentsState]);
   
   // التحقق من صلاحيات المستخدم
   useEffect(() => {
@@ -56,10 +60,11 @@ const PaymentsManagement = () => {
   const handlePaymentAdded = (payment: Payment) => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
-    // تحديث قائمة المدفوعات
-    if (currentUser?.role === "admin") {
-      setFilteredPayments([...payments, payment]);
-    }
+    // تحديث قائمة المدفوعات ستحدث تلقائيا من خلال useEffect
+    toast({
+      title: "تم تسجيل الدفع بنجاح",
+      description: `تم تسجيل دفع الشهر ${payment.month} للطالب ${payment.studentName}`,
+    });
   };
 
   return (
