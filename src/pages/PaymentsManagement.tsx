@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, Search, Calendar, User, DollarSign } from "lucide-react";
+import { ArrowRight, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
@@ -17,6 +17,12 @@ const PaymentsManagement = () => {
   const { payments } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0); // Add a refresh key
+  
+  // Force refresh of payments list
+  const handlePaymentAdded = () => {
+    setRefreshKey(prevKey => prevKey + 1);
+  };
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -27,18 +33,21 @@ const PaymentsManagement = () => {
 
     if (currentUser.role === "admin") {
       // المدير يرى جميع المدفوعات
+      console.log("Admin view - all payments:", payments);
       setFilteredPayments(payments);
     } else if (currentUser.role === "student") {
       // الطالب يرى مدفوعاته فقط
       const studentPayments = payments.filter(payment => payment.studentId === currentUser.id);
+      console.log("Student view - filtered payments:", studentPayments);
       setFilteredPayments(studentPayments);
     } else if (currentUser.role === "parent") {
       // ولي الأمر يرى مدفوعات الطالب التابع له
       const associatedStudent = currentUser.name.replace("ولي أمر ", "");
       const studentPayments = payments.filter(payment => payment.studentName === associatedStudent);
+      console.log("Parent view - filtered payments:", studentPayments);
       setFilteredPayments(studentPayments);
     }
-  }, [currentUser, payments]);
+  }, [currentUser, payments, refreshKey]); // Add refreshKey as dependency
   
   // التحقق من صلاحيات المستخدم
   useEffect(() => {
@@ -87,7 +96,10 @@ const PaymentsManagement = () => {
           
           {/* نموذج إضافة دفعة (للمدير فقط) */}
           {showAddForm && currentUser?.role === "admin" && (
-            <PaymentForm onClose={() => setShowAddForm(false)} />
+            <PaymentForm 
+              onClose={() => setShowAddForm(false)} 
+              onPaymentAdded={handlePaymentAdded}
+            />
           )}
           
           {/* قائمة المدفوعات */}
