@@ -1,4 +1,3 @@
-
 export interface Attendance {
   id: string;
   studentId: string;
@@ -29,6 +28,7 @@ export interface Video {
   thumbnailUrl?: string;
   uploadDate: string;
   grade: "first" | "second" | "third";
+  isYouTube?: boolean;
 }
 
 export interface Book {
@@ -42,31 +42,34 @@ export interface Book {
 export interface Student {
   id: string;
   name: string;
-  phone: string;
-  parentPhone: string;
-  role: "student";
-  grade: "first" | "second" | "third";
-  password: string;
-  qrCode?: string;
-  group?: string;
   code: string;
-}
-
-export interface Parent {
-  id: string;
-  phone: string;
-  studentCode: string;
-  studentName: string;
-  password: string;
+  group: string;
+  grade: "first" | "second" | "third";
+  password?: string;
 }
 
 export interface User {
   id: string;
   name: string;
-  phone: string;
-  role: "admin" | "parent" | "student";
-  password?: string;
-  grade?: "first" | "second" | "third";
-  group?: string;
+  email: string;
+  role: "admin" | "student" | "parent";
   code?: string;
+  group?: string;
+  grade?: "first" | "second" | "third";
+}
+
+export interface PaidMonth {
+  month: string;
+  date: string;
+}
+
+export interface Payment {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentCode: string;
+  group: string;
+  month: string;
+  date: string;
+  paidMonths: PaidMonth[];
 }

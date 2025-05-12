@@ -26,6 +26,7 @@ import AttendanceListByGrade from "./pages/AttendanceListByGrade";
 import GradesManagement from "./pages/GradesManagement";
 import GradesByGrade from "./pages/GradesByGrade";
 import StudentGrades from "./pages/StudentGrades";
+import PaymentsManagement from "./pages/PaymentsManagement";
 import { useEffect } from "react";
 import "./App.css";
 
@@ -160,6 +161,7 @@ const App = () => {
                     <Route path="/attendance-list/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<AttendanceListByGrade />} />} />
                     <Route path="/grades-management" element={<RequireAuth allowedRoles={["admin"]} children={<GradesManagement />} />} />
                     <Route path="/grades-management/:grade" element={<RequireAuth allowedRoles={["admin"]} children={<GradesByGrade />} />} />
+                    <Route path="/payments" element={<RequireAuth allowedRoles={["admin"]} children={<PaymentsManagement />} />} />
                     
                     {/* Student Routes */}
                     <Route path="/student-code" element={<RequireAuth allowedRoles={["student"]} children={<StudentCode />} />} />
