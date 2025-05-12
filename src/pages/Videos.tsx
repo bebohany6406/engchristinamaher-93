@@ -14,3 +14,67 @@ import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 const isYouTubeURL = (url: string): boolean => {
   return url.includes("youtube.com") || url.includes("youtu.be");
 };
+
+// Create the Videos component
+const Videos = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
+  const [showUpload, setShowUpload] = useState(location.pathname === "/add-video");
+
+  return (
+    <div className="min-h-screen bg-physics-navy flex flex-col">
+      <PhoneContact />
+      
+      {/* Header */}
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+        <div className="flex items-center">
+          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
+            <ArrowRight size={20} />
+            <span>العودة للرئيسية</span>
+          </button>
+        </div>
+        <Logo />
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-physics-gold mb-6">
+            {showUpload ? "إضافة فيديو جديد" : "مكتبة الفيديوهات"}
+          </h1>
+          
+          {currentUser?.role === "admin" && (
+            <div className="mb-6">
+              <button
+                onClick={() => setShowUpload(!showUpload)}
+                className="bg-physics-gold text-physics-navy px-4 py-2 rounded-md hover:bg-physics-gold/80 transition-colors"
+              >
+                {showUpload ? "عرض الفيديوهات" : "إضافة فيديو جديد"}
+              </button>
+            </div>
+          )}
+          
+          {showUpload && currentUser?.role === "admin" ? (
+            <VideoUploader />
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {/* Just some example videos as placeholders */}
+              <div className="bg-physics-dark rounded-lg overflow-hidden">
+                <h3 className="text-white text-lg p-4">شرح درس الحركة المستقيمة</h3>
+                <YouTubeEmbed videoUrl="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+              </div>
+              
+              <div className="bg-physics-dark rounded-lg overflow-hidden">
+                <h3 className="text-white text-lg p-4">قوانين نيوتن للحركة</h3>
+                <YouTubeEmbed videoUrl="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Videos;
