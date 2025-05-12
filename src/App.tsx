@@ -28,6 +28,8 @@ import GradesByGrade from "./pages/GradesByGrade";
 import StudentGrades from "./pages/StudentGrades";
 import PaymentsManagement from "./pages/PaymentsManagement";
 import SystemReset from "./pages/SystemReset";
+import StudentPaymentsPage from "./pages/StudentPaymentsPage";
+import ParentPaymentsPage from "./pages/ParentPaymentsPage";
 import { useEffect } from "react";
 import "./App.css";
 
@@ -168,6 +170,10 @@ const App = () => {
                     {/* Student Routes */}
                     <Route path="/student-code" element={<RequireAuth allowedRoles={["student"]} children={<StudentCode />} />} />
                     <Route path="/student-grades" element={<RequireAuth allowedRoles={["student"]} children={<StudentGrades />} />} />
+                    <Route path="/student-payments" element={<RequireAuth allowedRoles={["student"]} children={<StudentPaymentsPage />} />} />
+                    
+                    {/* Parent Routes */}
+                    <Route path="/parent-payments" element={<RequireAuth allowedRoles={["parent"]} children={<ParentPaymentsPage />} />} />
                     
                     {/* All Users Routes */}
                     <Route path="/videos" element={<RequireAuth allowedRoles={["admin", "student"]} children={<Videos />} />} />

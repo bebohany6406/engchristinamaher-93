@@ -68,8 +68,8 @@ const AttendanceRecord = () => {
         <div className="max-w-3xl mx-auto">
           <h1 className="text-2xl font-bold text-physics-gold mb-6">سجل الحضور</h1>
           
-          {/* Student ID Input (for admin/parent) */}
-          {(currentUser?.role === "admin" || currentUser?.role === "parent") && (
+          {/* Student ID Input (for admin only) */}
+          {currentUser?.role === "admin" && (
             <div className="mb-4">
               <label htmlFor="studentId" className="block text-white mb-2">
                 أدخل كود الطالب

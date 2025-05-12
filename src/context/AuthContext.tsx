@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateUniquePassword } from "@/lib/utils";
@@ -98,6 +99,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentUser, students, parents, isInitialized]);
 
   const login = (phoneNumber: string, password: string): boolean => {
+    console.log("Attempting login with:", { phoneNumber, password });
+    console.log("Available students:", students);
+    
     // Check if admin
     if (phoneNumber === adminUser.phone && password === adminUser.password) {
       setCurrentUser(adminUser);
@@ -111,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check if student
     const student = students.find(s => s.phone === phoneNumber && s.password === password);
     if (student) {
+      console.log("Student found:", student);
       setCurrentUser({
         id: student.id,
         name: student.name,
@@ -131,12 +136,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check if parent
     const parent = parents.find(p => p.phone === phoneNumber && p.password === password);
     if (parent) {
+      console.log("Parent found:", parent);
+      const student = students.find(s => s.code === parent.studentCode);
       setCurrentUser({
         id: parent.id,
         name: `ولي أمر ${parent.studentName}`,
         phone: parent.phone,
         password: parent.password,
-        role: "parent"
+        role: "parent",
+        childrenIds: student ? [student.id] : []
       });
       toast({
         title: "✅ تم تسجيل الدخول بنجاح",
@@ -145,6 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     }
 
+    console.log("Login failed. No matching user found.");
     toast({
       variant: "destructive",
       title: "❌ فشل تسجيل الدخول",
