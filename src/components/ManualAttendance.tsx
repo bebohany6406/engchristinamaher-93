@@ -96,9 +96,13 @@ export function ManualAttendance() {
               <p className="text-white">الطالب: <span className="font-bold">{studentInfo.name}</span></p>
               
               {studentInfo.hasPaid ? (
-                <CheckCircle2 className="text-green-400" size={20} title="مدفوع" />
+                <span className="flex items-center" aria-label="مدفوع">
+                  <CheckCircle2 className="text-green-400" size={20} />
+                </span>
               ) : (
-                <AlertCircle className="text-red-400" size={20} title="غير مدفوع" />
+                <span className="flex items-center" aria-label="غير مدفوع">
+                  <AlertCircle className="text-red-400" size={20} />
+                </span>
               )}
             </div>
             
