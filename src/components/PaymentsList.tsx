@@ -9,6 +9,7 @@ interface PaymentsListProps {
 
 export function PaymentsList({ payments }: PaymentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchGroup, setSearchGroup] = useState("");
   
   // تنسيق التاريخ
   const formatDate = (dateString: string) => {
@@ -19,17 +20,18 @@ export function PaymentsList({ payments }: PaymentsListProps) {
     });
   };
 
-  // تصفية المدفوعات حسب البحث
+  // تصفية المدفوعات حسب البحث والمجموعة
   const filteredPayments = payments.filter(payment => 
-    payment.studentName.includes(searchQuery) || 
-    payment.studentCode.includes(searchQuery) ||
-    payment.group.includes(searchQuery)
+    (payment.studentName.includes(searchQuery) || 
+     payment.studentCode.includes(searchQuery) ||
+     payment.group.includes(searchQuery)) &&
+    (searchGroup === "" || payment.group.includes(searchGroup))
   );
 
   return (
     <div>
-      {/* حقل البحث */}
-      <div className="p-4">
+      {/* حقول البحث */}
+      <div className="p-4 space-y-3">
         <div className="relative">
           <input
             type="text"
@@ -39,6 +41,16 @@ export function PaymentsList({ payments }: PaymentsListProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+        </div>
+        
+        <div className="relative">
+          <input
+            type="text"
+            className="inputField"
+            placeholder="بحث حسب المجموعة..."
+            value={searchGroup}
+            onChange={(e) => setSearchGroup(e.target.value)}
+          />
         </div>
       </div>
 
