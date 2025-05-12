@@ -84,18 +84,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
     
     if (result.success) {
       // بعد إضافة الدفعة بنجاح، نقوم بإرسال بيانات الدفعة للدالة onPaymentAdded
-      const newPayment: Payment = {
-        id: `payment-${Date.now()}`,
-        studentId: selectedStudent.id,
-        studentName: selectedStudent.name,
-        studentCode: selectedStudent.code,
-        group: selectedStudent.group || "",
-        month,
-        date: new Date().toISOString(),
-        paidMonths: [{ month, date: new Date().toISOString() }]
-      };
-      
-      onPaymentAdded(newPayment);
+      onPaymentAdded(result.payment);
       
       toast({
         title: "✅ تم تسجيل الدفعة",

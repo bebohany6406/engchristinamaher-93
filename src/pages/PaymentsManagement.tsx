@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, Search, Calendar, User, DollarSign, Bug } from "lucide-react";
+import { ArrowRight, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
@@ -60,11 +60,8 @@ const PaymentsManagement = () => {
   const handlePaymentAdded = (payment: Payment) => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
-    // تحديث قائمة المدفوعات ستحدث تلقائيا من خلال useEffect
-    toast({
-      title: "تم تسجيل الدفع بنجاح",
-      description: `تم تسجيل دفع الشهر ${payment.month} للطالب ${payment.studentName}`,
-    });
+    // سنحتاج لتحديث قائمة المدفوعات يدوياً هنا لعرض التغييرات على الفور
+    debugPaymentsState(); // للتحقق من البيانات في الكونسول
   };
 
   return (
@@ -110,7 +107,7 @@ const PaymentsManagement = () => {
           
           {/* عرض أحدث دفعة تم إضافتها */}
           {recentPayment && (
-            <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6 animate-pulse">
+            <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6">
               <h2 className="text-physics-gold font-bold mb-2">تم إضافة دفعة جديدة</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
@@ -128,6 +125,16 @@ const PaymentsManagement = () => {
                 <div>
                   <span className="text-gray-400 block text-sm">الشهر المدفوع:</span>
                   <span className="text-white">{recentPayment.month}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-sm">الأشهر المدفوعة:</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {recentPayment.paidMonths.map((month, index) => (
+                      <span key={index} className="bg-physics-navy px-2 py-1 rounded-full text-xs text-white">
+                        {month.month}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

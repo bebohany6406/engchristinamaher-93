@@ -12,6 +12,7 @@ export function usePayments() {
     if (storedPayments) {
       try {
         setPayments(JSON.parse(storedPayments));
+        console.log("Loaded payments from localStorage:", JSON.parse(storedPayments));
       } catch (error) {
         console.error("Error loading payments from localStorage:", error);
       }
@@ -53,20 +54,29 @@ export function usePayments() {
             return payment; // Don't do anything if month is already paid
           }
           
-          return {
+          // Create a new payment object with updated values
+          const updatedPayment = {
             ...payment,
             month, // Update current month
             date,  // Update payment date
             paidMonths: [...payment.paidMonths, paidMonth] // Add new month to paid months list
           };
+          
+          return updatedPayment;
         }
         return payment;
       });
 
-      setPayments(updatedPayments);
+      // Explicitly set state with new array to ensure React detects the change
+      setPayments([...updatedPayments]);
+      
+      // Save to localStorage immediately to ensure data persistence
+      localStorage.setItem("payments", JSON.stringify(updatedPayments));
+      
       return {
         success: true,
-        message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`
+        message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`,
+        payment: existingPayment
       };
     } else {
       // Create new payment record for student
@@ -81,11 +91,17 @@ export function usePayments() {
         paidMonths: [paidMonth]
       };
 
-      setPayments(prevPayments => [...prevPayments, newPayment]);
+      // Create a new array with the new payment
+      const newPayments = [...payments, newPayment];
+      
+      // Update state and localStorage
+      setPayments(newPayments);
+      localStorage.setItem("payments", JSON.stringify(newPayments));
       
       return {
         success: true,
-        message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`
+        message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`,
+        payment: newPayment
       };
     }
   };
@@ -100,7 +116,7 @@ export function usePayments() {
     return payments.filter(payment => payment.studentId === studentId);
   };
   
-  // Check if a student has paid for current month
+  // Check if a student has paid for current lesson
   const hasStudentPaidForCurrentLesson = (studentId: string, lessonNumber: number) => {
     const studentPayment = payments.find(p => p.studentId === studentId);
     if (!studentPayment) return false;
