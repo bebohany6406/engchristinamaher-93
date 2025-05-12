@@ -1,101 +1,115 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, FilePlus, Calendar, Search, Play, Edit, Trash, X, Check } from "lucide-react";
-import { VideoPlayerFixed } from "@/components/VideoPlayerFixed";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
+import { ArrowRight, Plus, Trash2, Search } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+interface Video {
+  id: string;
+  title: string;
+  description: string;
+  youtubeUrl: string;
+  grade: string;
+  group: string;
+  date: string;
+}
 
 const Videos = () => {
   const navigate = useNavigate();
-  const { getAllVideos, getVideosByGrade, addVideo, deleteVideo, updateVideo } = useData();
   const { currentUser } = useAuth();
+  const [videos, setVideos] = useState<Video[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [selectedGrade, setSelectedGrade] = useState<"all" | "first" | "second" | "third">("all");
-  const [selectedVideoIsYouTube, setSelectedVideoIsYouTube] = useState(false);
-
-  // حالة النموذج
+  const [filterGroup, setFilterGroup] = useState("");
+  
+  // Form state
   const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
-  const [grade, setGrade] = useState<"first" | "second" | "third">("first");
-
-  // حالة التعديل
-  const [editId, setEditId] = useState("");
-  const [editTitle, setEditTitle] = useState("");
-  const [editUrl, setEditUrl] = useState("");
-  const [editGrade, setEditGrade] = useState<"first" | "second" | "third">("first");
-  const [editIsYouTube, setEditIsYouTube] = useState(false);
-
-  const videos = selectedGrade === "all" ? getAllVideos() : getVideosByGrade(selectedGrade);
-  const filteredVideos = videos.filter(video => video.title.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  const handleAddVideo = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) {
-      const audio = new Audio("/error-sound.mp3");
-      audio.volume = 0.5;
-      audio.play().catch(e => console.error("Sound play failed:", e));
-      return;
-    }
-
-    // Always set isYouTube to true since we're only adding YouTube videos now
-    addVideo(title, url, grade, true);
-    setTitle("");
-    setUrl("");
-    setGrade("first");
-    setShowAddForm(false);
-  };
-
-  const handleEditVideo = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateVideo(editId, editTitle, editUrl, editGrade);
-    setShowEditForm(false);
-  };
-
-  const handleDeleteVideo = (id: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
-      deleteVideo(id);
-      if (selectedVideo) {
-        setSelectedVideo(null);
+  const [description, setDescription] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [group, setGroup] = useState("");
+  const [grade, setGrade] = useState<string>("first");
+  
+  useEffect(() => {
+    // Load videos from localStorage
+    const storedVideos = localStorage.getItem("videos");
+    if (storedVideos) {
+      try {
+        setVideos(JSON.parse(storedVideos));
+      } catch (error) {
+        console.error("Failed to parse videos from localStorage:", error);
       }
     }
-  };
-
-  const openEditForm = (video: any) => {
-    setEditId(video.id);
-    setEditTitle(video.title);
-    setEditUrl(video.url);
-    setEditGrade(video.grade);
-    setEditIsYouTube(video.isYouTube || false);
-    setShowEditForm(true);
-  };
-
-  const handleSelectVideo = (video: any) => {
-    setSelectedVideo(video.url);
-    setSelectedVideoIsYouTube(video.isYouTube || false);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-EG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+  }, []);
+  
+  // حفظ الفيديوهات عند تحديثها
+  useEffect(() => {
+    localStorage.setItem("videos", JSON.stringify(videos));
+  }, [videos]);
+  
+  const handleAddVideo = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // التحقق من الرابط
+    if (!youtubeUrl.includes("youtube.com") && !youtubeUrl.includes("youtu.be")) {
+      toast({
+        title: "❌ خطأ",
+        description: "الرجاء إدخال رابط يوتيوب صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // إضافة الفيديو الجديد
+    const newVideo: Video = {
+      id: `video-${Date.now()}`,
+      title,
+      description,
+      youtubeUrl,
+      group,
+      grade,
+      date: new Date().toISOString(),
+    };
+    
+    setVideos([...videos, newVideo]);
+    
+    // إعادة تعيين النموذج
+    setTitle("");
+    setDescription("");
+    setYoutubeUrl("");
+    setShowAddForm(false);
+    
+    toast({
+      title: "✅ تم إضافة الفيديو بنجاح",
+      description: "",
     });
   };
-
+  
+  const handleDeleteVideo = (id: string) => {
+    setVideos(videos.filter(video => video.id !== id));
+    toast({
+      title: "✅ تم حذف الفيديو بنجاح",
+      description: "",
+    });
+  };
+  
+  const filteredVideos = videos.filter(video => 
+    (video.title.includes(searchQuery) || 
+     video.description.includes(searchQuery)) &&
+    (filterGroup === "" || video.group.includes(filterGroup))
+  );
+  
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col relative">
-      <PhoneContact />
-      
+    <div className="min-h-screen bg-physics-navy flex flex-col">
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
-          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
+          <button 
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 text-physics-gold hover:opacity-80"
+          >
             <ArrowRight size={20} />
             <span>العودة للرئيسية</span>
           </button>
@@ -105,231 +119,172 @@ const Videos = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">الفيديوهات التعليمية</h1>
             {currentUser?.role === "admin" && (
-              <button onClick={() => setShowAddForm(true)} className="goldBtn flex items-center gap-2">
-                <FilePlus size={18} />
+              <button 
+                onClick={() => setShowAddForm(true)}
+                className="goldBtn flex items-center gap-2"
+              >
+                <Plus size={18} />
                 <span>إضافة فيديو</span>
               </button>
             )}
           </div>
           
-          {/* التصفية والبحث */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="w-full md:w-1/3">
-              <select className="inputField" value={selectedGrade} onChange={e => setSelectedGrade(e.target.value as "all" | "first" | "second" | "third")}>
-                <option value="all">جميع الصفوف</option>
-                <option value="first">الصف الأول الثانوي</option>
-                <option value="second">الصف الثاني الثانوي</option>
-                <option value="third">الصف الثالث الثانوي</option>
-              </select>
+          {/* Search and Filter */}
+          <div className="mb-6 flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                className="inputField pr-10 w-full"
+                placeholder="بحث عن فيديو..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            
-            <div className="relative w-full md:w-2/3">
-              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
-              <input type="text" className="inputField pr-12" placeholder="ابحث عن فيديو" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <div className="w-full md:w-48">
+              <input
+                type="text"
+                className="inputField w-full"
+                placeholder="فلتر المجموعة..."
+                value={filterGroup}
+                onChange={(e) => setFilterGroup(e.target.value)}
+              />
             </div>
           </div>
           
-          {/* الفيديو المحدد */}
-          {selectedVideo && (
-            <div className="bg-physics-dark rounded-lg overflow-hidden mb-6">
-              {selectedVideoIsYouTube ? (
-                <YouTubeEmbed videoUrl={selectedVideo} title={videos.find(v => v.url === selectedVideo)?.title || ""} />
-              ) : (
-                <VideoPlayerFixed src={selectedVideo} title={videos.find(v => v.url === selectedVideo)?.title || ""} />
-              )}
-              <div className="p-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-white">
-                    {videos.find(v => v.url === selectedVideo)?.title || ""}
-                  </h2>
-                  
-                  {currentUser?.role === "admin" && (
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => {
-                          const video = videos.find(v => v.url === selectedVideo);
-                          if (video) openEditForm(video);
-                        }} 
-                        className="p-2 text-physics-gold hover:text-white"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      
-                      <button 
-                        onClick={() => {
-                          const video = videos.find(v => v.url === selectedVideo);
-                          if (video) handleDeleteVideo(video.id);
-                        }} 
-                        className="p-2 text-red-500 hover:text-white"
-                      >
-                        <Trash size={18} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button onClick={() => setSelectedVideo(null)} className="text-physics-gold hover:underline mt-2">
-                  العودة للقائمة
-                </button>
-              </div>
+          {/* Videos Grid */}
+          {filteredVideos.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-white text-lg">لا توجد فيديوهات متاحة</p>
             </div>
-          )}
-          
-          {/* قائمة الفيديوهات */}
-          {!selectedVideo && (
-            <div className="bg-physics-dark rounded-lg overflow-hidden">
-              {filteredVideos.length === 0 ? (
-                <div className="p-8 text-center">
-                  <p className="text-white text-lg">لا توجد فيديوهات متاحة</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-physics-navy">
-                  {filteredVideos.map(video => (
-                    <div key={video.id} className="p-4 hover:bg-physics-navy/30">
-                      <div className="flex items-center">
-                        <div 
-                          className="mr-4 bg-physics-navy p-3 rounded-full cursor-pointer" 
-                          onClick={() => handleSelectVideo(video)}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredVideos.map((video) => (
+                <div 
+                  key={video.id} 
+                  className="bg-physics-dark rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                >
+                  {/* Video Embed */}
+                  <div className="aspect-video">
+                    <YouTubeEmbed url={video.youtubeUrl} />
+                  </div>
+                  
+                  {/* Video Info */}
+                  <div className="p-4">
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-lg font-medium text-white">{video.title}</h3>
+                      {currentUser?.role === "admin" && (
+                        <button
+                          onClick={() => handleDeleteVideo(video.id)}
+                          className="text-red-500 hover:text-red-400"
                         >
-                          <Play size={24} className="text-physics-gold" />
-                        </div>
-                        <div className="flex-1 cursor-pointer" onClick={() => handleSelectVideo(video)}>
-                          <div className="flex items-center">
-                            <h3 className="text-lg font-medium text-white">
-                              {video.title}
-                              {video.isYouTube && (
-                                <span className="mr-2 text-xs bg-red-600 text-white px-2 py-0.5 rounded">
-                                  YouTube
-                                </span>
-                              )}
-                            </h3>
-                            <div className="mr-2 text-green-500">
-                              <Check size={16} />
-                            </div>
-                          </div>
-                          <div className="flex items-center text-sm text-gray-300 mt-1">
-                            <Calendar size={14} className="ml-1" />
-                            <span>{formatDate(video.uploadDate)}</span>
-                            <span className="mx-2">•</span>
-                            <span>
-                              {video.grade === "first" && "الصف الأول الثانوي"}
-                              {video.grade === "second" && "الصف الثاني الثانوي"}
-                              {video.grade === "third" && "الصف الثالث الثانوي"}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {currentUser?.role === "admin" && (
-                          <div className="flex">
-                            <button 
-                              onClick={() => openEditForm(video)} 
-                              className="p-2 text-physics-gold hover:text-white"
-                            >
-                              <Edit size={18} />
-                            </button>
-                            
-                            <button 
-                              onClick={() => handleDeleteVideo(video.id)} 
-                              className="p-2 text-red-500 hover:text-white"
-                            >
-                              <Trash size={18} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
-                  ))}
+                    
+                    <p className="text-gray-300 text-sm mt-2 line-clamp-2">{video.description}</p>
+                    
+                    <div className="flex items-center mt-3 text-xs text-gray-400 space-x-3 rtl:space-x-reverse">
+                      <span>المجموعة: {video.group}</span>
+                      <span>|</span>
+                      <span>
+                        {video.grade === "first"
+                          ? "الصف الأول"
+                          : video.grade === "second"
+                          ? "الصف الثاني"
+                          : "الصف الثالث"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
           )}
         </div>
       </main>
       
-      {/* نموذج إضافة فيديو - فقط يوتيوب */}
+      {/* Add Video Form Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-physics-gold">إضافة فيديو جديد</h2>
-              <button type="button" className="text-gray-400 hover:text-white" onClick={() => setShowAddForm(false)}>
-                <X size={24} />
-              </button>
-            </div>
+            <h2 className="text-xl font-bold text-physics-gold mb-6">إضافة فيديو جديد</h2>
             
             <form onSubmit={handleAddVideo} className="space-y-4">
               <div>
                 <label className="block text-white mb-1">عنوان الفيديو</label>
-                <input type="text" className="inputField" value={title} onChange={e => setTitle(e.target.value)} required />
+                <input
+                  type="text"
+                  className="inputField"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                />
               </div>
               
               <div>
-                <label className="block text-white mb-1">رابط فيديو يوتيوب</label>
-                <input type="text" className="inputField" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." required />
-                <p className="text-xs text-gray-400 mt-1">أدخل رابط فيديو يوتيوب</p>
+                <label className="block text-white mb-1">وصف الفيديو</label>
+                <textarea
+                  className="inputField min-h-[80px]"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                ></textarea>
               </div>
               
               <div>
-                <label className="block text-white mb-1">الصف الدراسي</label>
-                <select className="inputField" value={grade} onChange={e => setGrade(e.target.value as "first" | "second" | "third")} required>
+                <label className="block text-white mb-1">رابط اليوتيوب</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">المجموعة</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={group}
+                  onChange={(e) => setGroup(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">الصف</label>
+                <select 
+                  className="inputField bg-physics-navy"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                  required
+                >
                   <option value="first">الصف الأول الثانوي</option>
                   <option value="second">الصف الثاني الثانوي</option>
                   <option value="third">الصف الثالث الثانوي</option>
                 </select>
               </div>
               
-              <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1" disabled={!url || !title}>
+              <div className="pt-2 flex gap-2">
+                <button 
+                  type="submit" 
+                  className="goldBtn flex-1"
+                >
                   إضافة الفيديو
                 </button>
-                <button type="button" className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1" onClick={() => setShowAddForm(false)}>
-                  إلغاء
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
-      {/* نموذج تعديل الفيديو */}
-      {showEditForm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-physics-gold mb-6">تعديل الفيديو</h2>
-            
-            <form onSubmit={handleEditVideo} className="space-y-4">
-              <div>
-                <label className="block text-white mb-1">عنوان الفيديو</label>
-                <input type="text" className="inputField" value={editTitle} onChange={e => setEditTitle(e.target.value)} required />
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">
-                  {editIsYouTube ? 'رابط فيديو يوتيوب' : 'رابط الفيديو'}
-                </label>
-                <input type="text" className="inputField" value={editUrl} onChange={e => setEditUrl(e.target.value)} required placeholder={editIsYouTube ? "https://www.youtube.com/watch?v=..." : "https://..."} />
-                <p className="text-sm text-gray-300 mt-1">
-                  {editIsYouTube ? "أدخل رابط فيديو يوتيوب صالح" : "أدخل رابط مباشر للفيديو (mp4, webm, mov, avi, 3gp)"}
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">الصف الدراسي</label>
-                <select className="inputField" value={editGrade} onChange={e => setEditGrade(e.target.value as "first" | "second" | "third")} required>
-                  <option value="first">الصف الأول الثانوي</option>
-                  <option value="second">الصف الثاني الثانوي</option>
-                  <option value="third">الصف الثالث الثانوي</option>
-                </select>
-              </div>
-              
-              <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1">
-                  حفظ التغييرات
-                </button>
-                <button type="button" className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1" onClick={() => setShowEditForm(false)}>
+                <button 
+                  type="button" 
+                  className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
+                  onClick={() => setShowAddForm(false)}
+                >
                   إلغاء
                 </button>
               </div>

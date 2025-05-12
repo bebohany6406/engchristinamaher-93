@@ -32,7 +32,6 @@ interface AuthContextType {
   getStudentByCode: (code: string) => Student | undefined;
   getAllStudents: () => Student[];
   getAllParents: () => Parent[];
-  getParentChildren: (parentId: string) => Student[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -245,7 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const password = generateRandomPassword();
     const newParent: Parent = {
-      id: `parent-${Date.now()}`,
+      id: `parent-${uuidv4()}`,
       phone,
       studentCode,
       studentName: student.name,
@@ -272,16 +271,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return parents;
   };
 
-  // New function to get children of a parent
-  const getParentChildren = (parentId: string): Student[] => {
-    // Find the parent with the given ID
-    const parent = parents.find(p => p.id === parentId);
-    if (!parent) return [];
-    
-    // Get all students with the parent's student code
-    return students.filter(student => student.code === parent.studentCode);
-  };
-
   const value = {
     currentUser,
     students,
@@ -295,7 +284,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getStudentByCode,
     getAllStudents,
     getAllParents,
-    getParentChildren,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
