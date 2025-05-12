@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
@@ -40,7 +41,7 @@ const Books = () => {
   const handleAddBook = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    addBook(title, url, grade);
+    addBook(title, url, grade); // Correctly passing all three parameters
     setTitle("");
     setUrl("");
     setGrade("first");

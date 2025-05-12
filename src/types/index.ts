@@ -1,4 +1,3 @@
-
 export interface Attendance {
   id: string;
   studentId: string;
@@ -19,7 +18,7 @@ export interface Grade {
   date: string;
   lessonNumber: number;
   group: string;
-  performanceIndicator: "excellent" | "good" | "average" | "poor";
+  performanceIndicator: "excellent" | "very-good" | "good" | "fair" | "needs-improvement";
 }
 
 export interface Video {
@@ -56,12 +55,13 @@ export interface User {
   id: string;
   name: string;
   role: "admin" | "student" | "parent";
-  email?: string;  // Made email optional
+  email?: string;
   code?: string;
   group?: string;
   grade?: "first" | "second" | "third";
   phone?: string;
   password?: string;
+  childrenIds?: string[];
 }
 
 export interface Parent {

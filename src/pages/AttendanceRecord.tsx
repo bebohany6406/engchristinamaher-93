@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
@@ -22,7 +23,7 @@ const AttendanceRecord = () => {
       setStudentId(currentUser.id);
     } 
     // If we're a parent, set the student ID to the child's ID
-    else if (currentUser?.role === "parent" && currentUser.childrenIds?.length > 0) {
+    else if (currentUser?.role === "parent" && currentUser.childrenIds && currentUser.childrenIds.length > 0) {
       setStudentId(currentUser.childrenIds[0]);
     }
   }, [currentUser]);

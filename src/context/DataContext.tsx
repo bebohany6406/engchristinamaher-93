@@ -45,7 +45,7 @@ interface DataContextType {
   getBooks: () => {title: string, url: string}[];
   getAllBooks: () => {id: string, title: string, url: string, grade: string, uploadDate: string}[];
   getBooksByGrade: (grade: string) => {id: string, title: string, url: string, grade: string, uploadDate: string}[];
-  addBook: (title: string, url: string) => void;
+  addBook: (title: string, url: string, grade: string) => void; // Fixed to include grade param
   updateBook: (id: string, title: string, url: string, grade: string) => void;
   deleteBook: (url: string) => void;
 }
@@ -145,14 +145,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               group,
               date: new Date().toISOString(), // تحديث التاريخ عند التعديل
               performanceIndicator: calculatePerformance(score, totalScore)
-            }
+            } as Grade
           : grade
       )
     );
   };
 
   // Function to calculate performance indicator
-  const calculatePerformance = (score: number, total: number): string => {
+  const calculatePerformance = (score: number, total: number): "excellent" | "very-good" | "good" | "fair" | "needs-improvement" => {
     const percentage = (score / total) * 100;
     if (percentage >= 90) return 'excellent';
     if (percentage >= 80) return 'very-good';
