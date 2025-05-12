@@ -285,8 +285,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Sync grades
       for (const grade of grades) {
-        const supabaseGrade = mapGradeToSupabaseGrade(grade);
-        
         const { data: existingGrade, error: checkError } = await supabase
           .from('grades')
           .select('id')
@@ -299,9 +297,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (!existingGrade) {
-          const { error: insertError } = await supabase
+          // ننشئ معرف UUID جديد لكل سجل
+          const { data: newGrade, error: insertError } = await supabase
             .from('grades')
-            .insert([supabaseGrade]);
+            .insert({
+              student_id: grade.studentId,
+              student_name: grade.studentName,
+              exam_name: grade.examName,
+              score: grade.score,
+              total_score: grade.totalScore,
+              lesson_number: grade.lessonNumber,
+              group_name: grade.group,
+              date: grade.date,
+              performance_indicator: grade.performanceIndicator
+            })
+            .select()
+            .single();
           
           if (insertError) {
             console.error("Error inserting grade:", insertError);
@@ -311,8 +322,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Sync attendance records
       for (const record of attendance) {
-        const supabaseAttendance = mapAttendanceToSupabaseAttendance(record);
-        
         const { data: existingRecord, error: checkError } = await supabase
           .from('attendance')
           .select('id')
@@ -325,9 +334,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (!existingRecord) {
-          const { error: insertError } = await supabase
+          // ننشئ معرف UUID جديد لكل سجل
+          const { data: newAttendance, error: insertError } = await supabase
             .from('attendance')
-            .insert([supabaseAttendance]);
+            .insert({
+              student_id: record.studentId,
+              student_name: record.studentName,
+              status: record.status,
+              lesson_number: record.lessonNumber,
+              time: record.time,
+              date: record.date
+            })
+            .select()
+            .single();
           
           if (insertError) {
             console.error("Error inserting attendance record:", insertError);
@@ -337,15 +356,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Sync videos
       for (const video of videos) {
-        const videoData = {
-          id: video.id,
-          title: video.title,
-          url: video.url,
-          grade: video.grade,
-          upload_date: video.uploadDate,
-          is_youtube: video.isYouTube
-        };
-        
         const { data: existingVideo, error: checkError } = await supabase
           .from('videos')
           .select('id')
@@ -358,9 +368,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (!existingVideo) {
-          const { error: insertError } = await supabase
+          // ننشئ معرف UUID جديد لكل سجل
+          const { data: newVideo, error: insertError } = await supabase
             .from('videos')
-            .insert([videoData]);
+            .insert({
+              title: video.title,
+              url: video.url,
+              grade: video.grade,
+              upload_date: video.uploadDate,
+              is_youtube: video.isYouTube
+            })
+            .select()
+            .single();
           
           if (insertError) {
             console.error("Error inserting video:", insertError);
@@ -370,14 +389,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Sync books
       for (const book of books) {
-        const bookData = {
-          id: book.id,
-          title: book.title,
-          url: book.url,
-          grade: book.grade,
-          upload_date: book.uploadDate
-        };
-        
         const { data: existingBook, error: checkError } = await supabase
           .from('books')
           .select('id')
@@ -390,9 +401,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (!existingBook) {
-          const { error: insertError } = await supabase
+          // ننشئ معرف UUID جديد لكل سجل
+          const { data: newBook, error: insertError } = await supabase
             .from('books')
-            .insert([bookData]);
+            .insert({
+              title: book.title,
+              url: book.url,
+              grade: book.grade,
+              upload_date: book.uploadDate
+            })
+            .select()
+            .single();
           
           if (insertError) {
             console.error("Error inserting book:", insertError);
@@ -430,37 +449,56 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     group: string
   ) => {
     const performanceIndicator = calculatePerformance(score, totalScore);
-    
-    const newGrade: Grade = {
-      id: `grade-${Date.now()}`,
-      studentId,
-      studentName,
-      examName,
-      score,
-      totalScore,
-      lessonNumber,
-      group,
-      date: new Date().toISOString(),
-      performanceIndicator
-    };
+    const now = new Date().toISOString();
     
     try {
-      // Add to Supabase
-      const supabaseGrade = mapGradeToSupabaseGrade(newGrade);
-      
-      const { error } = await supabase
+      // إضافة إلى Supabase مباشرة مع ترك Supabase يُنشئ معرف UUID
+      const { data: newGradeData, error } = await supabase
         .from('grades')
-        .insert([supabaseGrade]);
+        .insert({
+          student_id: studentId,
+          student_name: studentName,
+          exam_name: examName,
+          score,
+          total_score: totalScore,
+          lesson_number: lessonNumber,
+          group_name: group,
+          date: now,
+          performance_indicator: performanceIndicator
+        })
+        .select()
+        .single();
       
       if (error) throw error;
       
-      // Update local list
-      setGrades(prevGrades => [...prevGrades, newGrade]);
+      if (newGradeData) {
+        // إضافة السجل المُرجع بمعرفه UUID إلى القائمة المحلية
+        const newGrade = mapSupabaseGradeToGrade(newGradeData as unknown as SupabaseGrade);
+        setGrades(prevGrades => [...prevGrades, newGrade]);
+        
+        toast({
+          title: "تم إضافة الدرجة بنجاح",
+          description: `تم تسجيل درجة ${score} للطالب ${studentName}`
+        });
+      }
     } catch (error) {
       console.error("Error adding grade:", error);
       
-      // Add locally even in case of failure to ensure data isn't lost
-      setGrades(prevGrades => [...prevGrades, newGrade]);
+      // في حالة الفشل، نضيف السجل محليًا لضمان عدم فقدان البيانات
+      const localGrade: Grade = {
+        id: crypto.randomUUID(),
+        studentId,
+        studentName,
+        examName,
+        score,
+        totalScore,
+        lessonNumber,
+        group,
+        date: now,
+        performanceIndicator
+      };
+      
+      setGrades(prevGrades => [...prevGrades, localGrade]);
       
       toast({
         variant: "destructive",
@@ -488,21 +526,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Grade not found");
       }
       
-      // Create updated grade
-      const updatedGrade: Grade = {
-        ...gradeToUpdate,
-        examName,
-        score,
-        totalScore,
-        lessonNumber,
-        group,
-        date: new Date().toISOString(),
-        performanceIndicator
-      };
-      
       // Update in Supabase
-      const supabaseGrade = mapGradeToSupabaseGrade(updatedGrade);
-      
       const { error } = await supabase
         .from('grades')
         .update({
@@ -521,7 +545,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update local list
       setGrades(prevGrades => 
         prevGrades.map(grade => 
-          grade.id === id ? updatedGrade : grade
+          grade.id === id ? { 
+            ...grade, 
+            examName, 
+            score, 
+            totalScore, 
+            lessonNumber,
+            group,
+            date: new Date().toISOString(),
+            performanceIndicator
+          } : grade
         )
       );
     } catch (error) {
@@ -604,33 +637,51 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     time?: string
   ) => {
     const now = new Date();
-    const newAttendance: Attendance = {
-      id: `attendance-${Date.now()}`,
-      studentId,
-      studentName,
-      status,
-      lessonNumber,
-      time: time || `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`,
-      date: now.toISOString()
-    };
+    const currentTime = time || `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const currentDate = now.toISOString();
     
     try {
-      // Add to Supabase
-      const supabaseAttendance = mapAttendanceToSupabaseAttendance(newAttendance);
-      
-      const { error } = await supabase
+      // إضافة إلى Supabase مباشرة مع ترك Supabase يُنشئ معرف UUID
+      const { data: newAttendanceData, error } = await supabase
         .from('attendance')
-        .insert([supabaseAttendance]);
+        .insert({
+          student_id: studentId,
+          student_name: studentName,
+          status,
+          lesson_number: lessonNumber,
+          time: currentTime,
+          date: currentDate
+        })
+        .select()
+        .single();
       
       if (error) throw error;
       
-      // Add to local list
-      setAttendance(prevAttendance => [...prevAttendance, newAttendance]);
+      if (newAttendanceData) {
+        // إضافة السجل المُرجع بمعرفه UUID إلى القائمة المحلية
+        const newAttendance = mapSupabaseAttendanceToAttendance(newAttendanceData as unknown as SupabaseAttendance);
+        setAttendance(prevAttendance => [...prevAttendance, newAttendance]);
+        
+        toast({
+          title: status === 'present' ? "تم تسجيل الحضور" : "تم تسجيل الغياب",
+          description: `تم تسجيل ${status === 'present' ? 'حضور' : 'غياب'} الطالب ${studentName}`
+        });
+      }
     } catch (error) {
       console.error("Error adding attendance record:", error);
       
-      // Add locally even in case of failure
-      setAttendance(prevAttendance => [...prevAttendance, newAttendance]);
+      // في حالة الفشل، نضيف السجل محليًا لضمان عدم فقدان البيانات
+      const localAttendance: Attendance = {
+        id: crypto.randomUUID(),
+        studentId,
+        studentName,
+        status,
+        lessonNumber,
+        time: currentTime,
+        date: currentDate
+      };
+      
+      setAttendance(prevAttendance => [...prevAttendance, localAttendance]);
       
       toast({
         variant: "destructive",
@@ -693,38 +744,57 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addVideo = async (title: string, url: string, grade: string) => {
     // Check if URL is a YouTube URL
     const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
-    
-    const newVideo = { 
-      id: `video-${Date.now()}`,
-      title, 
-      url,
-      grade,
-      uploadDate: new Date().toISOString(),
-      isYouTube
-    };
+    const uploadDate = new Date().toISOString();
     
     try {
-      // Add to Supabase
-      const { error } = await supabase
+      // إضافة إلى Supabase مباشرة مع ترك Supabase يُنشئ معرف UUID
+      const { data: newVideoData, error } = await supabase
         .from('videos')
-        .insert([{
-          id: newVideo.id,
-          title: newVideo.title,
-          url: newVideo.url,
-          grade: newVideo.grade,
-          upload_date: newVideo.uploadDate,
-          is_youtube: newVideo.isYouTube
-        }]);
+        .insert({
+          title,
+          url,
+          grade,
+          upload_date: uploadDate,
+          is_youtube: isYouTube
+        })
+        .select()
+        .single();
       
       if (error) throw error;
       
-      // Add to local list
-      setVideos(prevVideos => [...prevVideos, newVideo]);
+      if (newVideoData) {
+        // إضافة الفيديو المُرجع بمعرفه UUID إلى القائمة المحلية
+        setVideos(prevVideos => [
+          ...prevVideos, 
+          {
+            id: newVideoData.id,
+            title: newVideoData.title,
+            url: newVideoData.url,
+            grade: newVideoData.grade,
+            uploadDate: newVideoData.upload_date,
+            isYouTube: newVideoData.is_youtube
+          }
+        ]);
+        
+        toast({
+          title: "تم إضافة الفيديو بنجاح",
+          description: `تم إضافة فيديو: ${title}`
+        });
+      }
     } catch (error) {
       console.error("Error adding video:", error);
       
-      // Add locally even in case of failure
-      setVideos(prevVideos => [...prevVideos, newVideo]);
+      // في حالة الفشل، نضيف السجل محليًا لضمان عدم فقدان البيانات
+      const localVideo = { 
+        id: crypto.randomUUID(),
+        title, 
+        url,
+        grade,
+        uploadDate,
+        isYouTube
+      };
+      
+      setVideos(prevVideos => [...prevVideos, localVideo]);
       
       toast({
         variant: "destructive",
@@ -816,35 +886,54 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const addBook = async (title: string, url: string, grade: string) => {
-    const newBook = { 
-      id: `book-${Date.now()}`,
-      title, 
-      url,
-      grade,
-      uploadDate: new Date().toISOString()
-    };
+    const uploadDate = new Date().toISOString();
     
     try {
-      // Add to Supabase
-      const { error } = await supabase
+      // إضافة إلى Supabase مباشرة مع ترك Supabase يُنشئ معرف UUID
+      const { data: newBookData, error } = await supabase
         .from('books')
-        .insert([{
-          id: newBook.id,
-          title: newBook.title,
-          url: newBook.url,
-          grade: newBook.grade,
-          upload_date: newBook.uploadDate
-        }]);
+        .insert({
+          title,
+          url,
+          grade,
+          upload_date: uploadDate
+        })
+        .select()
+        .single();
       
       if (error) throw error;
       
-      // Add to local list
-      setBooks(prevBooks => [...prevBooks, newBook]);
+      if (newBookData) {
+        // إضافة الكتاب المُرجع بمعرفه UUID إلى القائمة المحلية
+        setBooks(prevBooks => [
+          ...prevBooks, 
+          {
+            id: newBookData.id,
+            title: newBookData.title,
+            url: newBookData.url,
+            grade: newBookData.grade,
+            uploadDate: newBookData.upload_date
+          }
+        ]);
+        
+        toast({
+          title: "تم إضافة الكتاب بنجاح",
+          description: `تم إضافة كتاب: ${title}`
+        });
+      }
     } catch (error) {
       console.error("Error adding book:", error);
       
-      // Add locally even in case of failure
-      setBooks(prevBooks => [...prevBooks, newBook]);
+      // في حالة الفشل، نضيف السجل محليًا لضمان عدم فقدان البيانات
+      const localBook = { 
+        id: crypto.randomUUID(),
+        title, 
+        url,
+        grade,
+        uploadDate
+      };
+      
+      setBooks(prevBooks => [...prevBooks, localBook]);
       
       toast({
         variant: "destructive",

@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useData } from "@/context/DataContext";
 import { toast } from "@/hooks/use-toast";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,7 @@ export function ManualAttendance() {
   const [isLoading, setIsLoading] = useState(false);
   
   const { getStudentByCode } = useAuth();
+  const { addAttendance } = useData();
   
   // استعلام عن عدد الدروس السابقة للطالب
   const fetchStudentLessonCount = async (studentId: string) => {
@@ -111,23 +113,13 @@ export function ManualAttendance() {
   const handleAbsence = async () => {
     if (studentInfo) {
       try {
-        // إنشاء سجل الحضور
-        const now = new Date();
-        
-        const { error } = await supabase
-          .from('attendance')
-          .insert([{
-            student_id: studentInfo.id,
-            student_name: studentInfo.name,
-            status: "absent",
-            lesson_number: studentInfo.lessonNumber,
-            time: `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`,
-            date: now.toISOString()
-          }]);
-
-        if (error) {
-          throw error;
-        }
+        // تسجيل الغياب باستخدام الدالة من سياق البيانات
+        await addAttendance(
+          studentInfo.id,
+          studentInfo.name,
+          "absent",
+          studentInfo.lessonNumber
+        );
         
         // تشغيل صوت
         const audio = new Audio("/attendance-absent.mp3");

@@ -128,7 +128,7 @@ export function QrScanner() {
         });
         
         // Record attendance regardless of payment status
-        addAttendance(student.id, student.name, "present", lessonCount);
+        await addAttendance(student.id, student.name, "present", lessonCount);
         
         // Play sound effect
         const audio = new Audio("/attendance-present.mp3");
@@ -184,7 +184,7 @@ export function QrScanner() {
         });
         
         // Record attendance regardless of payment status
-        addAttendance(student.id, student.name, "present", lessonCount);
+        await addAttendance(student.id, student.name, "present", lessonCount);
         
         // Play sound effect
         const audio = new Audio("/attendance-present.mp3");
