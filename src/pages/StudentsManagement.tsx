@@ -31,17 +31,16 @@ const StudentsManagement = () => {
   
   const filteredStudents = students.filter(student => 
     student.name.includes(searchQuery) || 
-    student.phone.includes(searchQuery) ||
+    student.phone?.includes(searchQuery) ||
     student.code.includes(searchQuery)
   );
   
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
-    createStudent(name, phone, password, parentPhone, group, grade);
+    const newStudent = createStudent(name, phone, parentPhone, group, grade);
     setStudents(getAllStudents()); // Refresh list
     setName("");
     setPhone("");
-    setPassword("");
     setParentPhone("");
     setGroup("");
     setGrade("first");
@@ -51,9 +50,9 @@ const StudentsManagement = () => {
   const handleEditClick = (student: Student) => {
     setEditingStudent(student);
     setName(student.name);
-    setPhone(student.phone);
-    setPassword(student.password);
-    setParentPhone(student.parentPhone);
+    setPhone(student.phone || "");
+    setPassword(student.password || "");
+    setParentPhone(student.parentPhone || "");
     setGroup(student.group || "");
     setGrade(student.grade);
     setShowEditForm(true);
@@ -223,17 +222,6 @@ const StudentsManagement = () => {
               </div>
               
               <div>
-                <label className="block text-white mb-1">كلمة المرور</label>
-                <input
-                  type="password"
-                  className="inputField"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
                 <label className="block text-white mb-1">رقم هاتف ولي الأمر</label>
                 <input
                   type="text"
@@ -311,17 +299,6 @@ const StudentsManagement = () => {
                   className="inputField"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">كلمة المرور</label>
-                <input
-                  type="password"
-                  className="inputField"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>

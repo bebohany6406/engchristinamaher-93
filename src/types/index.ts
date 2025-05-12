@@ -55,8 +55,8 @@ export interface Student {
 export interface User {
   id: string;
   name: string;
-  email: string;
   role: "admin" | "student" | "parent";
+  email?: string;  // Made email optional
   code?: string;
   group?: string;
   grade?: "first" | "second" | "third";

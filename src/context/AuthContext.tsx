@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
-import { generateRandomCode } from "@/lib/utils";
+import { generateRandomCode, generateRandomPassword } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
 interface AuthContextType {
@@ -13,7 +12,6 @@ interface AuthContextType {
   createStudent: (
     name: string,
     phone: string,
-    password: string,
     parentPhone: string,
     group: string,
     grade: "first" | "second" | "third"
@@ -28,7 +26,7 @@ interface AuthContextType {
     grade: "first" | "second" | "third"
   ) => void;
   deleteStudent: (id: string) => void;
-  createParent: (phone: string, studentCode: string, password: string) => Parent;
+  createParent: (phone: string, studentCode: string) => Parent;
   getStudentByCode: (code: string) => Student | undefined;
   getAllStudents: () => Student[];
   getAllParents: () => Parent[];
@@ -42,7 +40,7 @@ const adminUser: User = {
   name: "admin",
   phone: "AdminAPPEng.Christina Maher",
   password: "Eng.Christina Maher0022",
-  role: "admin",
+  role: "admin"
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -173,12 +171,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const createStudent = (
     name: string,
     phone: string,
-    password: string,
     parentPhone: string,
     group: string,
     grade: "first" | "second" | "third"
   ): Student => {
     const code = generateRandomCode();
+    const password = generateRandomPassword();
     const newStudent: Student = {
       id: `student-${Date.now()}`,
       name,
@@ -194,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setStudents(prev => [...prev, newStudent]);
     toast({
       title: "تم إنشاء حساب الطالب بنجاح",
-      description: `كود الطالب هو: ${code}`,
+      description: `كود الطالب هو: ${code} | كلمة المرور: ${password}`,
     });
     return newStudent;
   };
@@ -230,7 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setStudents(prev => prev.filter(student => student.id !== id));
   };
 
-  const createParent = (phone: string, studentCode: string, password: string): Parent => {
+  const createParent = (phone: string, studentCode: string): Parent => {
     const student = students.find(s => s.code === studentCode);
     
     if (!student) {
@@ -242,6 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Student code invalid");
     }
 
+    const password = generateRandomPassword();
     const newParent: Parent = {
       id: `parent-${Date.now()}`,
       phone,
@@ -253,7 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setParents(prev => [...prev, newParent]);
     toast({
       title: "تم إنشاء حساب ولي الأمر بنجاح",
-      description: `مرتبط بالطالب: ${student.name}`,
+      description: `مرتبط بالطالب: ${student.name} | كلمة المرور: ${password}`,
     });
     return newParent;
   };
