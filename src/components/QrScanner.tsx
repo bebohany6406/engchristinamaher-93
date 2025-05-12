@@ -2,7 +2,8 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
-import { Camera, X } from "lucide-react";
+import { usePayments } from "@/hooks/use-payments";
+import { Camera, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import jsQR from "jsqr";
 
@@ -12,8 +13,11 @@ export function QrScanner() {
   const [scanning, setScanning] = useState<boolean>(false);
   const [scannedCode, setScannedCode] = useState<string>("");
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
+  const [paymentStatus, setPaymentStatus] = useState<{paid: boolean, studentName?: string} | null>(null);
+  
   const { getStudentByCode } = useAuth();
-  const { addAttendance } = useData();
+  const { addAttendance, getStudentLessonCount } = useData();
+  const { hasStudentPaidForCurrentLesson } = usePayments();
   
   const requestCameraPermission = async () => {
     try {
@@ -108,14 +112,28 @@ export function QrScanner() {
     
     const student = getStudentByCode(code);
     if (student) {
-      addAttendance(student.id, student.name, "present");
+      // Get current lesson count for the student
+      const lessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
+      
+      // Check if student has paid for this lesson
+      const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonCount);
+      
+      // Update payment status state
+      setPaymentStatus({
+        paid: hasPaid,
+        studentName: student.name
+      });
+      
+      // Record attendance regardless of payment status
+      addAttendance(student.id, student.name, "present", lessonCount);
+      
       // Play sound effect
       const audio = new Audio("/attendance-present.mp3");
       audio.play().catch(e => console.error("Sound play failed:", e));
       
       toast({
         title: "✅ تم تسجيل الحضور",
-        description: `تم تسجيل حضور الطالب ${student.name}`
+        description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
       });
     } else {
       toast({
@@ -137,14 +155,28 @@ export function QrScanner() {
     if (scannedCode) {
       const student = getStudentByCode(scannedCode);
       if (student) {
-        addAttendance(student.id, student.name, "present");
+        // Get current lesson count for the student
+        const lessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
+        
+        // Check if student has paid for this lesson
+        const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonCount);
+        
+        // Update payment status state
+        setPaymentStatus({
+          paid: hasPaid,
+          studentName: student.name
+        });
+        
+        // Record attendance regardless of payment status
+        addAttendance(student.id, student.name, "present", lessonCount);
+        
         // Play sound effect
         const audio = new Audio("/attendance-present.mp3");
         audio.play().catch(e => console.error("Sound play failed:", e));
         
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name}`
+          description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
         });
         setScannedCode("");
       } else {
@@ -216,6 +248,27 @@ export function QrScanner() {
                 تسجيل الحضور
               </button>
             </form>
+          </div>
+        )}
+        
+        {/* Payment status display */}
+        {paymentStatus && (
+          <div className={`mt-4 p-3 rounded-lg text-center ${paymentStatus.paid ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+            <div className="flex items-center justify-center gap-2">
+              {paymentStatus.paid ? (
+                <CheckCircle2 className="text-green-400" size={20} />
+              ) : (
+                <AlertCircle className="text-red-400" size={20} />
+              )}
+              <p className="text-white font-bold">
+                {paymentStatus.studentName}
+              </p>
+            </div>
+            <p className="text-sm text-white mt-1">
+              {paymentStatus.paid 
+                ? 'الطالب مدفوع الاشتراك للدرس الحالي' 
+                : 'الطالب غير مدفوع الاشتراك للدرس الحالي'}
+            </p>
           </div>
         )}
       </div>

@@ -6,7 +6,7 @@ export function usePayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // تحميل البيانات من localStorage عند تهيئة الهوك
+  // Load data from localStorage when hook initializes
   useEffect(() => {
     const storedPayments = localStorage.getItem("payments");
     if (storedPayments) {
@@ -19,14 +19,14 @@ export function usePayments() {
     setIsInitialized(true);
   }, []);
 
-  // حفظ البيانات في localStorage عند تغييرها
+  // Save data to localStorage whenever it changes
   useEffect(() => {
     if (!isInitialized) return;
     localStorage.setItem("payments", JSON.stringify(payments));
     console.log("Saving payments to localStorage:", payments);
   }, [payments, isInitialized]);
 
-  // إضافة دفعة جديدة
+  // Add a new payment
   const addPayment = (
     studentId: string,
     studentName: string,
@@ -40,24 +40,24 @@ export function usePayments() {
       date
     };
 
-    // البحث عن سجل دفع موجود للطالب
+    // Check if payment record for this student already exists
     const existingPayment = payments.find(p => p.studentId === studentId);
 
     if (existingPayment) {
-      // تحديث سجل الدفع الموجود
+      // Update existing payment record
       const updatedPayments = payments.map(payment => {
         if (payment.studentId === studentId) {
-          // تحقق مما إذا كان الشهر مدفوعًا بالفعل
+          // Check if this month is already paid
           const monthAlreadyPaid = payment.paidMonths.some(pm => pm.month === month);
           if (monthAlreadyPaid) {
-            return payment; // لا تفعل شيئًا إذا كان الشهر مدفوعًا بالفعل
+            return payment; // Don't do anything if month is already paid
           }
           
           return {
             ...payment,
-            month, // تحديث الشهر الحالي
-            date,  // تحديث تاريخ الدفع
-            paidMonths: [...payment.paidMonths, paidMonth] // إضافة الشهر الجديد إلى قائمة الأشهر المدفوعة
+            month, // Update current month
+            date,  // Update payment date
+            paidMonths: [...payment.paidMonths, paidMonth] // Add new month to paid months list
           };
         }
         return payment;
@@ -69,7 +69,7 @@ export function usePayments() {
         message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`
       };
     } else {
-      // إنشاء سجل دفع جديد للطالب
+      // Create new payment record for student
       const newPayment: Payment = {
         id: `payment-${Date.now()}`,
         studentId,
@@ -81,12 +81,7 @@ export function usePayments() {
         paidMonths: [paidMonth]
       };
 
-      setPayments(prevPayments => {
-        const updatedPayments = [...prevPayments, newPayment];
-        localStorage.setItem("payments", JSON.stringify(updatedPayments));
-        console.log("Added new payment and updated localStorage:", updatedPayments);
-        return updatedPayments;
-      });
+      setPayments(prevPayments => [...prevPayments, newPayment]);
       
       return {
         success: true,
@@ -95,17 +90,33 @@ export function usePayments() {
     }
   };
 
-  // الحصول على جميع سجلات الدفع
+  // Get all payment records
   const getAllPayments = () => {
     return payments;
   };
 
-  // الحصول على سجلات دفع طالب معين
+  // Get payment records for a specific student
   const getStudentPayments = (studentId: string) => {
     return payments.filter(payment => payment.studentId === studentId);
   };
+  
+  // Check if a student has paid for current month
+  const hasStudentPaidForCurrentLesson = (studentId: string, lessonNumber: number) => {
+    const studentPayment = payments.find(p => p.studentId === studentId);
+    if (!studentPayment) return false;
+    
+    // Each month includes 8 lessons
+    // If student has paid and hasn't reached 8 lessons yet, they're considered paid
+    const lessonsPerMonth = 8;
+    
+    // Calculate how many months they should have paid for
+    const requiredMonths = Math.ceil(lessonNumber / lessonsPerMonth);
+    
+    // Check if they have enough paid months
+    return studentPayment.paidMonths.length >= requiredMonths;
+  };
 
-  // فحص حالة الهوك
+  // Debug function to check hook state
   const debugPaymentsState = () => {
     console.log("Current payments state:", payments);
     console.log("Saved payments in localStorage:", localStorage.getItem("payments"));
@@ -120,6 +131,7 @@ export function usePayments() {
     addPayment,
     getAllPayments,
     getStudentPayments,
+    hasStudentPaidForCurrentLesson,
     debugPaymentsState
   };
 }

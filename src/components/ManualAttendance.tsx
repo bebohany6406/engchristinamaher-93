@@ -2,14 +2,22 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { usePayments } from "@/hooks/use-payments";
 import { toast } from "@/hooks/use-toast";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function ManualAttendance() {
   const [studentCode, setStudentCode] = useState("");
-  const [studentInfo, setStudentInfo] = useState<{ id: string; name: string } | null>(null);
+  const [studentInfo, setStudentInfo] = useState<{ 
+    id: string; 
+    name: string; 
+    hasPaid: boolean; 
+    lessonNumber: number;
+  } | null>(null);
   
   const { getStudentByCode } = useAuth();
-  const { addAttendance } = useData();
+  const { addAttendance, getStudentLessonCount } = useData();
+  const { hasStudentPaidForCurrentLesson } = usePayments();
 
   const handleLookup = () => {
     if (!studentCode.trim()) {
@@ -23,7 +31,18 @@ export function ManualAttendance() {
 
     const student = getStudentByCode(studentCode);
     if (student) {
-      setStudentInfo({ id: student.id, name: student.name });
+      // Get current lesson count
+      const lessonNumber = getStudentLessonCount(student.id) + 1; // +1 because we're about to add a new attendance
+      
+      // Check payment status
+      const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonNumber);
+      
+      setStudentInfo({ 
+        id: student.id, 
+        name: student.name,
+        hasPaid,
+        lessonNumber
+      });
     } else {
       toast({
         variant: "destructive",
@@ -36,7 +55,7 @@ export function ManualAttendance() {
 
   const handleAbsence = () => {
     if (studentInfo) {
-      addAttendance(studentInfo.id, studentInfo.name, "absent");
+      addAttendance(studentInfo.id, studentInfo.name, "absent", studentInfo.lessonNumber);
       // Play sound effect
       const audio = new Audio("/attendance-absent.mp3");
       audio.play().catch(e => console.error("Sound play failed:", e));
@@ -73,7 +92,22 @@ export function ManualAttendance() {
         
         {studentInfo && (
           <div className="bg-physics-navy p-4 rounded-lg">
-            <p className="text-white mb-2">الطالب: <span className="font-bold">{studentInfo.name}</span></p>
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-white">الطالب: <span className="font-bold">{studentInfo.name}</span></p>
+              
+              {studentInfo.hasPaid ? (
+                <CheckCircle2 className="text-green-400" size={20} title="مدفوع" />
+              ) : (
+                <AlertCircle className="text-red-400" size={20} title="غير مدفوع" />
+              )}
+            </div>
+            
+            <div className="text-sm text-gray-300 mb-2">
+              {studentInfo.hasPaid 
+                ? 'الطالب مدفوع الاشتراك للدرس الحالي' 
+                : 'الطالب غير مدفوع الاشتراك للدرس الحالي'}
+            </div>
+            
             <button 
               onClick={handleAbsence}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
