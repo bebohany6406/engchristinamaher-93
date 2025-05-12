@@ -1,122 +1,260 @@
 
 import { useState, useEffect } from 'react';
 import { Payment, PaidMonth } from '@/types';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export function usePayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from localStorage when hook initializes
+  // Load data from Supabase when hook initializes
   useEffect(() => {
-    const storedPayments = localStorage.getItem("payments");
-    if (storedPayments) {
+    const fetchPayments = async () => {
       try {
-        setPayments(JSON.parse(storedPayments));
-        console.log("Loaded payments from localStorage:", JSON.parse(storedPayments));
+        setIsLoading(true);
+        
+        // First, fetch all payments
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from('payments')
+          .select('*');
+
+        if (paymentsError) {
+          console.error("Error fetching payments:", paymentsError);
+          toast({
+            title: "خطأ في جلب المدفوعات",
+            description: paymentsError.message,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Then fetch all paid months
+        const { data: paidMonthsData, error: paidMonthsError } = await supabase
+          .from('paid_months')
+          .select('*');
+          
+        if (paidMonthsError) {
+          console.error("Error fetching paid months:", paidMonthsError);
+          toast({
+            title: "خطأ في جلب الأشهر المدفوعة",
+            description: paidMonthsError.message,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Map the database data to our app's data structure
+        const processedPayments = paymentsData.map(payment => {
+          // Find all paid months for this payment
+          const relatedPaidMonths = paidMonthsData
+            .filter(pm => pm.payment_id === payment.id)
+            .map(pm => ({
+              month: pm.month,
+              date: pm.date
+            }));
+          
+          return {
+            id: payment.id,
+            studentId: payment.student_id,
+            studentName: payment.student_name,
+            studentCode: payment.student_code,
+            group: payment.student_group,
+            month: payment.month,
+            date: payment.date,
+            paidMonths: relatedPaidMonths
+          };
+        });
+        
+        setPayments(processedPayments);
+        console.log("Loaded payments from Supabase:", processedPayments);
       } catch (error) {
-        console.error("Error loading payments from localStorage:", error);
+        console.error("Error loading payments from Supabase:", error);
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
       }
-    }
-    setIsInitialized(true);
+    };
+    
+    fetchPayments();
   }, []);
 
-  // Save data to localStorage whenever it changes
-  useEffect(() => {
-    if (!isInitialized) return;
-    localStorage.setItem("payments", JSON.stringify(payments));
-    console.log("Saving payments to localStorage:", payments);
-  }, [payments, isInitialized]);
-
   // Add a new payment
-  const addPayment = (
+  const addPayment = async (
     studentId: string,
     studentName: string,
     studentCode: string,
     group: string,
     month: string
   ) => {
-    const date = new Date().toISOString();
-    const paidMonth: PaidMonth = {
-      month,
-      date
-    };
-
-    // Check if payment record for this student already exists
-    const existingPayment = payments.find(p => p.studentId === studentId);
-
-    if (existingPayment) {
-      // Update existing payment record
-      const updatedPayments = payments.map(payment => {
-        if (payment.studentId === studentId) {
-          // Check if this month is already paid
-          const monthAlreadyPaid = payment.paidMonths.some(pm => pm.month === month);
-          if (monthAlreadyPaid) {
-            return payment; // Don't do anything if month is already paid
-          }
-          
-          // Create a new payment object with updated values
-          const updatedPayment = {
-            ...payment,
-            month, // Update current month
-            date,  // Update payment date
-            paidMonths: [...payment.paidMonths, paidMonth] // Add new month to paid months list
-          };
-          
-          return updatedPayment;
-        }
-        return payment;
-      });
-
-      // Explicitly set state with new array to ensure React detects the change
-      setPayments([...updatedPayments]);
-      
-      // Save to localStorage immediately to ensure data persistence
-      localStorage.setItem("payments", JSON.stringify(updatedPayments));
-      
-      return {
-        success: true,
-        message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`,
-        payment: existingPayment
-      };
-    } else {
-      // Create new payment record for student
-      const newPayment: Payment = {
-        id: `payment-${Date.now()}`,
-        studentId,
-        studentName,
-        studentCode,
-        group,
+    try {
+      const date = new Date().toISOString();
+      const paidMonth: PaidMonth = {
         month,
-        date,
-        paidMonths: [paidMonth]
+        date
       };
 
-      // Create a new array with the new payment
-      const newPayments = [...payments, newPayment];
-      
-      // Update state and localStorage
-      setPayments(newPayments);
-      localStorage.setItem("payments", JSON.stringify(newPayments));
-      
+      // Check if payment record for this student already exists
+      const existingPayment = payments.find(p => p.studentId === studentId);
+
+      if (existingPayment) {
+        // Check if this month is already paid
+        const monthAlreadyPaid = existingPayment.paidMonths.some(pm => pm.month === month);
+        if (monthAlreadyPaid) {
+          return {
+            success: false,
+            message: `تم دفع شهر ${month} مسبقا للطالب ${studentName}`,
+            payment: existingPayment
+          };
+        }
+
+        // Update existing payment in Supabase
+        const { error: updateError } = await supabase
+          .from('payments')
+          .update({ 
+            month,
+            date
+          })
+          .eq('id', existingPayment.id);
+
+        if (updateError) {
+          console.error("Error updating payment:", updateError);
+          throw updateError;
+        }
+
+        // Add new paid month
+        const { error: paidMonthError } = await supabase
+          .from('paid_months')
+          .insert({
+            payment_id: existingPayment.id,
+            month,
+            date
+          });
+
+        if (paidMonthError) {
+          console.error("Error adding paid month:", paidMonthError);
+          throw paidMonthError;
+        }
+
+        // Update local state
+        const updatedPayments = payments.map(payment => {
+          if (payment.id === existingPayment.id) {
+            return {
+              ...payment,
+              month, // Update current month
+              date,  // Update payment date
+              paidMonths: [...payment.paidMonths, paidMonth] // Add new month to paid months list
+            };
+          }
+          return payment;
+        });
+
+        setPayments(updatedPayments);
+
+        return {
+          success: true,
+          message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`,
+          payment: {
+            ...existingPayment,
+            month,
+            date,
+            paidMonths: [...existingPayment.paidMonths, paidMonth]
+          }
+        };
+      } else {
+        // Create new payment record for student in Supabase
+        const { data: newPaymentData, error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            student_id: studentId,
+            student_name: studentName,
+            student_code: studentCode,
+            student_group: group,
+            month,
+            date
+          })
+          .select()
+          .single();
+
+        if (paymentError) {
+          console.error("Error creating payment:", paymentError);
+          throw paymentError;
+        }
+
+        // Add initial paid month
+        const { error: paidMonthError } = await supabase
+          .from('paid_months')
+          .insert({
+            payment_id: newPaymentData.id,
+            month,
+            date
+          });
+
+        if (paidMonthError) {
+          console.error("Error adding paid month:", paidMonthError);
+          throw paidMonthError;
+        }
+
+        // Create new payment object for local state
+        const newPayment: Payment = {
+          id: newPaymentData.id,
+          studentId,
+          studentName,
+          studentCode,
+          group,
+          month,
+          date,
+          paidMonths: [paidMonth]
+        };
+
+        // Update state
+        setPayments(prevPayments => [...prevPayments, newPayment]);
+
+        return {
+          success: true,
+          message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`,
+          payment: newPayment
+        };
+      }
+    } catch (error: any) {
+      console.error("Error in addPayment:", error);
       return {
-        success: true,
-        message: `تم تسجيل دفع شهر ${month} للطالب ${studentName}`,
-        payment: newPayment
+        success: false,
+        message: `حدث خطأ أثناء تسجيل الدفعة: ${error.message || 'خطأ غير معروف'}`,
+        payment: null
       };
     }
   };
 
   // Delete a payment record
-  const deletePayment = (paymentId: string) => {
-    const updatedPayments = payments.filter(payment => payment.id !== paymentId);
-    setPayments(updatedPayments);
-    // Save to localStorage immediately to ensure data persistence
-    localStorage.setItem("payments", JSON.stringify(updatedPayments));
-    
-    return {
-      success: true,
-      message: "تم حذف سجل الدفع بنجاح"
-    };
+  const deletePayment = async (paymentId: string) => {
+    try {
+      // Delete from Supabase (paid_months will be deleted by CASCADE)
+      const { error } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', paymentId);
+
+      if (error) {
+        console.error("Error deleting payment:", error);
+        throw error;
+      }
+
+      // Update local state
+      setPayments(prevPayments => prevPayments.filter(payment => payment.id !== paymentId));
+
+      return {
+        success: true,
+        message: "تم حذف سجل الدفع بنجاح"
+      };
+    } catch (error: any) {
+      console.error("Error in deletePayment:", error);
+      return {
+        success: false,
+        message: `حدث خطأ أثناء حذف سجل الدفع: ${error.message || 'خطأ غير معروف'}`
+      };
+    }
   };
 
   // Get all payment records
@@ -148,15 +286,15 @@ export function usePayments() {
   // Debug function to check hook state
   const debugPaymentsState = () => {
     console.log("Current payments state:", payments);
-    console.log("Saved payments in localStorage:", localStorage.getItem("payments"));
     return {
       stateCount: payments.length,
-      localStorageCount: localStorage.getItem("payments") ? JSON.parse(localStorage.getItem("payments") || "[]").length : 0
+      supabaseIntegrated: true
     };
   };
 
   return {
     payments,
+    isLoading,
     addPayment,
     deletePayment,
     getAllPayments,
