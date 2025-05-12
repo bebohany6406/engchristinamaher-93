@@ -1,28 +1,23 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
 import { ArrowRight, FilePlus, Calendar, Search, Edit, Trash, X, FileText, Download } from "lucide-react";
 import { FileUploader } from "@/components/FileUploader";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Books = () => {
   const navigate = useNavigate();
-  const {
-    getAllBooks,
-    getBooksByGrade,
-    addBook,
-    deleteBook,
-    updateBook
-  } = useData();
-  
   const { currentUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGrade, setSelectedGrade] = useState<"all" | "first" | "second" | "third">("all");
+  const [books, setBooks] = useState<{id: string, title: string, url: string, grade: string, uploadDate: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // حالة النموذج
   const [title, setTitle] = useState("");
@@ -35,32 +30,158 @@ const Books = () => {
   const [editUrl, setEditUrl] = useState("");
   const [editGrade, setEditGrade] = useState<"first" | "second" | "third">("first");
   
-  const books = selectedGrade === "all" ? getAllBooks() : getBooksByGrade(selectedGrade);
-  const filteredBooks = books.filter(book => book.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  // استدعاء البيانات من Supabase
+  const fetchBooks = async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase.from('books').select('*').order('upload_date', { ascending: false });
+      
+      if (selectedGrade !== 'all') {
+        query = query.eq('grade', selectedGrade);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (data) {
+        const mappedBooks = data.map(book => ({
+          id: book.id,
+          title: book.title,
+          url: book.url,
+          grade: book.grade,
+          uploadDate: book.upload_date || new Date().toISOString()
+        }));
+        setBooks(mappedBooks);
+      }
+    } catch (error) {
+      console.error("Error fetching books:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ في تحميل البيانات",
+        description: "حدث خطأ أثناء محاولة تحميل الكتب والملفات"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
-  const handleAddBook = (e: React.FormEvent) => {
+  // استدعاء البيانات عند تحميل الصفحة أو تغيير التصفية
+  useState(() => {
+    fetchBooks();
+  }, [selectedGrade]);
+  
+  // تصفية البيانات حسب البحث
+  const filteredBooks = books.filter(book => 
+    book.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const handleAddBook = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
-    addBook(title, url, grade); // Correctly passing all three parameters
-    setTitle("");
-    setUrl("");
-    setGrade("first");
-    setShowAddForm(false);
+    if (!title.trim() || !url.trim()) return;
+    
+    try {
+      // إضافة إلى Supabase
+      const { data, error } = await supabase
+        .from('books')
+        .insert([{
+          title: title,
+          url: url,
+          grade: grade,
+          upload_date: new Date().toISOString()
+        }]);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "تم إضافة الملف",
+        description: "تم إضافة الملف بنجاح"
+      });
+      
+      // إعادة تحميل البيانات
+      fetchBooks();
+      
+      // إعادة تعيين النموذج
+      setTitle("");
+      setUrl("");
+      setGrade("first");
+      setShowAddForm(false);
+    } catch (error) {
+      console.error("Error adding book:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ في إضافة الملف",
+        description: "حدث خطأ أثناء محاولة إضافة الملف"
+      });
+    }
   };
   
   const handleFileURLGenerated = (generatedUrl: string) => {
     setUrl(generatedUrl);
   };
   
-  const handleEditBook = (e: React.FormEvent) => {
+  const handleEditBook = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateBook(editId, editTitle, editUrl, editGrade);
-    setShowEditForm(false);
+    
+    try {
+      // تحديث في Supabase
+      const { error } = await supabase
+        .from('books')
+        .update({
+          title: editTitle,
+          url: editUrl,
+          grade: editGrade
+        })
+        .eq('id', editId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "تم تحديث الملف",
+        description: "تم تحديث الملف بنجاح"
+      });
+      
+      // إعادة تحميل البيانات
+      fetchBooks();
+      
+      // إغلاق نموذج التعديل
+      setShowEditForm(false);
+    } catch (error) {
+      console.error("Error updating book:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ في تحديث الملف",
+        description: "حدث خطأ أثناء محاولة تحديث الملف"
+      });
+    }
   };
   
-  const handleDeleteBook = (id: string) => {
+  const handleDeleteBook = async (id: string) => {
     if (window.confirm("هل أنت متأكد من حذف هذا الملف؟")) {
-      deleteBook(id);
+      try {
+        // حذف من Supabase
+        const { error } = await supabase
+          .from('books')
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "تم حذف الملف",
+          description: "تم حذف الملف بنجاح"
+        });
+        
+        // إعادة تحميل البيانات
+        fetchBooks();
+      } catch (error) {
+        console.error("Error deleting book:", error);
+        toast({
+          variant: "destructive",
+          title: "خطأ في حذف الملف",
+          description: "حدث خطأ أثناء محاولة حذف الملف"
+        });
+      }
     }
   };
   
@@ -109,7 +230,11 @@ const Books = () => {
           {/* التصفية والبحث */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="w-full md:w-1/3">
-              <select className="inputField" value={selectedGrade} onChange={e => setSelectedGrade(e.target.value as "all" | "first" | "second" | "third")}>
+              <select 
+                className="inputField" 
+                value={selectedGrade} 
+                onChange={e => setSelectedGrade(e.target.value as "all" | "first" | "second" | "third")}
+              >
                 <option value="all">جميع الصفوف</option>
                 <option value="first">الصف الأول الثانوي</option>
                 <option value="second">الصف الثاني الثانوي</option>
@@ -119,60 +244,86 @@ const Books = () => {
             
             <div className="relative w-full md:w-2/3">
               <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
-              <input type="text" className="inputField pr-12" placeholder="ابحث عن كتاب أو ملف" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <input 
+                type="text" 
+                className="inputField pr-12" 
+                placeholder="ابحث عن كتاب أو ملف" 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+              />
             </div>
           </div>
           
+          {/* حالة التحميل */}
+          {isLoading && (
+            <div className="bg-physics-dark rounded-lg p-8 text-center">
+              <div className="inline-block w-8 h-8 border-4 border-physics-gold border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-white mt-3">جاري تحميل البيانات...</p>
+            </div>
+          )}
+          
           {/* قائمة الكتب والملفات */}
-          <div className="bg-physics-dark rounded-lg overflow-hidden">
-            {filteredBooks.length === 0 ? <div className="p-8 text-center">
-                <p className="text-white text-lg">لا توجد ملفات متاحة</p>
-              </div> : <div className="divide-y divide-physics-navy">
-                {filteredBooks.map(book => <div key={book.id} className="p-4 hover:bg-physics-navy/30">
-                    <div className="flex items-center">
-                      <div className="mr-4 bg-physics-navy p-3 rounded-full">
-                        <FileText size={24} className="text-physics-gold" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center">
-                          <h3 className="text-lg font-medium text-white">{book.title}</h3>
+          {!isLoading && (
+            <div className="bg-physics-dark rounded-lg overflow-hidden">
+              {filteredBooks.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-white text-lg">لا توجد ملفات متاحة</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-physics-navy">
+                  {filteredBooks.map(book => (
+                    <div key={book.id} className="p-4 hover:bg-physics-navy/30">
+                      <div className="flex items-center">
+                        <div className="mr-4 bg-physics-navy p-3 rounded-full">
+                          <FileText size={24} className="text-physics-gold" />
                         </div>
-                        <div className="flex items-center text-sm text-gray-300 mt-1">
-                          <Calendar size={14} className="ml-1" />
-                          <span>{formatDate(book.uploadDate)}</span>
-                          <span className="mx-2">•</span>
-                          <span>
-                            {book.grade === "first" && "الصف الأول الثانوي"}
-                            {book.grade === "second" && "الصف الثاني الثانوي"}
-                            {book.grade === "third" && "الصف الثالث الثانوي"}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <a href={book.url} target="_blank" rel="noopener noreferrer" className="p-2 text-physics-gold hover:text-white">
-                          <Download size={18} />
-                        </a>
                         
-                        {currentUser?.role === "admin" && <div className="flex">
-                            <button onClick={() => openEditForm(book)} className="p-2 text-physics-gold hover:text-white">
-                              <Edit size={18} />
-                            </button>
-                            
-                            <button onClick={() => handleDeleteBook(book.id)} className="p-2 text-red-500 hover:text-white">
-                              <Trash size={18} />
-                            </button>
-                          </div>}
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            <h3 className="text-lg font-medium text-white">{book.title}</h3>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-300 mt-1">
+                            <Calendar size={14} className="ml-1" />
+                            <span>{formatDate(book.uploadDate)}</span>
+                            <span className="mx-2">•</span>
+                            <span>
+                              {book.grade === "first" && "الصف الأول الثانوي"}
+                              {book.grade === "second" && "الصف الثاني الثانوي"}
+                              {book.grade === "third" && "الصف الثالث الثانوي"}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <a href={book.url} target="_blank" rel="noopener noreferrer" className="p-2 text-physics-gold hover:text-white">
+                            <Download size={18} />
+                          </a>
+                          
+                          {currentUser?.role === "admin" && (
+                            <div className="flex">
+                              <button onClick={() => openEditForm(book)} className="p-2 text-physics-gold hover:text-white">
+                                <Edit size={18} />
+                              </button>
+                              
+                              <button onClick={() => handleDeleteBook(book.id)} className="p-2 text-red-500 hover:text-white">
+                                <Trash size={18} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>)}
-              </div>}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
       
       {/* نموذج إضافة كتاب */}
-      {showAddForm && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-physics-gold">إضافة ملف جديد</h2>
@@ -190,9 +341,11 @@ const Books = () => {
               <div>
                 <label className="block text-white mb-1">رابط الملف</label>
                 <FileUploader onFileURLGenerated={handleFileURLGenerated} />
-                {url && <p className="text-xs text-gray-400 mt-1">
+                {url && (
+                  <p className="text-xs text-gray-400 mt-1">
                     تم رفع الملف بنجاح: {url}
-                  </p>}
+                  </p>
+                )}
               </div>
               
               <div>
@@ -214,10 +367,12 @@ const Books = () => {
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
       
       {/* نموذج تعديل الكتاب */}
-      {showEditForm && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      {showEditForm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-physics-dark rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold text-physics-gold mb-6">تعديل الملف</h2>
             
@@ -251,7 +406,8 @@ const Books = () => {
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </div>
   );
 };

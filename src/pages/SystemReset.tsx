@@ -1,33 +1,22 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
 import { ArrowRight, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
+import { supabase } from "@/integrations/supabase/client";
 
 const SystemReset = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { 
-    grades, 
-    attendance, 
-    setGrades, 
-    setAttendance,
-    deleteVideo,
-    deleteBook,
-    getAllVideos,
-    getAllBooks
-  } = useData();
-  
   const [selectedGrade, setSelectedGrade] = useState<"first" | "second" | "third">("first");
   const [confirmText, setConfirmText] = useState("");
   const [isResetting, setIsResetting] = useState(false);
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (confirmText !== `reset-${selectedGrade}`) {
       toast({
         title: "خطأ في التأكيد",
@@ -39,40 +28,56 @@ const SystemReset = () => {
 
     setIsResetting(true);
     
-    // Filter and delete data for the selected grade
-    // 1. Delete grades for the selected grade
-    const newGrades = grades.filter(grade => grade.group !== `${selectedGrade}-group`);
-    setGrades(newGrades);
-    
-    // 2. Delete attendance for students in the selected grade
-    // We don't have grade info in attendance records, so we'd need to track this differently
-    // This is a simplification - in a real app, you'd need a way to associate attendance with grades
-    
-    // 3. Delete videos for the selected grade
-    const videos = getAllVideos();
-    videos.forEach(video => {
-      if (video.grade === selectedGrade) {
-        deleteVideo(video.id);
-      }
-    });
-    
-    // 4. Delete books for the selected grade
-    const books = getAllBooks();
-    books.forEach(book => {
-      if (book.grade === selectedGrade) {
-        deleteBook(book.id);
-      }
-    });
-    
-    // Completion
-    setTimeout(() => {
-      setIsResetting(false);
+    try {
+      toast({
+        title: "جاري إعادة تعيين النظام",
+        description: "يرجى الانتظار..."
+      });
+      
+      // 1. حذف الدرجات للصف المحدد
+      const { error: gradesError } = await supabase
+        .from('grades')
+        .delete()
+        .eq('group_name', `${selectedGrade}-group`);
+      
+      if (gradesError) throw gradesError;
+      
+      // 2. حذف الفيديوهات للصف المحدد
+      const { error: videosError } = await supabase
+        .from('videos')
+        .delete()
+        .eq('grade', selectedGrade);
+      
+      if (videosError) throw videosError;
+      
+      // 3. حذف الكتب للصف المحدد
+      const { error: booksError } = await supabase
+        .from('books')
+        .delete()
+        .eq('grade', selectedGrade);
+      
+      if (booksError) throw booksError;
+      
+      // 4. ملاحظة: لا يمكننا حذف سجلات الحضور لصف محدد لأنها لا تحتوي على حقل "grade"
+      // يمكن تعديل الجدول لاحقًا ليشمل هذه المعلومات
+      
+      // الانتهاء
       toast({
         title: "تم إعادة تعيين النظام",
         description: `تم حذف بيانات ${getGradeName(selectedGrade)} بنجاح`,
       });
+      
       setConfirmText("");
-    }, 1500);
+    } catch (error) {
+      console.error("Error resetting system:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ في إعادة التعيين",
+        description: "حدث خطأ أثناء محاولة حذف البيانات"
+      });
+    } finally {
+      setIsResetting(false);
+    }
   };
   
   const getGradeName = (grade: string) => {
@@ -84,7 +89,7 @@ const SystemReset = () => {
     }
   };
   
-  // Redirect non-admin users
+  // توجيه المستخدمين غير المسؤولين
   if (currentUser?.role !== "admin") {
     navigate("/unauthorized");
     return null;
@@ -122,7 +127,6 @@ const SystemReset = () => {
             </p>
             <ul className="list-disc list-inside text-gray-300 mt-2 space-y-1">
               <li>درجات الطلاب</li>
-              <li>سجلات الحضور</li>
               <li>الفيديوهات التعليمية</li>
               <li>الكتب والملفات</li>
             </ul>
