@@ -53,6 +53,7 @@ const Books = () => {
           uploadDate: book.upload_date || new Date().toISOString()
         }));
         setBooks(mappedBooks);
+        console.log("تم تحميل الكتب من Supabase:", mappedBooks);
       }
     } catch (error) {
       console.error("Error fetching books:", error);

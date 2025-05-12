@@ -1,10 +1,11 @@
+
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { Users, UserPlus, QrCode, Video, Book, LogOut, CheckSquare, Award, DollarSign, UserCheck, RefreshCcw, Database } from "lucide-react";
+import { Users, UserPlus, QrCode, Video, Book, LogOut, CheckSquare, Award, DollarSign, UserCheck, RefreshCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
 
@@ -12,12 +13,14 @@ const DashboardItem = ({
   to,
   icon,
   title,
-  description
+  description,
+  stats = null
 }: {
   to: string;
   icon: React.ReactNode;
   title: string;
   description: string;
+  stats?: { present?: number; absent?: number; total?: number } | null;
 }) => {
   return (
     <Link 
@@ -28,6 +31,20 @@ const DashboardItem = ({
         {icon}
       </div>
       <h3 className="text-xl font-bold text-physics-gold mb-2">{title}</h3>
+      {stats && (
+        <div className="mt-2 w-full">
+          <div className="flex justify-between text-sm text-white">
+            <div className="text-green-400">حضور: {stats.present || 0}</div>
+            <div className="text-red-400">غياب: {stats.absent || 0}</div>
+          </div>
+          <div className="w-full bg-physics-navy h-2 rounded-full mt-1 overflow-hidden">
+            <div 
+              className="bg-green-500 h-full" 
+              style={{ width: `${stats.total ? (stats.present || 0) / stats.total * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+      )}
     </Link>
   );
 };
@@ -35,7 +52,14 @@ const DashboardItem = ({
 const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const { syncWithSupabase } = useData();
+  const { syncWithSupabase, getStudentAttendance, getStudentLessonCount } = useData();
+
+  // إحصائيات الحضور للطالب
+  const attendanceStats = currentUser?.role === "student" ? {
+    present: getStudentAttendance(currentUser.id).filter(r => r.status === "present").length,
+    absent: getStudentAttendance(currentUser.id).filter(r => r.status === "absent").length,
+    total: getStudentLessonCount(currentUser.id)
+  } : null;
 
   useEffect(() => {
     if (!currentUser) {
@@ -169,6 +193,7 @@ const Dashboard = () => {
                 icon={<CheckSquare size={32} />} 
                 title="سجل الحضور" 
                 description="عرض سجل الحضور الخاص بك" 
+                stats={attendanceStats}
               />
               <DashboardItem 
                 to="/videos" 
@@ -177,7 +202,7 @@ const Dashboard = () => {
                 description="مشاهدة الفيديوهات التعليمية" 
               />
               <DashboardItem 
-                to="/books" 
+                to="/student-books" 
                 icon={<Book size={32} />} 
                 title="الكتب والملفات" 
                 description="تحميل المذكرات والملفات التعليمية" 
