@@ -4,6 +4,7 @@ import { Payment } from "@/types";
 
 export const usePayments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // تحميل المدفوعات من التخزين المحلي عند بدء التطبيق
   useEffect(() => {
@@ -15,13 +16,16 @@ export const usePayments = () => {
         console.error("Failed to parse payments from localStorage:", error);
       }
     }
+    setIsInitialized(true);
   }, []);
 
   // حفظ المدفوعات في التخزين المحلي عند تغييرها
   useEffect(() => {
-    localStorage.setItem("payments", JSON.stringify(payments));
-    console.log("Payments saved to localStorage:", payments);
-  }, [payments]);
+    if (isInitialized) {
+      localStorage.setItem("payments", JSON.stringify(payments));
+      console.log("Payments saved to localStorage:", payments);
+    }
+  }, [payments, isInitialized]);
 
   // إضافة دفعة جديدة
   const addPayment = (
@@ -32,7 +36,7 @@ export const usePayments = () => {
     month: string
   ) => {
     const today = new Date().toISOString();
-    console.log("Adding payment for:", studentName, "Month:", month);
+    console.log("Adding payment for:", studentName, "Month:", month, "Group:", group);
     
     // Check if student has existing payment record
     const existingPaymentIndex = payments.findIndex(p => p.studentId === studentId);
