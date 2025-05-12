@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -155,7 +154,6 @@ const StudentsManagement = () => {
                       <th className="text-right py-3 px-4">المجموعة</th>
                       <th className="text-right py-3 px-4">الصف</th>
                       <th className="text-right py-3 px-4">هاتف ولي الأمر</th>
-                      <th className="text-right py-3 px-4">كلمة المرور</th>
                       <th className="text-center py-3 px-4">خيارات</th>
                     </tr>
                   </thead>
@@ -168,7 +166,6 @@ const StudentsManagement = () => {
                         <td className="py-3 px-4 text-white">{student.group || "—"}</td>
                         <td className="py-3 px-4 text-white">{getGradeDisplay(student.grade)}</td>
                         <td className="py-3 px-4 text-white">{student.parentPhone}</td>
-                        <td className="py-3 px-4 text-white">{student.password}</td>
                         <td className="py-3 px-4 text-white text-center">
                           <div className="flex justify-center gap-2">
                             <button 
