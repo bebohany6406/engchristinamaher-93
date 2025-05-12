@@ -30,7 +30,7 @@ interface AuthContextType {
   getStudentByCode: (code: string) => Student | undefined;
   getAllStudents: () => Student[];
   getAllParents: () => Parent[];
-  getParentChildren: (parentPhone: string) => Student[];
+  getParentChildren: (parentId: string) => Student[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -269,10 +269,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getAllParents = (): Parent[] => {
     return parents;
   };
-
-  // إضافة وظيفة جديدة للحصول على أبناء ولي الأمر
-  const getParentChildren = (parentPhone: string): Student[] => {
-    return students.filter(student => student.parentPhone === parentPhone);
+  
+  // Get all children for a specific parent
+  const getParentChildren = (parentId: string): Student[] => {
+    const parent = parents.find(p => p.id === parentId);
+    if (!parent) return [];
+    
+    // Return all students linked to this parent's code
+    return students.filter(student => {
+      const parentWithStudentCode = parents.find(p => p.id === parentId && p.studentCode === student.code);
+      return !!parentWithStudentCode;
+    });
   };
 
   const value = {
