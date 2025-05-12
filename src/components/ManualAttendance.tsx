@@ -67,19 +67,29 @@ export function ManualAttendance() {
     }
   };
 
-  const handleAbsence = () => {
+  const handleAbsence = async () => {
     if (studentInfo) {
-      addAttendance(studentInfo.id, studentInfo.name, "absent", studentInfo.lessonNumber);
-      // Play sound effect
-      const audio = new Audio("/attendance-absent.mp3");
-      audio.play().catch(e => console.error("Sound play failed:", e));
-      
-      toast({
-        title: "تم تسجيل الغياب",
-        description: `تم تسجيل غياب الطالب ${studentInfo.name}`
-      });
-      setStudentCode("");
-      setStudentInfo(null);
+      try {
+        await addAttendance(studentInfo.id, studentInfo.name, "absent", studentInfo.lessonNumber);
+        
+        // Play sound effect
+        const audio = new Audio("/attendance-absent.mp3");
+        audio.play().catch(e => console.error("Sound play failed:", e));
+        
+        toast({
+          title: "تم تسجيل الغياب",
+          description: `تم تسجيل غياب الطالب ${studentInfo.name}`
+        });
+        setStudentCode("");
+        setStudentInfo(null);
+      } catch (error) {
+        console.error("Error recording absence:", error);
+        toast({
+          variant: "destructive",
+          title: "خطأ في تسجيل الغياب",
+          description: "حدث خطأ أثناء محاولة تسجيل الغياب"
+        });
+      }
     }
   };
 

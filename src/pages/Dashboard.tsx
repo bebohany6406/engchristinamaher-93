@@ -2,9 +2,10 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useData } from "@/context/DataContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { Users, UserPlus, QrCode, Video, Book, LogOut, CheckSquare, Award, DollarSign, UserCheck, RefreshCcw } from "lucide-react";
+import { Users, UserPlus, QrCode, Video, Book, LogOut, CheckSquare, Award, DollarSign, UserCheck, RefreshCcw, Database } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
 
@@ -35,6 +36,7 @@ const DashboardItem = ({
 const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const { syncWithSupabase } = useData();
 
   useEffect(() => {
     if (!currentUser) {
@@ -45,6 +47,19 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     navigate("/");
+  };
+
+  const handleSync = async () => {
+    try {
+      await syncWithSupabase();
+    } catch (error) {
+      console.error("خطأ في المزامنة:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ في المزامنة",
+        description: "حدث خطأ أثناء مزامنة البيانات مع قاعدة البيانات"
+      });
+    }
   };
 
   if (!currentUser) return null;
@@ -67,10 +82,21 @@ const Dashboard = () => {
         
         <Logo />
         
-        <button onClick={handleLogout} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
-          <span>تسجيل الخروج</span>
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          {currentUser.role === "admin" && (
+            <button 
+              onClick={handleSync} 
+              className="flex items-center gap-2 bg-physics-gold/20 hover:bg-physics-gold/30 text-physics-gold rounded-full px-4 py-1 mr-2"
+            >
+              <Database size={18} />
+              <span>مزامنة البيانات</span>
+            </button>
+          )}
+          <button onClick={handleLogout} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
+            <span>تسجيل الخروج</span>
+            <LogOut size={20} />
+          </button>
+        </div>
       </header>
 
       {/* Main Content - Dashboard */}
