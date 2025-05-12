@@ -187,6 +187,7 @@ const StudentsManagement = () => {
                       <th className="text-right py-3 px-4">الاسم</th>
                       <th className="text-right py-3 px-4">الهاتف</th>
                       <th className="text-right py-3 px-4">الكود</th>
+                      <th className="text-right py-3 px-4">كلمة المرور</th>
                       <th className="text-right py-3 px-4">المجموعة</th>
                       <th className="text-right py-3 px-4">الصف</th>
                       <th className="text-right py-3 px-4">هاتف ولي الأمر</th>
@@ -199,6 +200,7 @@ const StudentsManagement = () => {
                         <td className="py-3 px-4 text-white">{student.name}</td>
                         <td className="py-3 px-4 text-white">{student.phone}</td>
                         <td className="py-3 px-4 text-white">{student.code}</td>
+                        <td className="py-3 px-4 text-white">{student.password}</td>
                         <td className="py-3 px-4 text-white">{student.group || "—"}</td>
                         <td className="py-3 px-4 text-white">{getGradeDisplay(student.grade)}</td>
                         <td className="py-3 px-4 text-white">{student.parentPhone}</td>
