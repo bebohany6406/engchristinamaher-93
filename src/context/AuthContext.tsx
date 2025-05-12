@@ -3,7 +3,6 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateRandomPassword } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -180,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const code = generateRandomCode();
     const password = generateRandomPassword();
     const newStudent: Student = {
-      id: `student-${uuidv4()}`,
+      id: `student-${Date.now()}`,
       name,
       phone,
       password,
@@ -244,7 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const password = generateRandomPassword();
     const newParent: Parent = {
-      id: `parent-${uuidv4()}`,
+      id: `parent-${Date.now()}`,
       phone,
       studentCode,
       studentName: student.name,

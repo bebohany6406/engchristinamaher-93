@@ -7,11 +7,11 @@ import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
 import { ArrowRight, Calendar, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Payment, Student } from "@/types";
+import { Payment } from "@/types";
 
 const ParentPayments = () => {
   const navigate = useNavigate();
-  const { currentUser, getAllStudents } = useAuth();
+  const { currentUser, getParentChildren } = useAuth();
   const { getStudentPayments } = usePayments();
   const [childrenPayments, setChildrenPayments] = useState<Payment[]>([]);
 
@@ -37,8 +37,7 @@ const ParentPayments = () => {
     }
 
     // الحصول على قائمة أبناء ولي الأمر
-    const allStudents = getAllStudents();
-    const children = allStudents.filter(student => student.parentPhone === currentUser.phone);
+    const children = getParentChildren(currentUser.id);
     
     // الحصول على مدفوعات كل طالب
     const payments: Payment[] = [];
@@ -50,7 +49,7 @@ const ParentPayments = () => {
     });
     
     setChildrenPayments(payments);
-  }, [currentUser, navigate, getAllStudents, getStudentPayments]);
+  }, [currentUser, navigate, getParentChildren, getStudentPayments]);
 
   // تنسيق التاريخ
   const formatDate = (dateString: string) => {
