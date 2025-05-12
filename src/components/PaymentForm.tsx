@@ -14,6 +14,7 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [month, setMonth] = useState("");
+  const [customGroup, setCustomGroup] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState<Student[]>([]);
   
@@ -38,6 +39,8 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
   
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
+    // Set the default group from the student data
+    setCustomGroup(student.group || "");
     setSearchQuery("");
     setShowResults(false);
   };
@@ -67,7 +70,7 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
       selectedStudent.id,
       selectedStudent.name,
       selectedStudent.code,
-      selectedStudent.group,
+      customGroup, // Use the custom group input instead of student.group
       month
     );
     
@@ -151,7 +154,18 @@ export function PaymentForm({ onClose }: PaymentFormProps) {
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="text-white">الاسم: <span className="text-physics-gold">{selectedStudent.name}</span></div>
               <div className="text-white">الكود: <span className="text-physics-gold">{selectedStudent.code}</span></div>
-              <div className="text-white">المجموعة: <span className="text-physics-gold">{selectedStudent.group}</span></div>
+              
+              {/* Manual Group Input */}
+              <div className="col-span-2 mt-2">
+                <label className="block text-white mb-1 text-sm">المجموعة</label>
+                <input
+                  type="text"
+                  className="inputField bg-physics-navy/60 border-physics-gold/50 text-white w-full"
+                  value={customGroup}
+                  onChange={(e) => setCustomGroup(e.target.value)}
+                  placeholder="أدخل اسم المجموعة"
+                />
+              </div>
             </div>
           </div>
         )}
