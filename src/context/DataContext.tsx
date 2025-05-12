@@ -53,6 +53,31 @@ interface DataContextType {
   syncWithSupabase: () => Promise<void>;
 }
 
+// Interface for data coming from Supabase
+interface SupabaseGrade {
+  id: string;
+  student_id: string;
+  student_name: string;
+  exam_name: string;
+  score: number;
+  total_score: number;
+  lesson_number: number;
+  group_name: string | null;
+  date: string | null;
+  performance_indicator: string;
+}
+
+// Interface for data coming from Supabase
+interface SupabaseAttendance {
+  id: string;
+  student_id: string;
+  student_name: string;
+  date: string | null;
+  time: string | null;
+  status: string;
+  lesson_number: number;
+}
+
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,33 +88,99 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // تحميل البيانات من Supabase عند بدء التشغيل
+  // Load data from Supabase on startup
   useEffect(() => {
     fetchDataFromSupabase();
   }, []);
   
-  // تحميل البيانات من Supabase
+  // Map Supabase format to our app format
+  const mapSupabaseGradeToGrade = (supabaseGrade: SupabaseGrade): Grade => {
+    return {
+      id: supabaseGrade.id,
+      studentId: supabaseGrade.student_id,
+      studentName: supabaseGrade.student_name,
+      examName: supabaseGrade.exam_name,
+      score: supabaseGrade.score,
+      totalScore: supabaseGrade.total_score,
+      lessonNumber: supabaseGrade.lesson_number,
+      group: supabaseGrade.group_name || "",
+      date: supabaseGrade.date || new Date().toISOString(),
+      performanceIndicator: supabaseGrade.performance_indicator as any
+    };
+  };
+
+  // Map app grade to Supabase format
+  const mapGradeToSupabaseGrade = (grade: Grade): SupabaseGrade => {
+    return {
+      id: grade.id,
+      student_id: grade.studentId,
+      student_name: grade.studentName,
+      exam_name: grade.examName,
+      score: grade.score,
+      total_score: grade.totalScore,
+      lesson_number: grade.lessonNumber,
+      group_name: grade.group,
+      date: grade.date,
+      performance_indicator: grade.performanceIndicator
+    };
+  };
+
+  // Map Supabase format to our app format
+  const mapSupabaseAttendanceToAttendance = (supabaseAttendance: SupabaseAttendance): Attendance => {
+    return {
+      id: supabaseAttendance.id,
+      studentId: supabaseAttendance.student_id,
+      studentName: supabaseAttendance.student_name,
+      date: supabaseAttendance.date || new Date().toISOString(),
+      time: supabaseAttendance.time || "",
+      status: supabaseAttendance.status as "present" | "absent",
+      lessonNumber: supabaseAttendance.lesson_number
+    };
+  };
+
+  // Map app attendance to Supabase format
+  const mapAttendanceToSupabaseAttendance = (attendance: Attendance): SupabaseAttendance => {
+    return {
+      id: attendance.id,
+      student_id: attendance.studentId,
+      student_name: attendance.studentName,
+      date: attendance.date,
+      time: attendance.time,
+      status: attendance.status,
+      lesson_number: attendance.lessonNumber
+    };
+  };
+  
+  // Loading data from Supabase
   const fetchDataFromSupabase = async () => {
     try {
-      // تحميل الدرجات
+      // Load grades
       const { data: gradesData, error: gradesError } = await supabase
         .from('grades')
         .select('*')
         .order('date', { ascending: false });
       
       if (gradesError) throw gradesError;
-      if (gradesData) setGrades(gradesData as Grade[]);
+      if (gradesData) {
+        const mappedGrades = gradesData.map(grade => mapSupabaseGradeToGrade(grade as SupabaseGrade));
+        setGrades(mappedGrades);
+      }
       
-      // تحميل سجلات الحضور
+      // Load attendance records
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
         .select('*')
         .order('date', { ascending: false });
       
       if (attendanceError) throw attendanceError;
-      if (attendanceData) setAttendance(attendanceData as Attendance[]);
+      if (attendanceData) {
+        const mappedAttendance = attendanceData.map(record => 
+          mapSupabaseAttendanceToAttendance(record as SupabaseAttendance)
+        );
+        setAttendance(mappedAttendance);
+      }
       
-      // تحميل الفيديوهات
+      // Load videos
       const { data: videosData, error: videosError } = await supabase
         .from('videos')
         .select('*')
@@ -107,7 +198,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })));
       }
       
-      // تحميل الكتب
+      // Load books
       const { data: booksData, error: booksError } = await supabase
         .from('books')
         .select('*')
@@ -124,27 +215,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })));
       }
       
-      // استخدم النسخة المحلية إذا لم تكن هناك بيانات في Supabase
+      // Use local version if no data in Supabase
       if (!gradesData?.length && !attendanceData?.length && !videosData?.length && !booksData?.length) {
         loadFromLocalStorage();
       }
       
       setIsInitialized(true);
     } catch (error) {
-      console.error("خطأ في تحميل البيانات من Supabase:", error);
+      console.error("Error loading data from Supabase:", error);
       toast({
         title: "حدث خطأ في الاتصال بقاعدة البيانات",
         description: "جاري تحميل البيانات المحلية كنسخة احتياطية",
         variant: "destructive"
       });
       
-      // استخدام النسخة المحلية في حال فشل الاتصال
+      // Use local version in case of connection failure
       loadFromLocalStorage();
       setIsInitialized(true);
     }
   };
   
-  // تحميل من المخزن المحلي كنسخة احتياطية
+  // Load from local storage as backup
   const loadFromLocalStorage = () => {
     try {
       const storedGrades = localStorage.getItem("grades");
@@ -167,11 +258,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setBooks(JSON.parse(storedBooks));
       }
     } catch (error) {
-      console.error("خطأ في تحميل البيانات من المخزن المحلي:", error);
+      console.error("Error loading data from local storage:", error);
     }
   };
   
-  // حفظ إلى المخزن المحلي كنسخة احتياطية
+  // Save to local storage as backup
   useEffect(() => {
     if (!isInitialized) return;
     
@@ -181,7 +272,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("books", JSON.stringify(books));
   }, [grades, attendance, videos, books, isInitialized]);
   
-  // مزامنة البيانات المحلية مع Supabase
+  // Sync local data with Supabase
   const syncWithSupabase = async () => {
     if (isSyncing) return;
     setIsSyncing(true);
@@ -192,8 +283,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "يرجى الانتظار..."
       });
       
-      // مزامنة الدرجات
+      // Sync grades
       for (const grade of grades) {
+        const supabaseGrade = mapGradeToSupabaseGrade(grade);
+        
         const { data: existingGrade, error: checkError } = await supabase
           .from('grades')
           .select('id')
@@ -201,23 +294,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
         
         if (checkError && checkError.code !== 'PGRST116') {
-          console.error("خطأ في التحقق من وجود الدرجة:", checkError);
+          console.error("Error checking for grade existence:", checkError);
           continue;
         }
         
         if (!existingGrade) {
           const { error: insertError } = await supabase
             .from('grades')
-            .insert([grade]);
+            .insert([supabaseGrade]);
           
           if (insertError) {
-            console.error("خطأ في إدراج الدرجة:", insertError);
+            console.error("Error inserting grade:", insertError);
           }
         }
       }
       
-      // مزامنة سجلات الحضور
+      // Sync attendance records
       for (const record of attendance) {
+        const supabaseAttendance = mapAttendanceToSupabaseAttendance(record);
+        
         const { data: existingRecord, error: checkError } = await supabase
           .from('attendance')
           .select('id')
@@ -225,22 +320,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
         
         if (checkError && checkError.code !== 'PGRST116') {
-          console.error("خطأ في التحقق من وجود سجل الحضور:", checkError);
+          console.error("Error checking for attendance record existence:", checkError);
           continue;
         }
         
         if (!existingRecord) {
           const { error: insertError } = await supabase
             .from('attendance')
-            .insert([record]);
+            .insert([supabaseAttendance]);
           
           if (insertError) {
-            console.error("خطأ في إدراج سجل الحضور:", insertError);
+            console.error("Error inserting attendance record:", insertError);
           }
         }
       }
       
-      // مزامنة الفيديوهات
+      // Sync videos
       for (const video of videos) {
         const videoData = {
           id: video.id,
@@ -258,7 +353,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
         
         if (checkError && checkError.code !== 'PGRST116') {
-          console.error("خطأ في التحقق من وجود الفيديو:", checkError);
+          console.error("Error checking for video existence:", checkError);
           continue;
         }
         
@@ -268,12 +363,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .insert([videoData]);
           
           if (insertError) {
-            console.error("خطأ في إدراج الفيديو:", insertError);
+            console.error("Error inserting video:", insertError);
           }
         }
       }
       
-      // مزامنة الكتب
+      // Sync books
       for (const book of books) {
         const bookData = {
           id: book.id,
@@ -290,7 +385,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
         
         if (checkError && checkError.code !== 'PGRST116') {
-          console.error("خطأ في التحقق من وجود الكتاب:", checkError);
+          console.error("Error checking for book existence:", checkError);
           continue;
         }
         
@@ -300,7 +395,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .insert([bookData]);
           
           if (insertError) {
-            console.error("خطأ في إدراج الكتاب:", insertError);
+            console.error("Error inserting book:", insertError);
           }
         }
       }
@@ -310,10 +405,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "تم تحديث قاعدة البيانات بأحدث البيانات"
       });
       
-      // تحديث البيانات المحلية بعد المزامنة
+      // Update local data after sync
       await fetchDataFromSupabase();
     } catch (error) {
-      console.error("خطأ في مزامنة البيانات مع Supabase:", error);
+      console.error("Error syncing data with Supabase:", error);
       toast({
         title: "فشلت عملية المزامنة",
         description: "يرجى المحاولة مرة أخرى لاحقًا",
@@ -324,7 +419,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  // إضافة درجة جديدة
+  // Add new grade
   const addGrade = async (
     studentId: string,
     studentName: string,
@@ -350,19 +445,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     try {
-      // إضافة إلى Supabase
+      // Add to Supabase
+      const supabaseGrade = mapGradeToSupabaseGrade(newGrade);
+      
       const { error } = await supabase
         .from('grades')
-        .insert([newGrade]);
+        .insert([supabaseGrade]);
       
       if (error) throw error;
       
-      // تحديث القائمة المحلية
+      // Update local list
       setGrades(prevGrades => [...prevGrades, newGrade]);
     } catch (error) {
-      console.error("خطأ في إضافة درجة:", error);
+      console.error("Error adding grade:", error);
       
-      // إضافة محليًا حتى في حالة الفشل للتأكد من عدم فقدان البيانات
+      // Add locally even in case of failure to ensure data isn't lost
       setGrades(prevGrades => [...prevGrades, newGrade]);
       
       toast({
@@ -373,7 +470,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // تحديث درجة موجودة
+  // Update existing grade
   const updateGrade = async (
     id: string,
     examName: string,
@@ -385,43 +482,52 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const performanceIndicator = calculatePerformance(score, totalScore);
     
     try {
-      // تحديث في Supabase
+      // Find existing grade to update
+      const gradeToUpdate = grades.find(g => g.id === id);
+      if (!gradeToUpdate) {
+        throw new Error("Grade not found");
+      }
+      
+      // Create updated grade
+      const updatedGrade: Grade = {
+        ...gradeToUpdate,
+        examName,
+        score,
+        totalScore,
+        lessonNumber,
+        group,
+        date: new Date().toISOString(),
+        performanceIndicator
+      };
+      
+      // Update in Supabase
+      const supabaseGrade = mapGradeToSupabaseGrade(updatedGrade);
+      
       const { error } = await supabase
         .from('grades')
         .update({
-          examName,
+          exam_name: examName,
           score,
-          totalScore,
-          lessonNumber,
-          group,
+          total_score: totalScore,
+          lesson_number: lessonNumber,
+          group_name: group,
           date: new Date().toISOString(),
-          performanceIndicator
+          performance_indicator: performanceIndicator
         })
         .eq('id', id);
       
       if (error) throw error;
       
-      // تحديث القائمة المحلية
+      // Update local list
       setGrades(prevGrades => 
         prevGrades.map(grade => 
-          grade.id === id 
-            ? { 
-                ...grade, 
-                examName, 
-                score, 
-                totalScore, 
-                lessonNumber,
-                group,
-                date: new Date().toISOString(),
-                performanceIndicator
-              }
-            : grade
+          grade.id === id ? updatedGrade : grade
         )
       );
     } catch (error) {
-      console.error("خطأ في تحديث درجة:", error);
+      console.error("Error updating grade:", error);
       
-      // تحديث محليًا حتى في حالة الفشل
+      // Update locally even in case of failure
       setGrades(prevGrades => 
         prevGrades.map(grade => 
           grade.id === id 
@@ -457,10 +563,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 'needs-improvement';
   };
 
-  // حذف درجة
+  // Delete grade
   const deleteGrade = async (id: string) => {
     try {
-      // حذف من Supabase
+      // Delete from Supabase
       const { error } = await supabase
         .from('grades')
         .delete()
@@ -468,12 +574,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // حذف من القائمة المحلية
+      // Delete from local list
       setGrades(prevGrades => prevGrades.filter(grade => grade.id !== id));
     } catch (error) {
-      console.error("خطأ في حذف درجة:", error);
+      console.error("Error deleting grade:", error);
       
-      // حذف محليًا حتى في حالة الفشل
+      // Delete locally even in case of failure
       setGrades(prevGrades => prevGrades.filter(grade => grade.id !== id));
       
       toast({
@@ -484,12 +590,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  // الحصول على درجات طالب محدد
+  // Get grades for specific student
   const getStudentGrades = (studentId: string): Grade[] => {
     return grades.filter(grade => grade.studentId === studentId);
   };
   
-  // إضافة سجل حضور
+  // Add attendance record
   const addAttendance = async (
     studentId: string,
     studentName: string,
@@ -509,19 +615,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     try {
-      // إضافة إلى Supabase
+      // Add to Supabase
+      const supabaseAttendance = mapAttendanceToSupabaseAttendance(newAttendance);
+      
       const { error } = await supabase
         .from('attendance')
-        .insert([newAttendance]);
+        .insert([supabaseAttendance]);
       
       if (error) throw error;
       
-      // إضافة إلى القائمة المحلية
+      // Add to local list
       setAttendance(prevAttendance => [...prevAttendance, newAttendance]);
     } catch (error) {
-      console.error("خطأ في إضافة سجل حضور:", error);
+      console.error("Error adding attendance record:", error);
       
-      // إضافة محليًا حتى في حالة الفشل
+      // Add locally even in case of failure
       setAttendance(prevAttendance => [...prevAttendance, newAttendance]);
       
       toast({
@@ -532,10 +640,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  // حذف سجل حضور
+  // Delete attendance record
   const deleteAttendanceRecord = async (id: string) => {
     try {
-      // حذف من Supabase
+      // Delete from Supabase
       const { error } = await supabase
         .from('attendance')
         .delete()
@@ -543,12 +651,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // حذف من القائمة المحلية
+      // Delete from local list
       setAttendance(prevAttendance => prevAttendance.filter(record => record.id !== id));
     } catch (error) {
-      console.error("خطأ في حذف سجل الحضور:", error);
+      console.error("Error deleting attendance record:", error);
       
-      // حذف محليًا حتى في حالة الفشل
+      // Delete locally even in case of failure
       setAttendance(prevAttendance => prevAttendance.filter(record => record.id !== id));
       
       toast({
@@ -568,12 +676,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Math.max(...studentAttendance.map(record => record.lessonNumber || 0));
   };
   
-  // الحصول على سجل حضور لطالب محدد
+  // Get attendance record for a specific student
   const getStudentAttendance = (studentId: string): Attendance[] => {
     return attendance.filter(record => record.studentId === studentId);
   };
   
-  // إدارة الفيديوهات
+  // Video management
   const getVideos = () => videos;
   
   const getAllVideos = () => videos;
@@ -596,7 +704,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     try {
-      // إضافة إلى Supabase
+      // Add to Supabase
       const { error } = await supabase
         .from('videos')
         .insert([{
@@ -610,12 +718,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // إضافة إلى القائمة المحلية
+      // Add to local list
       setVideos(prevVideos => [...prevVideos, newVideo]);
     } catch (error) {
-      console.error("خطأ في إضافة فيديو:", error);
+      console.error("Error adding video:", error);
       
-      // إضافة محليًا حتى في حالة الفشل
+      // Add locally even in case of failure
       setVideos(prevVideos => [...prevVideos, newVideo]);
       
       toast({
@@ -631,7 +739,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
     
     try {
-      // تحديث في Supabase
+      // Update in Supabase
       const { error } = await supabase
         .from('videos')
         .update({
@@ -644,7 +752,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // تحديث القائمة المحلية
+      // Update local list
       setVideos(prevVideos => 
         prevVideos.map(video => 
           video.id === id 
@@ -653,9 +761,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         )
       );
     } catch (error) {
-      console.error("خطأ في تحديث الفيديو:", error);
+      console.error("Error updating video:", error);
       
-      // تحديث محليًا حتى في حالة الفشل
+      // Update locally even in case of failure
       setVideos(prevVideos => 
         prevVideos.map(video => 
           video.id === id 
@@ -674,7 +782,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const deleteVideo = async (id: string) => {
     try {
-      // حذف من Supabase
+      // Delete from Supabase
       const { error } = await supabase
         .from('videos')
         .delete()
@@ -682,12 +790,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // حذف من القائمة المحلية
+      // Delete from local list
       setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
     } catch (error) {
-      console.error("خطأ في حذف الفيديو:", error);
+      console.error("Error deleting video:", error);
       
-      // حذف محليًا حتى في حالة الفشل
+      // Delete locally even in case of failure
       setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
       
       toast({
@@ -698,7 +806,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  // إدارة الكتب
+  // Book management
   const getBooks = () => books;
   
   const getAllBooks = () => books;
@@ -717,7 +825,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     try {
-      // إضافة إلى Supabase
+      // Add to Supabase
       const { error } = await supabase
         .from('books')
         .insert([{
@@ -730,12 +838,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // إضافة إلى القائمة المحلية
+      // Add to local list
       setBooks(prevBooks => [...prevBooks, newBook]);
     } catch (error) {
-      console.error("خطأ في إضافة كتاب:", error);
+      console.error("Error adding book:", error);
       
-      // إضافة محليًا حتى في حالة الفشل
+      // Add locally even in case of failure
       setBooks(prevBooks => [...prevBooks, newBook]);
       
       toast({
@@ -748,7 +856,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const updateBook = async (id: string, title: string, url: string, grade: string) => {
     try {
-      // تحديث في Supabase
+      // Update in Supabase
       const { error } = await supabase
         .from('books')
         .update({
@@ -760,7 +868,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // تحديث القائمة المحلية
+      // Update local list
       setBooks(prevBooks => 
         prevBooks.map(book => 
           book.id === id 
@@ -769,9 +877,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         )
       );
     } catch (error) {
-      console.error("خطأ في تحديث الكتاب:", error);
+      console.error("Error updating book:", error);
       
-      // تحديث محليًا حتى في حالة الفشل
+      // Update locally even in case of failure
       setBooks(prevBooks => 
         prevBooks.map(book => 
           book.id === id 
@@ -790,7 +898,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const deleteBook = async (id: string) => {
     try {
-      // حذف من Supabase
+      // Delete from Supabase
       const { error } = await supabase
         .from('books')
         .delete()
@@ -798,12 +906,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // حذف من القائمة المحلية
+      // Delete from local list
       setBooks(prevBooks => prevBooks.filter(book => book.id !== id));
     } catch (error) {
-      console.error("خطأ في حذف الكتاب:", error);
+      console.error("Error deleting book:", error);
       
-      // حذف محليًا حتى في حالة الفشل
+      // Delete locally even in case of failure
       setBooks(prevBooks => prevBooks.filter(book => book.id !== id));
       
       toast({
