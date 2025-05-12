@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Attendance, Grade, Video, Book, Student } from "@/types";
 import { toast } from "@/hooks/use-toast";
@@ -14,12 +13,9 @@ interface DataContextType {
   getStudentAttendance: (studentId: string) => Attendance[];
   getAttendanceByGrade: (grade: "first" | "second" | "third") => Attendance[];
   getStudentLessonCount: (studentId: string) => number;
-  deleteAttendance: (id: string) => void;
   
   // Grades methods
   addGrade: (studentId: string, studentName: string, examName: string, score: number, totalScore: number, lessonNumber: number, group: string) => void;
-  updateGrade: (id: string, studentId: string, studentName: string, examName: string, score: number, totalScore: number, lessonNumber: number, group: string) => void;
-  deleteGrade: (id: string) => void;
   getStudentGrades: (studentId: string) => Grade[];
   getGradesByGradeLevel: (grade: "first" | "second" | "third") => Grade[];
   
@@ -199,21 +195,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return studentAttendance.length > 8 ? 8 : studentAttendance.length;
   };
 
-  // New method to delete an attendance record
-  const deleteAttendance = (id: string) => {
-    setAttendance(prev => prev.filter(record => record.id !== id));
-    
-    // Play sound effect
-    const audio = new Audio("/item-deleted.mp3");
-    audio.volume = 0.5;
-    audio.play().catch(e => console.error("Sound play failed:", e));
-    
-    toast({
-      title: "تم حذف سجل الحضور",
-      description: "تم حذف سجل الحضور بنجاح",
-    });
-  };
-
   const addGrade = (
     studentId: string, 
     studentName: string, 
@@ -267,73 +248,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       "إضافة درجة جديدة", 
       `تم إضافة درجة ${examName} للطالب ${studentName}: ${score}/${totalScore}`
     );
-  };
-
-  // New method to update an existing grade
-  const updateGrade = (
-    id: string,
-    studentId: string,
-    studentName: string,
-    examName: string,
-    score: number,
-    totalScore: number,
-    lessonNumber: number,
-    group: string
-  ) => {
-    // Calculate performance indicator
-    const percentage = (score / totalScore) * 100;
-    let performanceIndicator: "excellent" | "good" | "average" | "poor" = "average";
-    
-    if (percentage >= 85) {
-      performanceIndicator = "excellent";
-    } else if (percentage >= 70) {
-      performanceIndicator = "good";
-    } else if (percentage >= 50) {
-      performanceIndicator = "average";
-    } else {
-      performanceIndicator = "poor";
-    }
-    
-    setGrades(prev => prev.map(grade => 
-      grade.id === id 
-        ? {
-            ...grade,
-            studentId,
-            studentName,
-            examName,
-            score,
-            totalScore,
-            lessonNumber,
-            group,
-            performanceIndicator
-          } 
-        : grade
-    ));
-    
-    // Play sound effect
-    const audio = new Audio("/item-updated.mp3");
-    audio.volume = 0.5;
-    audio.play().catch(e => console.error("Sound play failed:", e));
-    
-    toast({
-      title: "تم تحديث الدرجة",
-      description: `تم تحديث درجة ${examName} للطالب ${studentName}`,
-    });
-  };
-  
-  // New method to delete a grade
-  const deleteGrade = (id: string) => {
-    setGrades(prev => prev.filter(grade => grade.id !== id));
-    
-    // Play sound effect
-    const audio = new Audio("/item-deleted.mp3");
-    audio.volume = 0.5;
-    audio.play().catch(e => console.error("Sound play failed:", e));
-    
-    toast({
-      title: "تم حذف الدرجة",
-      description: "تم حذف الدرجة بنجاح",
-    });
   };
 
   const getStudentGrades = (studentId: string): Grade[] => {
@@ -535,10 +449,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getStudentAttendance,
     getAttendanceByGrade,
     getStudentLessonCount,
-    deleteAttendance,
     addGrade,
-    updateGrade,
-    deleteGrade,
     getStudentGrades,
     getGradesByGradeLevel,
     addVideo,

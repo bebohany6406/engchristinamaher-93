@@ -1,191 +1,288 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Student, Parent } from "@/types";
-import { toast } from "@/hooks/use-toast";
+import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateUniquePassword } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 interface AuthContextType {
-  currentUser: Student | Parent | null;
-  allStudents: Student[];
-  allParents: Parent[];
-  
-  login: (code: string, password?: string) => Promise<boolean>;
+  currentUser: User | null;
+  students: Student[];
+  parents: Parent[];
+  login: (phoneNumber: string, password: string) => boolean;
   logout: () => void;
-  
-  createStudent: (name: string, grade: "first" | "second" | "third", parentPhone?: string, group?: string) => Student;
-  getAllStudents: () => Student[];
-  getStudentByCode: (code: string) => Student | undefined;
-  
+  createStudent: (
+    name: string,
+    phone: string,
+    parentPhone: string,
+    group: string,
+    grade: "first" | "second" | "third"
+  ) => Student;
+  updateStudent: (
+    id: string,
+    name: string,
+    phone: string,
+    password: string,
+    parentPhone: string,
+    group: string,
+    grade: "first" | "second" | "third"
+  ) => void;
+  deleteStudent: (id: string) => void;
   createParent: (phone: string, studentCode: string) => Parent;
+  getStudentByCode: (code: string) => Student | undefined;
+  getAllStudents: () => Student[];
   getAllParents: () => Parent[];
-  
-  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Initial admin user with updated credentials
+const adminUser: User = {
+  id: "admin-1",
+  name: "admin",
+  phone: "AdminAPPEng.Christina Maher",
+  password: "Eng.Christina Maher0022",
+  role: "admin"
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<Student | Parent | null>(null);
-  const [allStudents, setAllStudents] = useState<Student[]>([]);
-  const [allParents, setAllParents] = useState<Parent[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const navigate = useNavigate();
-  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [parents, setParents] = useState<Parent[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load data from localStorage on initial mount
   useEffect(() => {
-    // Load students and parents from localStorage on initial mount
+    const storedUser = localStorage.getItem("currentUser");
+    const userLoggedIn = localStorage.getItem("userLoggedIn");
+    
+    if (storedUser && userLoggedIn === "true") {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Failed to parse user from localStorage:", error);
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("userLoggedIn");
+      }
+    }
+
     const storedStudents = localStorage.getItem("students");
     if (storedStudents) {
       try {
-        setAllStudents(JSON.parse(storedStudents));
+        setStudents(JSON.parse(storedStudents));
       } catch (error) {
         console.error("Failed to parse students from localStorage:", error);
       }
     }
-    
+
     const storedParents = localStorage.getItem("parents");
     if (storedParents) {
       try {
-        setAllParents(JSON.parse(storedParents));
+        setParents(JSON.parse(storedParents));
       } catch (error) {
         console.error("Failed to parse parents from localStorage:", error);
       }
     }
     
-    // Load current user from localStorage
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      try {
-        setCurrentUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse currentUser from localStorage:", error);
-      }
-    }
+    setIsInitialized(true);
   }, []);
-  
-  useEffect(() => {
-    // Save students and parents to localStorage whenever they change
-    localStorage.setItem("students", JSON.stringify(allStudents));
-    localStorage.setItem("parents", JSON.stringify(allParents));
-  }, [allStudents, allParents]);
-  
-  useEffect(() => {
-    // Save current user to localStorage whenever it changes
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  }, [currentUser]);
 
-  const login = async (code: string, password?: string): Promise<boolean> => {
-    setIsLoading(true);
+  // Save data to localStorage when it changes
+  useEffect(() => {
+    if (!isInitialized) return;
     
-    // Check if the code exists in students
-    const student = allStudents.find(student => student.code === code);
-    if (student && student.password === password) {
-      setCurrentUser(student);
-      setIsLoading(false);
-      navigate("/dashboard");
+    if (currentUser) {
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      localStorage.setItem("userLoggedIn", "true");
+    }
+    localStorage.setItem("students", JSON.stringify(students));
+    localStorage.setItem("parents", JSON.stringify(parents));
+  }, [currentUser, students, parents, isInitialized]);
+
+  const login = (phoneNumber: string, password: string): boolean => {
+    // Check if admin
+    if (phoneNumber === adminUser.phone && password === adminUser.password) {
+      setCurrentUser(adminUser);
+      toast({
+        title: "✅ تم تسجيل الدخول بنجاح",
+        description: "مرحباً بك في لوحة التحكم",
+      });
       return true;
     }
-    
-    // Check if the code exists in parents
-    const parent = allParents.find(parent => parent.studentCode === code);
-    if (parent && parent.password === password) {
-      setCurrentUser(parent);
-      setIsLoading(false);
-      navigate("/dashboard");
+
+    // Check if student
+    const student = students.find(s => s.phone === phoneNumber && s.password === password);
+    if (student) {
+      setCurrentUser({
+        id: student.id,
+        name: student.name,
+        phone: student.phone,
+        password: student.password,
+        role: "student",
+        code: student.code,
+        group: student.group,
+        grade: student.grade
+      });
+      toast({
+        title: "✅ تم تسجيل الدخول بنجاح",
+        description: `مرحباً ${student.name}`,
+      });
       return true;
     }
-    
-    setIsLoading(false);
+
+    // Check if parent
+    const parent = parents.find(p => p.phone === phoneNumber && p.password === password);
+    if (parent) {
+      setCurrentUser({
+        id: parent.id,
+        name: `ولي أمر ${parent.studentName}`,
+        phone: parent.phone,
+        password: parent.password,
+        role: "parent"
+      });
+      toast({
+        title: "✅ تم تسجيل الدخول بنجاح",
+        description: `مرحباً بك`,
+      });
+      return true;
+    }
+
     toast({
-      title: "❌ خطأ في تسجيل الدخول",
-      description: "كود الطالب أو كلمة المرور غير صحيحة",
       variant: "destructive",
+      title: "❌ فشل تسجيل الدخول",
+      description: "رقم الهاتف أو كلمة المرور غير صحيحة",
     });
     return false;
   };
 
   const logout = () => {
     setCurrentUser(null);
-    navigate("/");
-  };
-  
-  const createStudent = (name: string, grade: "first" | "second" | "third", parentPhone: string = "", group: string = "") => {
-    const newCode = generateRandomCode();
-    const newPassword = generateUniquePassword(allStudents, allParents);
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("userLoggedIn");
+    toast({
+      title: "تم تسجيل الخروج",
+      description: "نراك قريباً!",
+    });
     
+    // Play logout sound
+    const audio = new Audio("/logout-sound.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
+  };
+
+  const createStudent = (
+    name: string,
+    phone: string,
+    parentPhone: string,
+    group: string,
+    grade: "first" | "second" | "third"
+  ): Student => {
+    const code = generateRandomCode();
+    const password = generateUniquePassword(students, parents);
     const newStudent: Student = {
       id: `student-${Date.now()}`,
       name,
-      code: newCode,
-      password: newPassword,
-      grade,
+      phone,
+      password,
+      code,
       parentPhone,
       group,
-      role: "student"
+      grade,
+      role: "student" 
     };
-    
-    setAllStudents(prevStudents => [...prevStudents, newStudent]);
-    
+
+    setStudents(prev => [...prev, newStudent]);
     toast({
-      title: "✅ تم إنشاء حساب الطالب",
-      description: `تم إنشاء حساب الطالب ${name} بنجاح`,
+      title: "✅ تم إنشاء حساب الطالب بنجاح",
+      description: `كود الطالب هو: ${code} | كلمة المرور: ${password}`,
     });
-    
     return newStudent;
   };
 
-  const getAllStudents = (): Student[] => {
-    return allStudents;
+  const updateStudent = (
+    id: string,
+    name: string,
+    phone: string,
+    password: string,
+    parentPhone: string,
+    group: string,
+    grade: "first" | "second" | "third"
+  ): void => {
+    const studentIndex = students.findIndex(s => s.id === id);
+    if (studentIndex !== -1) {
+      const updatedStudent = {
+        ...students[studentIndex],
+        name,
+        phone,
+        password,
+        parentPhone,
+        group,
+        grade
+      };
+
+      const newStudents = [...students];
+      newStudents[studentIndex] = updatedStudent;
+      setStudents(newStudents);
+    }
   };
-  
-  const getStudentByCode = (code: string): Student | undefined => {
-    return allStudents.find(student => student.code === code);
+
+  const deleteStudent = (id: string): void => {
+    setStudents(prev => prev.filter(student => student.id !== id));
   };
-  
-  const createParent = (phone: string, studentCode: string) => {
-    const student = allStudents.find(student => student.code === studentCode);
+
+  const createParent = (phone: string, studentCode: string): Parent => {
+    const student = students.find(s => s.code === studentCode);
     
     if (!student) {
-      throw new Error("Student not found with the provided code.");
+      toast({
+        variant: "destructive",
+        title: "❌ خطأ",
+        description: "كود الطالب غير صحيح",
+      });
+      throw new Error("Student code invalid");
     }
-    
-    const newPassword = generateUniquePassword(allStudents, allParents);
-    
+
+    const password = generateUniquePassword(students, parents);
     const newParent: Parent = {
       id: `parent-${Date.now()}`,
       phone,
       studentCode,
       studentName: student.name,
-      password: newPassword,
-      role: "parent"
+      password,
     };
-    
-    setAllParents(prevParents => [...prevParents, newParent]);
-    
+
+    setParents(prev => [...prev, newParent]);
     toast({
-      title: "✅ تم إنشاء حساب ولي الأمر",
-      description: `تم إنشاء حساب ولي الأمر بنجاح`,
+      title: "✅ تم إنشاء حساب ولي الأمر بنجاح",
+      description: `مرتبط بالطالب: ${student.name} | كلمة المرور: ${password}`,
     });
-    
     return newParent;
   };
 
+  const getStudentByCode = (code: string): Student | undefined => {
+    return students.find(student => student.code === code);
+  };
+
+  const getAllStudents = (): Student[] => {
+    return students;
+  };
+
   const getAllParents = (): Parent[] => {
-    return allParents;
+    return parents;
   };
 
   const value = {
     currentUser,
-    allStudents,
-    allParents,
+    students,
+    parents,
     login,
     logout,
     createStudent,
-    getAllStudents,
-    getStudentByCode,
+    updateStudent,
+    deleteStudent,
     createParent,
+    getStudentByCode,
+    getAllStudents,
     getAllParents,
-    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -194,7 +291,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within a AuthProvider");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

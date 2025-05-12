@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign } from "lucide-react";
+import { ArrowRight, Search, Calendar, User, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
@@ -17,16 +17,6 @@ const PaymentsManagement = () => {
   const { payments } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-  
-  // Force refresh of payments list
-  const handlePaymentAdded = () => {
-    setRefreshKey(prevKey => prevKey + 1);
-    toast({
-      title: "✅ تم التحديث",
-      description: "تم تحديث قائمة المدفوعات بنجاح",
-    });
-  };
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -37,21 +27,18 @@ const PaymentsManagement = () => {
 
     if (currentUser.role === "admin") {
       // المدير يرى جميع المدفوعات
-      console.log("Admin view - all payments:", payments);
-      setFilteredPayments([...payments]);
+      setFilteredPayments(payments);
     } else if (currentUser.role === "student") {
       // الطالب يرى مدفوعاته فقط
       const studentPayments = payments.filter(payment => payment.studentId === currentUser.id);
-      console.log("Student view - filtered payments:", studentPayments);
       setFilteredPayments(studentPayments);
     } else if (currentUser.role === "parent") {
       // ولي الأمر يرى مدفوعات الطالب التابع له
       const associatedStudent = currentUser.name.replace("ولي أمر ", "");
       const studentPayments = payments.filter(payment => payment.studentName === associatedStudent);
-      console.log("Parent view - filtered payments:", studentPayments);
       setFilteredPayments(studentPayments);
     }
-  }, [currentUser, payments, refreshKey]);
+  }, [currentUser, payments]);
   
   // التحقق من صلاحيات المستخدم
   useEffect(() => {
@@ -82,7 +69,7 @@ const PaymentsManagement = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
             
@@ -100,10 +87,7 @@ const PaymentsManagement = () => {
           
           {/* نموذج إضافة دفعة (للمدير فقط) */}
           {showAddForm && currentUser?.role === "admin" && (
-            <PaymentForm 
-              onClose={() => setShowAddForm(false)} 
-              onPaymentAdded={handlePaymentAdded}
-            />
+            <PaymentForm onClose={() => setShowAddForm(false)} />
           )}
           
           {/* قائمة المدفوعات */}

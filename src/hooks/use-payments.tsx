@@ -4,7 +4,6 @@ import { Payment } from "@/types";
 
 export const usePayments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   // تحميل المدفوعات من التخزين المحلي عند بدء التطبيق
   useEffect(() => {
@@ -16,16 +15,12 @@ export const usePayments = () => {
         console.error("Failed to parse payments from localStorage:", error);
       }
     }
-    setIsInitialized(true);
   }, []);
 
   // حفظ المدفوعات في التخزين المحلي عند تغييرها
   useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem("payments", JSON.stringify(payments));
-      console.log("Payments saved to localStorage:", payments);
-    }
-  }, [payments, isInitialized]);
+    localStorage.setItem("payments", JSON.stringify(payments));
+  }, [payments]);
 
   // إضافة دفعة جديدة
   const addPayment = (
@@ -36,15 +31,29 @@ export const usePayments = () => {
     month: string
   ) => {
     const today = new Date().toISOString();
-    console.log("Adding payment for:", studentName, "Month:", month, "Group:", group);
     
-    // Check if student has existing payment record
+    // Check if student has payments
+    const studentPayments = payments.filter(p => p.studentId === studentId);
+    
+    // Create new payment
+    const newPayment: Payment = {
+      id: `payment-${Date.now()}`,
+      studentId,
+      studentName,
+      studentCode,
+      group,
+      month,
+      date: today,
+      paidMonths: [{ month, date: today }]
+    };
+    
+    // Check if student already has a payment record
     const existingPaymentIndex = payments.findIndex(p => p.studentId === studentId);
     
     if (existingPaymentIndex !== -1) {
       // Update existing payment record
       const updatedPayments = [...payments];
-      const existingPayment = {...updatedPayments[existingPaymentIndex]};
+      const existingPayment = updatedPayments[existingPaymentIndex];
       
       // Check if this month is already paid
       const monthAlreadyPaid = existingPayment.paidMonths.some(
@@ -52,50 +61,24 @@ export const usePayments = () => {
       );
       
       if (!monthAlreadyPaid) {
-        // Add new month to paid months
-        const updatedPaidMonths = [...existingPayment.paidMonths, { month, date: today }];
-        existingPayment.paidMonths = updatedPaidMonths;
+        existingPayment.paidMonths.push({ month, date: today });
         existingPayment.date = today; // Update last payment date
-        existingPayment.month = month; // Update current month
-        
         updatedPayments[existingPaymentIndex] = existingPayment;
         setPayments(updatedPayments);
-        
-        console.log("Updated existing payment record:", existingPayment);
-        
-        // Play sound effect
-        const audio = new Audio("/payment-success.mp3");
-        audio.volume = 0.5;
-        audio.play().catch(e => console.error("Sound play failed:", e));
-        
-        return { success: true, message: "تم تسجيل الدفعة بنجاح" };
       } else {
-        console.log("Month already paid:", month);
         return { success: false, message: "هذا الشهر مدفوع بالفعل" };
       }
     } else {
-      // Create new payment record
-      const newPayment: Payment = {
-        id: `payment-${Date.now()}`,
-        studentId,
-        studentName,
-        studentCode,
-        group,
-        month,
-        date: today,
-        paidMonths: [{ month, date: today }]
-      };
-      
-      setPayments(prevPayments => [...prevPayments, newPayment]);
-      console.log("Created new payment record:", newPayment);
-      
-      // Play sound effect
-      const audio = new Audio("/payment-success.mp3");
-      audio.volume = 0.5;
-      audio.play().catch(e => console.error("Sound play failed:", e));
-      
-      return { success: true, message: "تم تسجيل الدفعة بنجاح" };
+      // Add new payment record
+      setPayments([...payments, newPayment]);
     }
+    
+    // Play sound effect
+    const audio = new Audio("/payment-success.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Sound play failed:", e));
+    
+    return { success: true, message: "تم تسجيل الدفعة بنجاح" };
   };
 
   // الحصول على مدفوعات طالب معين

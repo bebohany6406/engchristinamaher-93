@@ -9,17 +9,15 @@ import { sanitizeSearchText } from "@/lib/utils";
 
 interface PaymentFormProps {
   onClose: () => void;
-  onPaymentAdded?: () => void; // Add callback for when payment is added successfully
 }
 
-export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
+export function PaymentForm({ onClose }: PaymentFormProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchField, setSearchField] = useState<"name" | "code" | "group">("name");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [month, setMonth] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState<Student[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { getAllStudents } = useAuth();
   const { addPayment } = usePayments();
@@ -75,8 +73,6 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
       return;
     }
     
-    setIsSubmitting(true);
-    
     const result = addPayment(
       selectedStudent.id,
       selectedStudent.name,
@@ -85,23 +81,11 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
       month
     );
     
-    setIsSubmitting(false);
-    
     if (result.success) {
       toast({
         title: "✅ تم تسجيل الدفعة",
         description: result.message,
       });
-      
-      // Reset form
-      setSelectedStudent(null);
-      setMonth("");
-      
-      // Call the callback if provided
-      if (onPaymentAdded) {
-        onPaymentAdded();
-      }
-      
       onClose();
     } else {
       toast({
@@ -214,9 +198,9 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
           <button 
             type="submit" 
             className="goldBtn flex-1"
-            disabled={!selectedStudent || !month || isSubmitting}
+            disabled={!selectedStudent || !month}
           >
-            {isSubmitting ? "جاري التسجيل..." : "تسجيل الدفعة"}
+            تسجيل الدفعة
           </button>
           <button 
             type="button" 

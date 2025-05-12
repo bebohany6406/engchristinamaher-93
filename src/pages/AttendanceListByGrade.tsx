@@ -1,85 +1,91 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Logo } from "@/components/Logo";
-import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, Search, Calendar, UserCheck, UserX, Trash2 } from "lucide-react";
-import { Student, Attendance } from "@/types";
-import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
-import { sanitizeSearchText, getGradeDisplay } from "@/lib/utils";
-import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { Logo } from "@/components/Logo";
+import { ArrowRight, CheckCircle, XCircle, Filter, Search } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import PhysicsBackground from "@/components/PhysicsBackground";
+import { PhoneContact } from "@/components/PhoneContact";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Student, Attendance } from "@/types";
 
 const AttendanceListByGrade = () => {
   const navigate = useNavigate();
   const { grade = "first" } = useParams<{ grade: "first" | "second" | "third" }>();
-  const { getAllStudents } = useAuth();
-  const { attendance, deleteAttendance } = useData();
-
+  const { currentUser, getAllStudents } = useAuth();
+  const { getStudentAttendance } = useData();
   const [students, setStudents] = useState<Student[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchField, setSearchField] = useState<"name" | "code" | "date" | "status" | "all">("all");
+  const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
+  const [filter, setFilter] = useState<"all" | "present" | "absent">("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   
   useEffect(() => {
+    if (!currentUser) return;
+    
     // Get all students for this grade
     const allStudents = getAllStudents();
     const gradeStudents = allStudents.filter(student => student.grade === grade);
     setStudents(gradeStudents);
-  }, [getAllStudents, grade]);
-  
-  const getAttendanceWithStudents = () => {
-    // Filter attendance records for students in this grade
-    return attendance.filter(record => {
-      // Find the student for this attendance record
-      const student = students.find(s => s.id === record.studentId);
-      return student !== undefined;
+    
+    // Get attendance records for all students
+    const records: Attendance[] = [];
+    gradeStudents.forEach(student => {
+      const studentRecords = getStudentAttendance(student.id);
+      records.push(...studentRecords);
     });
-  };
-  
-  const handleDeleteAttendance = (id: string, studentName: string) => {
-    if (confirm(`هل أنت متأكد من حذف سجل حضور الطالب ${studentName}؟`)) {
-      deleteAttendance(id);
-    }
-  };
-  
-  // Filter attendance records based on search query
-  const filteredAttendance = getAttendanceWithStudents().filter(record => {
-    if (!searchQuery) return true;
     
-    const query = sanitizeSearchText(searchQuery);
-    const student = students.find(s => s.id === record.studentId);
-    
-    switch (searchField) {
-      case "name":
-        return sanitizeSearchText(record.studentName).includes(query);
-      case "code":
-        return student && student.code ? sanitizeSearchText(student.code).includes(query) : false;
-      case "date":
-        return sanitizeSearchText(record.date).includes(query);
-      case "status":
-        return record.status === "present" && "حاضر".includes(query) ||
-               record.status === "absent" && "غائب".includes(query);
-      case "all":
-      default:
-        return (
-          sanitizeSearchText(record.studentName).includes(query) ||
-          (student && student.code && sanitizeSearchText(student.code).includes(query)) ||
-          sanitizeSearchText(record.date).includes(query) ||
-          (record.status === "present" && "حاضر".includes(query)) ||
-          (record.status === "absent" && "غائب".includes(query))
-        );
+    setAttendanceRecords(records);
+  }, [currentUser, getAllStudents, getStudentAttendance, grade]);
+  
+  const filteredRecords = attendanceRecords.filter(record => {
+    // Apply status filter
+    if (filter !== "all" && record.status !== filter) {
+      return false;
     }
+    
+    // Apply search filter if provided
+    if (searchTerm.trim() !== "") {
+      const student = students.find(s => s.id === record.studentId);
+      const searchLower = searchTerm.toLowerCase();
+      
+      return (
+        record.studentName.toLowerCase().includes(searchLower) ||
+        student?.code.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
   });
-  
+
+  const getGradeTitle = () => {
+    switch (grade) {
+      case "first": return "الصف الأول الثانوي";
+      case "second": return "الصف الثاني الثانوي";
+      case "third": return "الصف الثالث الثانوي";
+      default: return "";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+      <PhysicsBackground />
       <PhoneContact />
       
       {/* Header */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <button 
-            onClick={() => navigate("/attendance-records")}
+            onClick={() => navigate("/attendance-list")}
             className="flex items-center gap-2 text-physics-gold hover:opacity-80"
           >
             <ArrowRight size={20} />
@@ -90,102 +96,91 @@ const AttendanceListByGrade = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-physics-gold">سجل الحضور</h1>
-            <p className="text-white mt-1">{getGradeDisplay(grade)}</p>
-          </div>
-          
-          {/* Search with filter */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="md:w-1/4">
-              <select
-                className="inputField w-full"
-                value={searchField}
-                onChange={(e) => setSearchField(e.target.value as any)}
-              >
-                <option value="all">بحث في كل الحقول</option>
-                <option value="name">بحث بالاسم</option>
-                <option value="code">بحث بالكود</option>
-                <option value="date">بحث بالتاريخ</option>
-                <option value="status">بحث بالحالة</option>
-              </select>
+      <main className="flex-1 p-6 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-physics-gold">سجل الحضور</h1>
+              <p className="text-white mt-1">{getGradeTitle()}</p>
             </div>
             
-            <div className="relative md:w-3/4">
-              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={20} />
-              <input
-                type="text"
-                className="inputField pr-12 w-full"
-                placeholder="ابحث في سجلات الحضور..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            {/* Filter */}
+            <div className="flex items-center gap-2 bg-physics-dark rounded-lg p-2">
+              <Filter className="text-physics-gold" size={20} />
+              <select 
+                className="bg-transparent text-white border-none outline-none"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as any)}
+              >
+                <option value="all">الكل</option>
+                <option value="present">الحاضرين</option>
+                <option value="absent">الغائبين</option>
+              </select>
             </div>
           </div>
           
-          {filteredAttendance.length === 0 ? (
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="بحث باسم الطالب أو الكود..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="inputField pl-10"
+              />
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+            </div>
+          </div>
+          
+          {filteredRecords.length === 0 ? (
             <div className="bg-physics-dark rounded-lg p-6 text-center">
-              <p className="text-white text-lg">لا توجد سجلات حضور</p>
+              <p className="text-white text-lg">لا توجد سجلات حضور متاحة</p>
             </div>
           ) : (
-            <div className="bg-physics-dark/80 rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-physics-navy/50 text-physics-gold">
-                      <th className="text-right py-3 px-4">الاسم</th>
-                      <th className="text-right py-3 px-4">الكود</th>
-                      <th className="text-center py-3 px-4">رقم الحصة</th>
-                      <th className="text-center py-3 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <Calendar size={16} />
-                          <span>التاريخ</span>
-                        </div>
-                      </th>
-                      <th className="text-center py-3 px-4">الحالة</th>
-                      <th className="text-center py-3 px-4">خيارات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAttendance.map((record) => {
-                      const student = students.find(s => s.id === record.studentId);
-                      
-                      return (
-                        <tr key={record.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
-                          <td className="py-3 px-4 text-white">{record.studentName}</td>
-                          <td className="py-3 px-4 text-white">{student?.code || ""}</td>
-                          <td className="py-3 px-4 text-white text-center">الحصة {record.lessonNumber}</td>
-                          <td className="py-3 px-4 text-white text-center">{record.date}</td>
-                          <td className="py-3 px-4 text-center">
-                            {record.status === "present" ? (
-                              <div className="inline-flex items-center gap-1 text-green-500">
-                                <UserCheck size={16} />
-                                <span>حاضر</span>
-                              </div>
-                            ) : (
-                              <div className="inline-flex items-center gap-1 text-red-500">
-                                <UserX size={16} />
-                                <span>غائب</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <button 
-                              onClick={() => handleDeleteAttendance(record.id, record.studentName)}
-                              className="p-1 text-red-400 hover:text-red-500"
-                              title="حذف"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+            <div className="bg-physics-dark rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-physics-navy/50 text-physics-gold hover:bg-physics-navy/50">
+                    <TableHead className="text-right">الطالب</TableHead>
+                    <TableHead className="text-right">الكود</TableHead>
+                    <TableHead className="text-right">المجموعة</TableHead>
+                    <TableHead className="text-right">التاريخ</TableHead>
+                    <TableHead className="text-right">الوقت</TableHead>
+                    <TableHead className="text-right">رقم الحصة</TableHead>
+                    <TableHead className="text-center">الحالة</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRecords.map((record) => {
+                    const student = students.find(s => s.id === record.studentId);
+                    
+                    return (
+                      <TableRow key={record.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
+                        <TableCell className="text-white">{record.studentName}</TableCell>
+                        <TableCell className="text-white">{student?.code || ""}</TableCell>
+                        <TableCell className="text-white">{student?.group || "غير محدد"}</TableCell>
+                        <TableCell className="text-white">{formatDate(record.date)}</TableCell>
+                        <TableCell className="text-white">{record.time || "غير متاح"}</TableCell>
+                        <TableCell className="text-white">الحصة {record.lessonNumber || 1}</TableCell>
+                        <TableCell className="text-center">
+                          {record.status === "present" ? (
+                            <div className="inline-flex items-center text-green-400 gap-1">
+                              <CheckCircle size={18} />
+                              <span>حاضر</span>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center text-red-400 gap-1">
+                              <XCircle size={18} />
+                              <span>غائب</span>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>
