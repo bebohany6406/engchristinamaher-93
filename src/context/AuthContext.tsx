@@ -1,9 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
-import { generateRandomCode, generateRandomPassword } from "@/lib/utils";
+import { generateRandomCode } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -14,6 +13,7 @@ interface AuthContextType {
   createStudent: (
     name: string,
     phone: string,
+    password: string,
     parentPhone: string,
     group: string,
     grade: "first" | "second" | "third"
@@ -28,11 +28,10 @@ interface AuthContextType {
     grade: "first" | "second" | "third"
   ) => void;
   deleteStudent: (id: string) => void;
-  createParent: (phone: string, studentCode: string) => Parent;
+  createParent: (phone: string, studentCode: string, password: string) => Parent;
   getStudentByCode: (code: string) => Student | undefined;
   getAllStudents: () => Student[];
   getAllParents: () => Parent[];
-  getParentChildren: (parentId: string) => Student[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,7 +42,7 @@ const adminUser: User = {
   name: "admin",
   phone: "AdminAPPEng.Christina Maher",
   password: "Eng.Christina Maher0022",
-  role: "admin"
+  role: "admin",
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -105,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (phoneNumber === adminUser.phone && password === adminUser.password) {
       setCurrentUser(adminUser);
       toast({
-        title: "✅ تم تسجيل الدخول بنجاح",
+        title: "تم تسجيل الدخول بنجاح",
         description: "مرحباً بك في لوحة التحكم",
       });
       return true;
@@ -125,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         grade: student.grade
       });
       toast({
-        title: "✅ تم تسجيل الدخول بنجاح",
+        title: "تم تسجيل الدخول بنجاح",
         description: `مرحباً ${student.name}`,
       });
       return true;
@@ -142,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: "parent"
       });
       toast({
-        title: "✅ تم تسجيل الدخول بنجاح",
+        title: "تم تسجيل الدخول بنجاح",
         description: `مرحباً بك`,
       });
       return true;
@@ -150,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     toast({
       variant: "destructive",
-      title: "❌ فشل تسجيل الدخول",
+      title: "فشل تسجيل الدخول",
       description: "رقم الهاتف أو كلمة المرور غير صحيحة",
     });
     return false;
@@ -161,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem("currentUser");
     localStorage.removeItem("userLoggedIn");
     toast({
-      title: "👋 تم تسجيل الخروج",
+      title: "تم تسجيل الخروج",
       description: "نراك قريباً!",
     });
     
@@ -174,14 +173,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const createStudent = (
     name: string,
     phone: string,
+    password: string,
     parentPhone: string,
     group: string,
     grade: "first" | "second" | "third"
   ): Student => {
     const code = generateRandomCode();
-    const password = generateRandomPassword();
     const newStudent: Student = {
-      id: `student-${uuidv4()}`,
+      id: `student-${Date.now()}`,
       name,
       phone,
       password,
@@ -194,8 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setStudents(prev => [...prev, newStudent]);
     toast({
-      title: "✅ تم إنشاء حساب الطالب بنجاح",
-      description: `كود الطالب هو: ${code} | كلمة المرور: ${password}`,
+      title: "تم إنشاء حساب الطالب بنجاح",
+      description: `كود الطالب هو: ${code}`,
     });
     return newStudent;
   };
@@ -231,19 +230,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setStudents(prev => prev.filter(student => student.id !== id));
   };
 
-  const createParent = (phone: string, studentCode: string): Parent => {
+  const createParent = (phone: string, studentCode: string, password: string): Parent => {
     const student = students.find(s => s.code === studentCode);
     
     if (!student) {
       toast({
         variant: "destructive",
-        title: "❌ خطأ",
+        title: "خطأ",
         description: "كود الطالب غير صحيح",
       });
       throw new Error("Student code invalid");
     }
 
-    const password = generateRandomPassword();
     const newParent: Parent = {
       id: `parent-${Date.now()}`,
       phone,
@@ -254,8 +252,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setParents(prev => [...prev, newParent]);
     toast({
-      title: "✅ تم إنشاء حساب ولي الأمر بنجاح",
-      description: `مرتبط بالطالب: ${student.name} | كلمة المرور: ${password}`,
+      title: "تم إنشاء حساب ولي الأمر بنجاح",
+      description: `مرتبط بالطالب: ${student.name}`,
     });
     return newParent;
   };
@@ -272,16 +270,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return parents;
   };
 
-  // New function to get children of a parent
-  const getParentChildren = (parentId: string): Student[] => {
-    // Find the parent with the given ID
-    const parent = parents.find(p => p.id === parentId);
-    if (!parent) return [];
-    
-    // Get all students with the parent's student code
-    return students.filter(student => student.code === parent.studentCode);
-  };
-
   const value = {
     currentUser,
     students,
@@ -295,7 +283,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getStudentByCode,
     getAllStudents,
     getAllParents,
-    getParentChildren,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,7 +7,7 @@ import { PhoneContact } from "@/components/PhoneContact";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { 
   BookOpen, Video, UserCheck, QrCode, Users, User, 
-  LogOut, BookCopy, CheckSquare, GraduationCap, DollarSign
+  LogOut, BookCopy, CheckSquare, GraduationCap 
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -123,12 +123,6 @@ const Dashboard = () => {
                 title="سجلات الدرجات"
                 icon={<GraduationCap className="h-10 w-10" />}
                 onClick={() => navigate("/grades-management")}
-              />
-              
-              <DashboardCard 
-                title="إدارة المدفوعات"
-                icon={<DollarSign className="h-10 w-10" />}
-                onClick={() => navigate("/payments")}
               />
               
               <DashboardCard 

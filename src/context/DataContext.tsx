@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Attendance, Grade, Video, Book, Student } from "@/types";
 import { toast } from "@/hooks/use-toast";
@@ -258,16 +259,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return grades;
   };
 
-  // Modify the addVideo function to support YouTube links
   const addVideo = (title: string, url: string, grade: "first" | "second" | "third" = "first", thumbnailUrl?: string) => {
-    // Check if this is a YouTube URL
-    const isYouTube = /youtube\.com|youtu\.be/i.test(url);
-    
-    // Ensure URL is suitable for direct playback on mobile devices if not YouTube
+    // Ensure URL is suitable for direct playback on mobile devices
     let processedUrl = url;
     
-    // Convert to direct links if not already and not YouTube
-    if (!isYouTube && url.includes('drive.google.com') && !url.includes('download')) {
+    // Convert to direct links if not already
+    if (url.includes('drive.google.com') && !url.includes('download')) {
       const fileId = url.match(/[-\w]{25,}/);
       if (fileId && fileId[0]) {
         processedUrl = `https://drive.google.com/uc?export=download&id=${fileId[0]}`;
@@ -280,8 +277,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       url: processedUrl,
       thumbnailUrl,
       uploadDate: new Date().toISOString(),
-      grade,
-      isYouTube
+      grade
     };
 
     setVideos(prev => [...prev, newVideo]);
@@ -297,16 +293,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
   
-  // Modify the updateVideo function to support YouTube links
   const updateVideo = (id: string, title: string, url: string, grade: "first" | "second" | "third" = "first", thumbnailUrl?: string) => {
-    // Check if this is a YouTube URL
-    const isYouTube = /youtube\.com|youtu\.be/i.test(url);
-    
-    // Ensure URL is suitable for direct playback if not YouTube
+    // Ensure URL is suitable for direct playback
     let processedUrl = url;
     
-    // Convert to direct links if not already and not YouTube
-    if (!isYouTube && url.includes('drive.google.com') && !url.includes('download')) {
+    // Convert to direct links if not already
+    if (url.includes('drive.google.com') && !url.includes('download')) {
       const fileId = url.match(/[-\w]{25,}/);
       if (fileId && fileId[0]) {
         processedUrl = `https://drive.google.com/uc?export=download&id=${fileId[0]}`;
@@ -316,7 +308,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setVideos(prev => 
       prev.map(video => 
         video.id === id 
-          ? { ...video, title, url: processedUrl, grade, thumbnailUrl, isYouTube } 
+          ? { ...video, title, url: processedUrl, grade, thumbnailUrl } 
           : video
       )
     );

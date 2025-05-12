@@ -29,7 +29,6 @@ export interface Video {
   thumbnailUrl?: string;
   uploadDate: string;
   grade: "first" | "second" | "third";
-  isYouTube?: boolean;
 }
 
 export interface Book {
@@ -43,25 +42,14 @@ export interface Book {
 export interface Student {
   id: string;
   name: string;
-  code: string;
-  group: string;
+  phone: string;
+  parentPhone: string;
+  role: "student";
   grade: "first" | "second" | "third";
-  password?: string;
-  phone?: string;
-  parentPhone?: string;
-  role?: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  role: "admin" | "student" | "parent";
-  email?: string;  // Made email optional
-  code?: string;
+  password: string;
+  qrCode?: string;
   group?: string;
-  grade?: "first" | "second" | "third";
-  phone?: string;
-  password?: string;
+  code: string;
 }
 
 export interface Parent {
@@ -72,18 +60,13 @@ export interface Parent {
   password: string;
 }
 
-export interface PaidMonth {
-  month: string;
-  date: string;
-}
-
-export interface Payment {
+export interface User {
   id: string;
-  studentId: string;
-  studentName: string;
-  studentCode: string;
-  group: string;
-  month: string;
-  date: string;
-  paidMonths: PaidMonth[];
+  name: string;
+  phone: string;
+  role: "admin" | "parent" | "student";
+  password?: string;
+  grade?: "first" | "second" | "third";
+  group?: string;
+  code?: string;
 }

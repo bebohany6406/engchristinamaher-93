@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -32,16 +31,17 @@ const StudentsManagement = () => {
   
   const filteredStudents = students.filter(student => 
     student.name.includes(searchQuery) || 
-    student.phone?.includes(searchQuery) ||
+    student.phone.includes(searchQuery) ||
     student.code.includes(searchQuery)
   );
   
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
-    const newStudent = createStudent(name, phone, parentPhone, group, grade);
+    createStudent(name, phone, password, parentPhone, group, grade);
     setStudents(getAllStudents()); // Refresh list
     setName("");
     setPhone("");
+    setPassword("");
     setParentPhone("");
     setGroup("");
     setGrade("first");
@@ -51,9 +51,9 @@ const StudentsManagement = () => {
   const handleEditClick = (student: Student) => {
     setEditingStudent(student);
     setName(student.name);
-    setPhone(student.phone || "");
-    setPassword(student.password || "");
-    setParentPhone(student.parentPhone || "");
+    setPhone(student.phone);
+    setPassword(student.password);
+    setParentPhone(student.parentPhone);
     setGroup(student.group || "");
     setGrade(student.grade);
     setShowEditForm(true);
@@ -155,7 +155,6 @@ const StudentsManagement = () => {
                       <th className="text-right py-3 px-4">المجموعة</th>
                       <th className="text-right py-3 px-4">الصف</th>
                       <th className="text-right py-3 px-4">هاتف ولي الأمر</th>
-                      <th className="text-right py-3 px-4">كلمة المرور</th>
                       <th className="text-center py-3 px-4">خيارات</th>
                     </tr>
                   </thead>
@@ -168,7 +167,6 @@ const StudentsManagement = () => {
                         <td className="py-3 px-4 text-white">{student.group || "—"}</td>
                         <td className="py-3 px-4 text-white">{getGradeDisplay(student.grade)}</td>
                         <td className="py-3 px-4 text-white">{student.parentPhone}</td>
-                        <td className="py-3 px-4 text-white">{student.password}</td>
                         <td className="py-3 px-4 text-white text-center">
                           <div className="flex justify-center gap-2">
                             <button 
@@ -220,6 +218,17 @@ const StudentsManagement = () => {
                   className="inputField"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">كلمة المرور</label>
+                <input
+                  type="password"
+                  className="inputField"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
@@ -302,6 +311,17 @@ const StudentsManagement = () => {
                   className="inputField"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white mb-1">كلمة المرور</label>
+                <input
+                  type="password"
+                  className="inputField"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
