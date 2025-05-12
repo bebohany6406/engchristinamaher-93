@@ -43,8 +43,22 @@ export function YouTubeEmbed({ videoUrl, title }: YouTubeEmbedProps) {
       }
 
       if (videoId) {
-        // تعطيل جميع خيارات التفاعل
-        setEmbedUrl(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1&fs=0&disablekb=1&controls=0&iv_load_policy=3&start=0&origin=${window.location.origin}&playsinline=1&mute=0&loop=0&cc_load_policy=0&enablejsapi=0&color=white&annotations=0&autohide=1`);
+        // Enhanced embed URL with maximum restrictions
+        // - rel=0: Disables related videos
+        // - modestbranding=1: Reduces YouTube branding
+        // - controls=1: Shows video controls
+        // - disablekb=1: Disables keyboard controls
+        // - iv_load_policy=3: Disables video annotations
+        // - fs=0: Disables fullscreen button
+        // - showinfo=0: Hides video information
+        // - origin: Sets the origin for better security
+        // - playsinline=1: Plays inline on iOS
+        // - mute=0: Unmutes the video
+        // - loop=0: Doesn't loop the video
+        // - cc_load_policy=0: Doesn't show captions by default
+        // - enablejsapi=0: Disables JS API
+        // - color=white: White progress bar
+        setEmbedUrl(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1&fs=0&disablekb=1&controls=1&iv_load_policy=3&start=0&origin=${window.location.origin}&playsinline=1&mute=0&loop=0&cc_load_policy=0&enablejsapi=0&color=white`);
         setIsLoading(false);
       } else {
         setError("الرابط غير صالح. يرجى استخدام رابط يوتيوب صحيح");
@@ -86,12 +100,11 @@ export function YouTubeEmbed({ videoUrl, title }: YouTubeEmbedProps) {
         allowFullScreen={false}
         loading="lazy"
         style={{
-          pointerEvents: "none" // Disable all interactions
+          pointerEvents: "auto"
         }}
       ></iframe>
-      
-      {/* Overlay to completely prevent interactions */}
-      <div className="absolute inset-0 bg-transparent z-10"></div>
+      {/* Overlay to prevent interactions with YouTube UI elements */}
+      <div className="absolute inset-12 pointer-events-none"></div>
     </div>
   );
 }

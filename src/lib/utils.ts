@@ -1,3 +1,4 @@
+
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -33,12 +34,28 @@ export function generateRandomCode(): string {
 }
 
 export function generateRandomPassword(): string {
-  // تعديل لتوليد كلمة مرور من 5 أرقام مختلفة
-  const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  // خلط الأرقام
-  const shuffled = [...digits].sort(() => 0.5 - Math.random());
-  // أخذ أول 5 أرقام
-  return shuffled.slice(0, 5).join('');
+  // Generate a stronger random password with 8 characters including letters, numbers, and symbols
+  const uppercaseChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';  // Avoiding confusing characters
+  const lowercaseChars = 'abcdefghjkmnpqrstuvwxyz';   // Avoiding confusing characters
+  const numberChars = '23456789';                     // Avoiding confusing numbers
+  const symbolChars = '!@#$%^&*';
+  
+  const allChars = uppercaseChars + lowercaseChars + numberChars + symbolChars;
+  let password = '';
+  
+  // Ensure at least one character from each category
+  password += uppercaseChars.charAt(Math.floor(Math.random() * uppercaseChars.length));
+  password += lowercaseChars.charAt(Math.floor(Math.random() * lowercaseChars.length));
+  password += numberChars.charAt(Math.floor(Math.random() * numberChars.length));
+  password += symbolChars.charAt(Math.floor(Math.random() * symbolChars.length));
+  
+  // Fill the rest of the password
+  for (let i = 0; i < 4; i++) {
+    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+  }
+  
+  // Shuffle the password characters
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
 }
 
 export function getPerformanceClass(performanceIndicator: string): string {
@@ -56,29 +73,20 @@ export function getPerformanceClass(performanceIndicator: string): string {
   }
 }
 
-// تحسين وظائف حفظ البيانات ومزامنتها
-
-// Save data to localStorage with enhanced synchronization
+// Save data to localStorage with expiration
 export function saveDataWithExpiration(key: string, value: any, expirationDays: number = 30) {
   const expirationMs = expirationDays * 24 * 60 * 60 * 1000; // Convert days to milliseconds
   const item = {
     value: value,
-    expiry: new Date().getTime() + expirationMs,
-    lastModified: new Date().getTime(),
-    deviceId: getDeviceId()
+    expiry: new Date().getTime() + expirationMs
   };
   localStorage.setItem(key, JSON.stringify(item));
-  
-  // Here we would implement cloud sync if available
-  // syncToCloud(key, item);
 }
 
-// Get data from localStorage with expiration check and sync verification
+// Get data from localStorage with expiration check
 export function getDataWithExpiration(key: string) {
   const itemStr = localStorage.getItem(key);
   if (!itemStr) {
-    // Try to get from cloud storage if available
-    // return getFromCloud(key);
     return null;
   }
   
@@ -91,59 +99,24 @@ export function getDataWithExpiration(key: string) {
     return null;
   }
   
-  // Check if there's a newer version available from another device
-  // checkForNewerVersion(key, item.lastModified);
-  
   return item.value;
 }
 
-// Generate a unique device ID if not already set
-export function getDeviceId() {
-  let deviceId = localStorage.getItem('device_id');
-  if (!deviceId) {
-    deviceId = 'device_' + new Date().getTime() + '_' + Math.random().toString(36).substring(2, 9);
-    localStorage.setItem('device_id', deviceId);
-  }
-  return deviceId;
-}
-
-// Enhanced data synchronization function
+// Ensure data synchronization between devices
 export function syncData(key: string, data: any) {
-  // Store data locally with proper metadata
-  const expirationDays = 30; // Default expiration
-  saveDataWithExpiration(key, data, expirationDays);
+  // Store data locally
+  saveDataWithExpiration(key, data);
   
-  // For cloud synchronization, we would need a backend service
-  // This would typically involve:
-  // 1. Check for internet connection
-  // 2. Send data to backend storage with version tracking
-  // 3. Handle conflicts with merge strategy
-  // 4. Implement offline-first approach with background sync
+  // Here you would typically implement a method to sync with a server
+  // For now, we're using local storage which is device-specific
+  // In a real application, you would integrate with a database or cloud storage
   
-  // Basic demo implementation (in real app, replace with actual backend sync)
-  const syncIndicator = localStorage.getItem('sync_indicator') || '{}';
-  const syncStatus = JSON.parse(syncIndicator);
-  syncStatus[key] = {
-    lastSync: new Date().getTime(),
-    status: 'synced'
-  };
-  localStorage.setItem('sync_indicator', JSON.stringify(syncStatus));
-  
-  // Force other browser tabs to check for updates
-  try {
-    localStorage.setItem('sync_trigger', new Date().getTime().toString());
-  } catch (e) {
-    console.error("Failed to trigger sync:", e);
-  }
-}
-
-// Setup listeners for cross-tab synchronization
-export function setupCrossBrowserSync() {
-  window.addEventListener('storage', (event) => {
-    if (event.key === 'sync_trigger') {
-      // Another tab has updated data, refresh relevant data
-      console.log("Data updated in another tab, refreshing data");
-      // Here we would reload specific data that might have changed
-    }
-  });
+  // Example of how you might implement this with a real backend:
+  // api.syncData(key, data).catch(err => {
+  //   console.error("Failed to sync data:", err);
+  //   // Store failed sync attempts for retry later
+  //   const failedSyncs = getDataWithExpiration("failedSyncs") || [];
+  //   failedSyncs.push({ key, data, timestamp: new Date().getTime() });
+  //   saveDataWithExpiration("failedSyncs", failedSyncs);
+  // });
 }

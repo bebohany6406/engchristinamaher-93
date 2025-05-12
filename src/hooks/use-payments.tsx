@@ -1,17 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { Payment } from "@/types";
-import { syncData, getDataWithExpiration } from "@/lib/utils";
 
 export const usePayments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
 
   // تحميل المدفوعات من التخزين المحلي عند بدء التطبيق
   useEffect(() => {
-    const storedPayments = getDataWithExpiration("payments");
+    const storedPayments = localStorage.getItem("payments");
     if (storedPayments) {
       try {
-        setPayments(storedPayments);
+        setPayments(JSON.parse(storedPayments));
       } catch (error) {
         console.error("Failed to parse payments from localStorage:", error);
       }
@@ -20,7 +19,7 @@ export const usePayments = () => {
 
   // حفظ المدفوعات في التخزين المحلي عند تغييرها
   useEffect(() => {
-    syncData("payments", payments);
+    localStorage.setItem("payments", JSON.stringify(payments));
   }, [payments]);
 
   // إضافة دفعة جديدة
