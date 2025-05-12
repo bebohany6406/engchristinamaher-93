@@ -19,6 +19,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
   const [month, setMonth] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState<Student[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { getAllStudents } = useAuth();
   const { addPayment } = usePayments();
@@ -53,7 +54,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
     setShowResults(false);
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedStudent) {
@@ -74,29 +75,42 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
       return;
     }
     
-    const result = addPayment(
-      selectedStudent.id,
-      selectedStudent.name,
-      selectedStudent.code,
-      selectedStudent.group || "",
-      month
-    );
-    
-    if (result.success) {
-      // بعد إضافة الدفعة بنجاح، نقوم بإرسال بيانات الدفعة للدالة onPaymentAdded
-      onPaymentAdded(result.payment);
+    try {
+      setIsSubmitting(true);
       
-      toast({
-        title: "✅ تم تسجيل الدفعة",
-        description: result.message,
-      });
-      onClose();
-    } else {
+      // Await the Promise returned by addPayment
+      const result = await addPayment(
+        selectedStudent.id,
+        selectedStudent.name,
+        selectedStudent.code,
+        selectedStudent.group || "",
+        month
+      );
+      
+      if (result.success) {
+        // بعد إضافة الدفعة بنجاح، نقوم بإرسال بيانات الدفعة للدالة onPaymentAdded
+        onPaymentAdded(result.payment);
+        
+        toast({
+          title: "✅ تم تسجيل الدفعة",
+          description: result.message,
+        });
+        onClose();
+      } else {
+        toast({
+          title: "❌ خطأ",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
       toast({
         title: "❌ خطأ",
-        description: result.message,
+        description: error.message || "حدث خطأ أثناء تسجيل الدفعة",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -202,14 +216,15 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
           <button 
             type="submit" 
             className="goldBtn flex-1"
-            disabled={!selectedStudent || !month}
+            disabled={!selectedStudent || !month || isSubmitting}
           >
-            تسجيل الدفعة
+            {isSubmitting ? "جاري التسجيل..." : "تسجيل الدفعة"}
           </button>
           <button 
             type="button" 
             onClick={onClose}
             className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
+            disabled={isSubmitting}
           >
             إلغاء
           </button>
