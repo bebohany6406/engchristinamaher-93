@@ -21,6 +21,13 @@ const Videos = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   const [showUpload, setShowUpload] = useState(location.pathname === "/add-video");
+  
+  // Handle new video URL generation
+  const handleVideoURLGenerated = (url: string) => {
+    console.log("New video URL:", url);
+    // Here you would typically save the video URL to your database
+    setShowUpload(false);
+  };
 
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
@@ -56,18 +63,18 @@ const Videos = () => {
           )}
           
           {showUpload && currentUser?.role === "admin" ? (
-            <VideoUploader />
+            <VideoUploader onVideoURLGenerated={handleVideoURLGenerated} />
           ) : (
             <div className="grid grid-cols-1 gap-6">
               {/* Just some example videos as placeholders */}
               <div className="bg-physics-dark rounded-lg overflow-hidden">
                 <h3 className="text-white text-lg p-4">شرح درس الحركة المستقيمة</h3>
-                <YouTubeEmbed videoUrl="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+                <YouTubeEmbed videoUrl="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="شرح درس الحركة المستقيمة" />
               </div>
               
               <div className="bg-physics-dark rounded-lg overflow-hidden">
                 <h3 className="text-white text-lg p-4">قوانين نيوتن للحركة</h3>
-                <YouTubeEmbed videoUrl="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+                <YouTubeEmbed videoUrl="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="قوانين نيوتن للحركة" />
               </div>
             </div>
           )}

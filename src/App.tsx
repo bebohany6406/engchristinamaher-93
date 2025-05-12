@@ -49,6 +49,7 @@ function App() {
             <Route path="/add-payment" element={<PaymentsManagement />} />
             <Route path="/student-payments" element={<StudentPayments />} />
             <Route path="/parent-payments" element={<ParentPayments />} />
+            <Route path="/students" element={<StudentsManagement />} />
           </Routes>
         </Router>
         <Toaster />
