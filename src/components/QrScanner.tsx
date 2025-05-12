@@ -14,6 +14,7 @@ export function QrScanner() {
   const [scannedCode, setScannedCode] = useState<string>("");
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = useState<{paid: boolean, studentName?: string} | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   const { getStudentByCode } = useAuth();
   const { addAttendance, getStudentLessonCount } = useData();
@@ -106,41 +107,53 @@ export function QrScanner() {
     }
   };
 
-  const processScannedCode = (code: string) => {
+  const processScannedCode = async (code: string) => {
     setScannedCode(code);
     stopScanner();
+    setIsProcessing(true);
     
-    const student = getStudentByCode(code);
-    if (student) {
-      // Get current lesson count for the student
-      const lessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
-      
-      // Check if student has paid for this lesson
-      const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonCount);
-      
-      // Update payment status state
-      setPaymentStatus({
-        paid: hasPaid,
-        studentName: student.name
-      });
-      
-      // Record attendance regardless of payment status
-      addAttendance(student.id, student.name, "present", lessonCount);
-      
-      // Play sound effect
-      const audio = new Audio("/attendance-present.mp3");
-      audio.play().catch(e => console.error("Sound play failed:", e));
-      
-      toast({
-        title: "✅ تم تسجيل الحضور",
-        description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
-      });
-    } else {
+    try {
+      const student = await getStudentByCode(code);
+      if (student) {
+        // Get current lesson count for the student
+        const lessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
+        
+        // Check if student has paid for this lesson
+        const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonCount);
+        
+        // Update payment status state
+        setPaymentStatus({
+          paid: hasPaid,
+          studentName: student.name
+        });
+        
+        // Record attendance regardless of payment status
+        addAttendance(student.id, student.name, "present", lessonCount);
+        
+        // Play sound effect
+        const audio = new Audio("/attendance-present.mp3");
+        audio.play().catch(e => console.error("Sound play failed:", e));
+        
+        toast({
+          title: "✅ تم تسجيل الحضور",
+          description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "❌ كود غير صالح",
+          description: "لم يتم العثور على طالب بهذا الكود"
+        });
+      }
+    } catch (error) {
+      console.error("Error processing scanned code:", error);
       toast({
         variant: "destructive",
-        title: "❌ كود غير صالح",
-        description: "لم يتم العثور على طالب بهذا الكود"
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء معالجة الكود"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
   
@@ -150,10 +163,13 @@ export function QrScanner() {
     };
   }, []);
 
-  const handleManualEntry = (e: React.FormEvent) => {
+  const handleManualEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (scannedCode) {
-      const student = getStudentByCode(scannedCode);
+    if (!scannedCode || isProcessing) return;
+    
+    setIsProcessing(true);
+    try {
+      const student = await getStudentByCode(scannedCode);
       if (student) {
         // Get current lesson count for the student
         const lessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
@@ -186,6 +202,15 @@ export function QrScanner() {
           description: "لم يتم العثور على طالب بهذا الكود"
         });
       }
+    } catch (error) {
+      console.error("Error processing manual entry:", error);
+      toast({
+        variant: "destructive",
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء معالجة الكود"
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -215,6 +240,7 @@ export function QrScanner() {
             <button 
               onClick={startScanner}
               className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-3 px-6 font-bold shadow-lg hover:bg-physics-gold/90 transition-colors"
+              disabled={isProcessing}
             >
               <Camera size={24} />
               <span>مسح الكود بالكاميرا</span>
@@ -238,14 +264,22 @@ export function QrScanner() {
                   onChange={(e) => setScannedCode(e.target.value)}
                   placeholder="أدخل كود الطالب يدوياً"
                   className="inputField bg-physics-navy/60 border-physics-gold/50 text-white"
+                  disabled={isProcessing}
                 />
               </div>
               <button 
                 type="submit" 
                 className="goldBtn w-full rounded-full shadow-lg"
-                disabled={!scannedCode}
+                disabled={!scannedCode || isProcessing}
               >
-                تسجيل الحضور
+                {isProcessing ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-physics-navy border-t-transparent rounded-full animate-spin mr-2"></div>
+                    <span>جاري المعالجة...</span>
+                  </div>
+                ) : (
+                  "تسجيل الحضور"
+                )}
               </button>
             </form>
           </div>

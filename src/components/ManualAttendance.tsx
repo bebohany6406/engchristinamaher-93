@@ -14,12 +14,13 @@ export function ManualAttendance() {
     hasPaid: boolean; 
     lessonNumber: number;
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   const { getStudentByCode } = useAuth();
   const { addAttendance, getStudentLessonCount } = useData();
   const { hasStudentPaidForCurrentLesson } = usePayments();
 
-  const handleLookup = () => {
+  const handleLookup = async () => {
     if (!studentCode.trim()) {
       toast({
         variant: "destructive",
@@ -29,27 +30,40 @@ export function ManualAttendance() {
       return;
     }
 
-    const student = getStudentByCode(studentCode);
-    if (student) {
-      // Get current lesson count
-      const lessonNumber = getStudentLessonCount(student.id) + 1; // +1 because we're about to add a new attendance
-      
-      // Check payment status
-      const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonNumber);
-      
-      setStudentInfo({ 
-        id: student.id, 
-        name: student.name,
-        hasPaid,
-        lessonNumber
-      });
-    } else {
+    setIsLoading(true);
+    try {
+      const student = await getStudentByCode(studentCode);
+      if (student) {
+        // Get current lesson count
+        const lessonNumber = getStudentLessonCount(student.id) + 1; // +1 because we're about to add a new attendance
+        
+        // Check payment status
+        const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonNumber);
+        
+        setStudentInfo({ 
+          id: student.id, 
+          name: student.name,
+          hasPaid,
+          lessonNumber
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: "لم يتم العثور على طالب بهذا الكود"
+        });
+        setStudentInfo(null);
+      }
+    } catch (error) {
+      console.error("Error looking up student:", error);
       toast({
         variant: "destructive",
         title: "خطأ",
-        description: "لم يتم العثور على طالب بهذا الكود"
+        description: "حدث خطأ أثناء البحث عن الطالب"
       });
       setStudentInfo(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -81,16 +95,25 @@ export function ManualAttendance() {
             value={studentCode}
             onChange={(e) => setStudentCode(e.target.value)}
             className="inputField flex-1"
+            disabled={isLoading}
           />
           <button 
             onClick={handleLookup}
             className="goldBtn"
+            disabled={isLoading}
           >
-            بحث
+            {isLoading ? 'جاري البحث...' : 'بحث'}
           </button>
         </div>
         
-        {studentInfo && (
+        {isLoading && (
+          <div className="bg-physics-navy p-4 rounded-lg text-center">
+            <div className="inline-block w-6 h-6 border-2 border-physics-gold border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-white mt-2">جاري البحث عن الطالب...</p>
+          </div>
+        )}
+        
+        {!isLoading && studentInfo && (
           <div className="bg-physics-navy p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <p className="text-white">الطالب: <span className="font-bold">{studentInfo.name}</span></p>
