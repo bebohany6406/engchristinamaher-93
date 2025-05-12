@@ -17,9 +17,9 @@ import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { Toaster } from "@/components/ui/toaster"
 import PaymentsManagement from './pages/PaymentsManagement';
+import { initializeSync } from "./lib/sync-service";
 import StudentPayments from './pages/StudentPayments';
 import ParentPayments from './pages/ParentPayments';
-import { initializeSync } from "./lib/sync-service";
 
 function App() {
   // استدعاء وظيفة بدء المزامنة عند تحميل التطبيق

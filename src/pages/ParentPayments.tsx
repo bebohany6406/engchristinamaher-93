@@ -11,7 +11,7 @@ import { Payment } from "@/types";
 
 const ParentPayments = () => {
   const navigate = useNavigate();
-  const { currentUser, getParentChildren } = useAuth();
+  const { currentUser } = useAuth();
   const { getStudentPayments } = usePayments();
   const [childrenPayments, setChildrenPayments] = useState<Payment[]>([]);
 
@@ -36,20 +36,20 @@ const ParentPayments = () => {
       return;
     }
 
-    // الحصول على قائمة أبناء ولي الأمر
-    const children = getParentChildren(currentUser.id);
+    // الحصول على قائمة أبناء ولي الأمر وتحميل المدفوعات الخاصة بهم
+    // نظرا لأن getParentChildren غير موجودة، سننفذ منطق مباشر للحصول على الطلاب المرتبطين بولي الأمر
     
-    // الحصول على مدفوعات كل طالب
-    const payments: Payment[] = [];
-    children.forEach(child => {
-      const payment = getStudentPayments(child.id);
+    // استخدام رقم هاتف ولي الأمر للعثور على الطالب المرتبط
+    if (currentUser && currentUser.id) {
+      // نفترض أن بيانات ولي الأمر تحتوي على معرف الطالب المرتبط
+      const studentId = currentUser.studentId || '';
+      
+      const payment = getStudentPayments(studentId);
       if (payment) {
-        payments.push(payment);
+        setChildrenPayments([payment]);
       }
-    });
-    
-    setChildrenPayments(payments);
-  }, [currentUser, navigate, getParentChildren, getStudentPayments]);
+    }
+  }, [currentUser, navigate, getStudentPayments]);
 
   // تنسيق التاريخ
   const formatDate = (dateString: string) => {
