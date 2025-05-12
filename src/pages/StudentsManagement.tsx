@@ -17,6 +17,7 @@ const StudentsManagement = () => {
   const [searchField, setSearchField] = useState<"all" | "name" | "phone" | "code" | "group">("all");
   const [students, setStudents] = useState<Student[]>([]);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Form state
   const [name, setName] = useState("");
@@ -55,16 +56,29 @@ const StudentsManagement = () => {
     }
   });
   
-  const handleAddStudent = (e: React.FormEvent) => {
+  const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newStudent = createStudent(name, phone, parentPhone, group, grade);
-    setStudents(getAllStudents()); // Refresh list
-    setName("");
-    setPhone("");
-    setParentPhone("");
-    setGroup("");
-    setGrade("first");
-    setShowAddForm(false);
+    setIsLoading(true);
+    
+    try {
+      const newStudent = await createStudent(name, phone, parentPhone, group, grade);
+      setStudents(getAllStudents()); // Refresh list
+      setName("");
+      setPhone("");
+      setParentPhone("");
+      setGroup("");
+      setGrade("first");
+      setShowAddForm(false);
+    } catch (error) {
+      console.error("Error creating student:", error);
+      toast({
+        variant: "destructive",
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء إنشاء حساب الطالب",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleEditClick = (student: Student) => {
@@ -78,40 +92,66 @@ const StudentsManagement = () => {
     setShowEditForm(true);
   };
   
-  const handleUpdateStudent = (e: React.FormEvent) => {
+  const handleUpdateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStudent) return;
     
-    updateStudent(
-      editingStudent.id,
-      name,
-      phone,
-      password,
-      parentPhone,
-      group,
-      grade
-    );
+    setIsLoading(true);
     
-    setStudents(getAllStudents()); // Refresh list
-    setShowEditForm(false);
-    setEditingStudent(null);
-    
-    toast({
-      title: "تم تحديث بيانات الطالب",
-      description: `تم تحديث بيانات الطالب ${name} بنجاح`,
-    });
-  };
-  
-  const handleDeleteStudent = (studentId: string, studentName: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف الطالب ${studentName}؟`)) {
-      deleteStudent(studentId);
+    try {
+      await updateStudent(
+        editingStudent.id,
+        name,
+        phone,
+        password,
+        parentPhone,
+        group,
+        grade
+      );
+      
       setStudents(getAllStudents()); // Refresh list
+      setShowEditForm(false);
+      setEditingStudent(null);
       
       toast({
-        title: "تم حذف الطالب",
-        description: `تم حذف الطالب ${studentName} بنجاح`,
-        variant: "destructive",
+        title: "تم تحديث بيانات الطالب",
+        description: `تم تحديث بيانات الطالب ${name} بنجاح`,
       });
+    } catch (error) {
+      console.error("Error updating student:", error);
+      toast({
+        variant: "destructive",
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء تحديث بيانات الطالب",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleDeleteStudent = async (studentId: string, studentName: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف الطالب ${studentName}؟`)) {
+      setIsLoading(true);
+      
+      try {
+        await deleteStudent(studentId);
+        setStudents(getAllStudents()); // Refresh list
+        
+        toast({
+          title: "تم حذف الطالب",
+          description: `تم حذف الطالب ${studentName} بنجاح`,
+          variant: "destructive",
+        });
+      } catch (error) {
+        console.error("Error deleting student:", error);
+        toast({
+          variant: "destructive",
+          title: "❌ خطأ",
+          description: "حدث خطأ أثناء حذف الطالب",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
   
@@ -139,6 +179,7 @@ const StudentsManagement = () => {
             <button 
               onClick={() => setShowAddForm(true)}
               className="goldBtn flex items-center gap-2"
+              disabled={isLoading}
             >
               <UserPlus size={18} />
               <span>إضافة طالب</span>
@@ -175,7 +216,12 @@ const StudentsManagement = () => {
           
           {/* Students List */}
           <div className="bg-physics-dark/80 rounded-lg overflow-hidden">
-            {filteredStudents.length === 0 ? (
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="w-12 h-12 border-4 border-physics-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-white text-lg">جاري تحميل البيانات...</p>
+              </div>
+            ) : filteredStudents.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-white text-lg">لا يوجد طلاب مسجلين</p>
               </div>
@@ -209,12 +255,14 @@ const StudentsManagement = () => {
                             <button 
                               className="p-1 text-physics-gold hover:text-physics-lightgold"
                               onClick={() => handleEditClick(student)}
+                              disabled={isLoading}
                             >
                               <Edit size={18} />
                             </button>
                             <button 
                               className="p-1 text-red-400 hover:text-red-500"
                               onClick={() => handleDeleteStudent(student.id, student.name)}
+                              disabled={isLoading}
                             >
                               <Trash2 size={18} />
                             </button>
@@ -297,13 +345,18 @@ const StudentsManagement = () => {
               </div>
               
               <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1">
-                  إضافة الطالب
+                <button 
+                  type="submit" 
+                  className="goldBtn flex-1"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "جاري الإضافة..." : "إضافة الطالب"}
                 </button>
                 <button 
                   type="button" 
                   className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
                   onClick={() => setShowAddForm(false)}
+                  disabled={isLoading}
                 >
                   إلغاء
                 </button>
@@ -380,13 +433,18 @@ const StudentsManagement = () => {
               </div>
               
               <div className="flex gap-4 pt-4">
-                <button type="submit" className="goldBtn flex-1">
-                  حفظ التغييرات
+                <button 
+                  type="submit" 
+                  className="goldBtn flex-1"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "جاري الحفظ..." : "حفظ التغييرات"}
                 </button>
                 <button 
                   type="button" 
                   className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
                   onClick={() => setShowEditForm(false)}
+                  disabled={isLoading}
                 >
                   إلغاء
                 </button>

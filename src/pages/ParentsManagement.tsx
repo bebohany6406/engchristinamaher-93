@@ -18,6 +18,7 @@ const ParentsManagement = () => {
   const [searchField, setSearchField] = useState<"all" | "name" | "phone" | "code" | "group">("all");
   const [parents, setParents] = useState<Parent[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Form state
   const [phone, setPhone] = useState("");
@@ -66,12 +67,13 @@ const ParentsManagement = () => {
     }
   });
   
-  const handleAddParent = (e: React.FormEvent) => {
+  const handleAddParent = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     try {
       // Validate student code exists
-      const student = getStudentByCode(studentCode);
+      const student = await getStudentByCode(studentCode);
       if (!student) {
         toast({
           title: "❌ كود غير صالح",
@@ -82,7 +84,7 @@ const ParentsManagement = () => {
       }
       
       // Create parent
-      const newParent = createParent(phone, studentCode);
+      const newParent = await createParent(phone, studentCode);
       
       // Update list
       setParents(getAllParents());
@@ -99,6 +101,8 @@ const ParentsManagement = () => {
         description: "حدث خطأ أثناء إنشاء حساب ولي الأمر",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -110,12 +114,13 @@ const ParentsManagement = () => {
     setShowEditForm(true);
   };
   
-  const handleEditParent = (e: React.FormEvent) => {
+  const handleEditParent = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     try {
       // Validate student code exists
-      const student = getStudentByCode(editStudentCode);
+      const student = await getStudentByCode(editStudentCode);
       if (!student) {
         toast({
           title: "❌ كود غير صالح",
@@ -126,7 +131,7 @@ const ParentsManagement = () => {
       }
       
       // Update parent
-      updateParent(editId, editPhone, editStudentCode, editPassword);
+      await updateParent(editId, editPhone, editStudentCode, editPassword);
       
       // Update list
       setParents(getAllParents());
@@ -146,13 +151,16 @@ const ParentsManagement = () => {
         description: "حدث خطأ أثناء تحديث حساب ولي الأمر",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  const handleDeleteParent = (parentId: string) => {
+  const handleDeleteParent = async (parentId: string) => {
     if (window.confirm("هل أنت متأكد من حذف حساب ولي الأمر؟ لا يمكن التراجع عن هذه العملية.")) {
+      setIsLoading(true);
       try {
-        deleteParent(parentId);
+        await deleteParent(parentId);
         setParents(getAllParents());
         toast({
           title: "✅ تم الحذف",
@@ -165,6 +173,8 @@ const ParentsManagement = () => {
           description: "حدث خطأ أثناء حذف حساب ولي الأمر",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -195,6 +205,7 @@ const ParentsManagement = () => {
             <button 
               onClick={() => setShowAddForm(true)}
               className="goldBtn flex items-center gap-2"
+              disabled={isLoading}
             >
               <UserPlus size={18} />
               <span>إضافة ولي أمر</span>
@@ -231,7 +242,12 @@ const ParentsManagement = () => {
           
           {/* Parents List */}
           <div className="bg-physics-dark/80 rounded-lg overflow-hidden">
-            {filteredParents.length === 0 ? (
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="w-12 h-12 border-4 border-physics-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-white text-lg">جاري تحميل البيانات...</p>
+              </div>
+            ) : filteredParents.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-white text-lg">لا يوجد أولياء أمور مسجلين</p>
               </div>
@@ -263,6 +279,7 @@ const ParentsManagement = () => {
                             <button 
                               className="p-1 text-physics-gold hover:text-yellow-300"
                               onClick={() => openEditForm(parent)}
+                              disabled={isLoading}
                               title="تعديل"
                             >
                               <Edit size={18} />
@@ -270,6 +287,7 @@ const ParentsManagement = () => {
                             <button 
                               className="p-1 text-red-400 hover:text-red-500"
                               onClick={() => handleDeleteParent(parent.id)}
+                              disabled={isLoading}
                               title="حذف"
                             >
                               <Trash2 size={18} />
@@ -295,6 +313,7 @@ const ParentsManagement = () => {
               <button 
                 onClick={() => setShowAddForm(false)} 
                 className="text-gray-400 hover:text-white"
+                disabled={isLoading}
               >
                 <X size={20} />
               </button>
@@ -327,13 +346,15 @@ const ParentsManagement = () => {
                 <button 
                   type="submit" 
                   className="goldBtn flex-1"
+                  disabled={isLoading}
                 >
-                  إضافة ولي الأمر
+                  {isLoading ? "جاري الإضافة..." : "إضافة ولي الأمر"}
                 </button>
                 <button 
                   type="button" 
                   className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
                   onClick={() => setShowAddForm(false)}
+                  disabled={isLoading}
                 >
                   إلغاء
                 </button>
@@ -352,6 +373,7 @@ const ParentsManagement = () => {
               <button 
                 onClick={() => setShowEditForm(false)} 
                 className="text-gray-400 hover:text-white"
+                disabled={isLoading}
               >
                 <X size={20} />
               </button>
@@ -395,13 +417,15 @@ const ParentsManagement = () => {
                 <button 
                   type="submit" 
                   className="goldBtn flex-1"
+                  disabled={isLoading}
                 >
-                  تحديث البيانات
+                  {isLoading ? "جاري التحديث..." : "تحديث البيانات"}
                 </button>
                 <button 
                   type="button" 
                   className="bg-physics-navy text-white py-2 px-4 rounded-lg flex-1"
                   onClick={() => setShowEditForm(false)}
+                  disabled={isLoading}
                 >
                   إلغاء
                 </button>

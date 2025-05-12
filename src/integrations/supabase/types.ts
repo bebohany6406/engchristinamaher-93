@@ -131,6 +131,41 @@ export type Database = {
           },
         ]
       }
+      parents: {
+        Row: {
+          created_at: string | null
+          id: string
+          password: string
+          phone: string
+          student_code: string
+          student_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          password: string
+          phone: string
+          student_code: string
+          student_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          password?: string
+          phone?: string
+          student_code?: string
+          student_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parents_student_code_fkey"
+            columns: ["student_code"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       payments: {
         Row: {
           created_at: string | null
@@ -161,6 +196,42 @@ export type Database = {
           student_group?: string
           student_id?: string
           student_name?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          code: string
+          created_at: string | null
+          grade: string
+          group_name: string | null
+          id: string
+          name: string
+          parent_phone: string | null
+          password: string
+          phone: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          grade: string
+          group_name?: string | null
+          id?: string
+          name: string
+          parent_phone?: string | null
+          password: string
+          phone: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          grade?: string
+          group_name?: string | null
+          id?: string
+          name?: string
+          parent_phone?: string | null
+          password?: string
+          phone?: string
         }
         Relationships: []
       }
