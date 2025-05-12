@@ -1,3 +1,4 @@
+
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
@@ -21,7 +22,7 @@ import AttendanceRecordList from "@/pages/AttendanceRecordList";
 import ParentsManagement from "@/pages/ParentsManagement";
 import PaymentsManagement from "@/pages/PaymentsManagement";
 import ParentPaymentsPage from "@/pages/ParentPaymentsPage";
-import { RequireAuth } from "@/components/RequireAuth";
+import RequireAuth from "@/components/RequireAuth";
 import { AuthProvider } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { Toaster } from "@/components/ui/toaster";
