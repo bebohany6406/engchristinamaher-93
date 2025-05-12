@@ -14,7 +14,7 @@ const Index = () => {
           <div className="text-center mb-6">
             <Logo />
             <h1 className="text-3xl font-bold text-physics-gold mb-2">فيزياء المرحلة الثانوية</h1>
-            <p className="text-white opacity-80 mb-8">تطبيق متكامل لدروس الفيزياء والمتابعة التعليمية</p>
+            <p className="text-white opacity-80 mb-8">موقع خاص بطلاب المهندسة : كيرستينا ماهر</p>
           </div>
 
           <div className="space-y-4">
