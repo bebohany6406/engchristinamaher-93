@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -8,26 +7,19 @@ import { ArrowRight, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
 const SystemReset = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const {
+    currentUser
+  } = useAuth();
   const [selectedGrade, setSelectedGrade] = useState<"first" | "second" | "third">("first");
   const [confirmText, setConfirmText] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-
   const handleReset = async () => {
     if (confirmText !== `reset-${selectedGrade}`) {
       toast({
@@ -37,48 +29,39 @@ const SystemReset = () => {
       });
       return;
     }
-
     setIsResetting(true);
-    
     try {
       toast({
         title: "جاري إعادة تعيين النظام",
         description: "يرجى الانتظار..."
       });
-      
+
       // 1. حذف الدرجات للصف المحدد
-      const { error: gradesError } = await supabase
-        .from('grades')
-        .delete()
-        .eq('group_name', `${selectedGrade}-group`);
-      
+      const {
+        error: gradesError
+      } = await supabase.from('grades').delete().eq('group_name', `${selectedGrade}-group`);
       if (gradesError) throw gradesError;
-      
+
       // 2. حذف الفيديوهات للصف المحدد
-      const { error: videosError } = await supabase
-        .from('videos')
-        .delete()
-        .eq('grade', selectedGrade);
-      
+      const {
+        error: videosError
+      } = await supabase.from('videos').delete().eq('grade', selectedGrade);
       if (videosError) throw videosError;
-      
+
       // 3. حذف الكتب للصف المحدد
-      const { error: booksError } = await supabase
-        .from('books')
-        .delete()
-        .eq('grade', selectedGrade);
-      
+      const {
+        error: booksError
+      } = await supabase.from('books').delete().eq('grade', selectedGrade);
       if (booksError) throw booksError;
-      
+
       // 4. ملاحظة: لا يمكننا حذف سجلات الحضور لصف محدد لأنها لا تحتوي على حقل "grade"
       // يمكن تعديل الجدول لاحقًا ليشمل هذه المعلومات
-      
+
       // الانتهاء
       toast({
         title: "تم إعادة تعيين النظام",
-        description: `تم حذف بيانات ${getGradeName(selectedGrade)} بنجاح`,
+        description: `تم حذف بيانات ${getGradeName(selectedGrade)} بنجاح`
       });
-      
       setConfirmText("");
     } catch (error) {
       console.error("Error resetting system:", error);
@@ -91,7 +74,6 @@ const SystemReset = () => {
       setIsResetting(false);
     }
   };
-  
   const deleteAllData = async () => {
     if (deleteConfirmText !== "delete-all-data") {
       toast({
@@ -101,79 +83,67 @@ const SystemReset = () => {
       });
       return;
     }
-    
     setIsDeleting(true);
-    
     try {
       toast({
         title: "جاري حذف جميع البيانات",
         description: "يرجى الانتظار..."
       });
-      
+
       // حذف جميع البيانات من كافة الجداول بطريقة تجنب مشاكل TypeScript
       // نحدد كل جدول على حدة بدلاً من استخدام حلقة للمرور عبر مصفوفة أسماء الجداول
-      
+
       // حذف البيانات من جدول attendance
-      const { error: attendanceError } = await supabase
-        .from('attendance')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: attendanceError
+      } = await supabase.from('attendance').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (attendanceError) console.error("Error deleting from attendance:", attendanceError);
-      
+
       // حذف البيانات من جدول books
-      const { error: booksError } = await supabase
-        .from('books')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: booksError
+      } = await supabase.from('books').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (booksError) console.error("Error deleting from books:", booksError);
-      
+
       // حذف البيانات من جدول grades
-      const { error: gradesError } = await supabase
-        .from('grades')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: gradesError
+      } = await supabase.from('grades').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (gradesError) console.error("Error deleting from grades:", gradesError);
-      
+
       // حذف البيانات من جدول paid_months
-      const { error: paidMonthsError } = await supabase
-        .from('paid_months')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: paidMonthsError
+      } = await supabase.from('paid_months').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (paidMonthsError) console.error("Error deleting from paid_months:", paidMonthsError);
-      
+
       // حذف البيانات من جدول parents
-      const { error: parentsError } = await supabase
-        .from('parents')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: parentsError
+      } = await supabase.from('parents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (parentsError) console.error("Error deleting from parents:", parentsError);
-      
+
       // حذف البيانات من جدول payments
-      const { error: paymentsError } = await supabase
-        .from('payments')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: paymentsError
+      } = await supabase.from('payments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (paymentsError) console.error("Error deleting from payments:", paymentsError);
-      
+
       // حذف البيانات من جدول students
-      const { error: studentsError } = await supabase
-        .from('students')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: studentsError
+      } = await supabase.from('students').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (studentsError) console.error("Error deleting from students:", studentsError);
-      
+
       // حذف البيانات من جدول videos
-      const { error: videosError } = await supabase
-        .from('videos')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const {
+        error: videosError
+      } = await supabase.from('videos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (videosError) console.error("Error deleting from videos:", videosError);
-      
       toast({
         title: "✅ تم حذف جميع البيانات",
-        description: "تم حذف جميع البيانات من قاعدة البيانات بنجاح",
+        description: "تم حذف جميع البيانات من قاعدة البيانات بنجاح"
       });
-      
       setShowDeleteConfirm(false);
       setDeleteConfirmText("");
     } catch (error) {
@@ -187,33 +157,31 @@ const SystemReset = () => {
       setIsDeleting(false);
     }
   };
-  
   const getGradeName = (grade: string) => {
-    switch(grade) {
-      case "first": return "الصف الأول الثانوي";
-      case "second": return "الصف الثاني الثانوي";
-      case "third": return "الصف الثالث الثانوي";
-      default: return "";
+    switch (grade) {
+      case "first":
+        return "الصف الأول الثانوي";
+      case "second":
+        return "الصف الثاني الثانوي";
+      case "third":
+        return "الصف الثالث الثانوي";
+      default:
+        return "";
     }
   };
-  
+
   // توجيه المستخدمين غير المسؤولين
   if (currentUser?.role !== "admin") {
     navigate("/unauthorized");
     return null;
   }
-
-  return (
-    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+  return <div className="min-h-screen bg-physics-navy flex flex-col relative">
       <PhysicsBackground />
       <PhoneContact />
       
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
-        <button 
-          onClick={() => navigate("/dashboard")} 
-          className="flex items-center gap-2 text-physics-gold hover:opacity-80"
-        >
+        <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
           <ArrowRight size={20} />
           <span>العودة للرئيسية</span>
         </button>
@@ -249,12 +217,7 @@ const SystemReset = () => {
                 <label htmlFor="grade" className="block text-white mb-2">
                   اختر الصف الدراسي
                 </label>
-                <select 
-                  id="grade"
-                  className="inputField" 
-                  value={selectedGrade} 
-                  onChange={e => setSelectedGrade(e.target.value as "first" | "second" | "third")}
-                >
+                <select id="grade" className="inputField" value={selectedGrade} onChange={e => setSelectedGrade(e.target.value as "first" | "second" | "third")}>
                   <option value="first">الصف الأول الثانوي</option>
                   <option value="second">الصف الثاني الثانوي</option>
                   <option value="third">الصف الثالث الثانوي</option>
@@ -265,75 +228,25 @@ const SystemReset = () => {
                 <label htmlFor="confirm" className="block text-white mb-2">
                   اكتب "<span className="text-red-400">reset-{selectedGrade}</span>" للتأكيد
                 </label>
-                <input 
-                  id="confirm"
-                  type="text" 
-                  className="inputField" 
-                  value={confirmText} 
-                  onChange={e => setConfirmText(e.target.value)} 
-                  placeholder={`reset-${selectedGrade}`}
-                />
+                <input id="confirm" type="text" className="inputField" value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder={`reset-${selectedGrade}`} />
               </div>
               
               <div className="pt-4">
-                <button
-                  onClick={handleReset}
-                  disabled={confirmText !== `reset-${selectedGrade}` || isResetting}
-                  className={`w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center ${
-                    confirmText === `reset-${selectedGrade}` && !isResetting 
-                      ? 'bg-red-600 hover:bg-red-700 text-white' 
-                      : 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                  }`}
-                >
-                  {isResetting ? (
-                    <>
+                <button onClick={handleReset} disabled={confirmText !== `reset-${selectedGrade}` || isResetting} className={`w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center ${confirmText === `reset-${selectedGrade}` && !isResetting ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-600 text-gray-300 cursor-not-allowed'}`}>
+                  {isResetting ? <>
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       جاري إعادة التعيين...
-                    </>
-                  ) : (
-                    `إعادة تعيين بيانات ${getGradeName(selectedGrade)}`
-                  )}
+                    </> : `إعادة تعيين بيانات ${getGradeName(selectedGrade)}`}
                 </button>
               </div>
             </div>
           </div>
           
           {/* قسم حذف جميع البيانات */}
-          <div className="bg-physics-dark rounded-lg p-6 shadow-lg">
-            <div className="flex items-center gap-3 mb-6">
-              <Trash2 size={28} className="text-red-500" />
-              <h1 className="text-2xl font-bold text-physics-gold">حذف جميع البيانات</h1>
-            </div>
-            
-            <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6">
-              <p className="text-white text-lg font-semibold mb-2">تحذير خطير!</p>
-              <p className="text-gray-300">
-                ستقوم هذه العملية بحذف <span className="text-red-400 font-bold">جميع البيانات</span> من قاعدة البيانات بما في ذلك:
-              </p>
-              <ul className="list-disc list-inside text-gray-300 mt-2 space-y-1">
-                <li>جميع بيانات الطلاب</li>
-                <li>جميع بيانات الحضور</li>
-                <li>جميع الدرجات</li>
-                <li>جميع سجلات الدفع</li>
-                <li>جميع الفيديوهات والكتب</li>
-                <li>جميع بيانات أولياء الأمور</li>
-              </ul>
-              <p className="text-red-400 font-bold mt-2">
-                هذه العملية خطيرة للغاية ولا يمكن التراجع عنها أبدًا!
-              </p>
-            </div>
-            
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 text-white"
-            >
-              <Trash2 size={20} />
-              حذف جميع البيانات من قاعدة البيانات
-            </button>
-          </div>
+          
         </div>
       </main>
       
@@ -351,46 +264,25 @@ const SystemReset = () => {
             <p className="text-white mb-4">
               للتأكيد، يرجى كتابة "<span className="text-red-400 font-bold">delete-all-data</span>" أدناه:
             </p>
-            <input
-              type="text"
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              placeholder="delete-all-data"
-              className="inputField w-full"
-            />
+            <input type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="delete-all-data" className="inputField w-full" />
           </div>
           
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowDeleteConfirm(false)}
-              className="bg-transparent border-gray-500 text-gray-300 hover:bg-gray-800"
-            >
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} className="bg-transparent border-gray-500 text-gray-300 hover:bg-gray-800">
               إلغاء
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={deleteAllData}
-              disabled={deleteConfirmText !== "delete-all-data" || isDeleting}
-              className="bg-red-700 hover:bg-red-800"
-            >
-              {isDeleting ? (
-                <>
+            <Button variant="destructive" onClick={deleteAllData} disabled={deleteConfirmText !== "delete-all-data" || isDeleting} className="bg-red-700 hover:bg-red-800">
+              {isDeleting ? <>
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   جاري الحذف...
-                </>
-              ) : (
-                "تأكيد الحذف"
-              )}
+                </> : "تأكيد الحذف"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default SystemReset;
