@@ -12,6 +12,7 @@ export function QrScanner() {
   const [scanning, setScanning] = useState<boolean>(false);
   const [scannedCode, setScannedCode] = useState<string>("");
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
+  const [permissionState, setPermissionState] = useState<string>("prompt");
   const [paymentStatus, setPaymentStatus] = useState<{paid: boolean, studentName?: string} | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
@@ -20,6 +21,47 @@ export function QrScanner() {
   const { getStudentByCode } = useAuth();
   const { addAttendance, getStudentLessonCount } = useData();
   const { hasStudentPaidForCurrentLesson } = usePayments();
+
+  // Check camera permission status on component mount
+  useEffect(() => {
+    const checkPermissions = async () => {
+      try {
+        // Check if permissions API is available
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          console.info("Notification permission:", result.state);
+          setPermissionState(result.state);
+          
+          if (result.state === 'denied') {
+            setPermissionDenied(true);
+          }
+          
+          // Listen for changes to permission state
+          result.addEventListener('change', () => {
+            console.info("Permission state changed to:", result.state);
+            setPermissionState(result.state);
+            if (result.state === 'granted') {
+              setPermissionDenied(false);
+            } else if (result.state === 'denied') {
+              setPermissionDenied(true);
+              stopScanner();
+            }
+          });
+        }
+      } catch (error) {
+        console.info("Error requesting permissions:", error);
+      }
+    };
+    
+    checkPermissions();
+    
+    // Cleanup
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
   
   const requestCameraPermission = async () => {
     try {
@@ -36,7 +78,7 @@ export function QrScanner() {
       toast({
         variant: "destructive",
         title: "❌ تم رفض الوصول للكاميرا",
-        description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز",
+        description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز ثم المحاولة مرة أخرى"
       });
       return false;
     }
@@ -72,12 +114,25 @@ export function QrScanner() {
   };
 
   const stopScanner = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      const tracks = stream.getTracks();
-      tracks.forEach(track => track.stop());
+    if (scanning) {
       setScanning(false);
-      setIsCameraActive(false);
+      
+      // Don't stop tracks here - just set scanning to false
+      // We'll keep the camera stream active for the preview
+    }
+  };
+  
+  const closeCamera = () => {
+    setScanning(false);
+    setIsCameraActive(false);
+    
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
   };
 
@@ -240,7 +295,7 @@ export function QrScanner() {
             ></video>
             <canvas ref={canvasRef} className="hidden"></canvas>
             <button 
-              onClick={stopScanner}
+              onClick={closeCamera}
               className="absolute top-2 right-2 p-2 bg-physics-navy rounded-full"
             >
               <X className="text-white" size={24} />
@@ -268,8 +323,8 @@ export function QrScanner() {
             )}
             
             {/* Small camera preview display */}
-            {!scanning && isCameraActive && (
-              <div className="mt-4 w-full aspect-video bg-physics-navy rounded-lg overflow-hidden">
+            {!scanning && isCameraActive && videoRef.current && videoRef.current.srcObject && (
+              <div className="relative mt-4 w-full aspect-video bg-physics-navy rounded-lg overflow-hidden">
                 <video 
                   ref={videoRef} 
                   className="w-full h-full object-cover"
@@ -277,6 +332,12 @@ export function QrScanner() {
                   muted 
                   autoPlay
                 />
+                <button 
+                  onClick={closeCamera}
+                  className="absolute top-2 right-2 p-1 bg-physics-dark rounded-full"
+                >
+                  <X className="text-white" size={18} />
+                </button>
               </div>
             )}
             

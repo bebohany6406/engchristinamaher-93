@@ -4,10 +4,19 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, AlertTriangle } from "lucide-react";
+import { ArrowRight, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const SystemReset = () => {
   const navigate = useNavigate();
@@ -15,6 +24,9 @@ const SystemReset = () => {
   const [selectedGrade, setSelectedGrade] = useState<"first" | "second" | "third">("first");
   const [confirmText, setConfirmText] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const handleReset = async () => {
     if (confirmText !== `reset-${selectedGrade}`) {
@@ -80,6 +92,58 @@ const SystemReset = () => {
     }
   };
   
+  const deleteAllData = async () => {
+    if (deleteConfirmText !== "delete-all-data") {
+      toast({
+        title: "خطأ في التأكيد",
+        description: "الرجاء كتابة نص التأكيد بشكل صحيح",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsDeleting(true);
+    
+    try {
+      toast({
+        title: "جاري حذف جميع البيانات",
+        description: "يرجى الانتظار..."
+      });
+      
+      // حذف جميع البيانات من كافة الجداول
+      const tables = ['attendance', 'books', 'grades', 'paid_months', 'parents', 'payments', 'students', 'videos'];
+      
+      for (const table of tables) {
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // حذف كافة الصفوف
+        
+        if (error) {
+          console.error(`Error deleting from ${table}:`, error);
+          throw error;
+        }
+      }
+      
+      toast({
+        title: "✅ تم حذف جميع البيانات",
+        description: "تم حذف جميع البيانات من قاعدة البيانات بنجاح",
+      });
+      
+      setShowDeleteConfirm(false);
+      setDeleteConfirmText("");
+    } catch (error) {
+      console.error("Error deleting all data:", error);
+      toast({
+        variant: "destructive",
+        title: "❌ خطأ في حذف البيانات",
+        description: "حدث خطأ أثناء محاولة حذف جميع البيانات"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
   const getGradeName = (grade: string) => {
     switch(grade) {
       case "first": return "الصف الأول الثانوي";
@@ -114,84 +178,173 @@ const SystemReset = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-6 relative z-10">
-        <div className="max-w-2xl mx-auto bg-physics-dark rounded-lg p-6 shadow-lg">
-          <div className="flex items-center gap-3 mb-6">
-            <AlertTriangle size={28} className="text-red-500" />
-            <h1 className="text-2xl font-bold text-physics-gold">إعادة تعيين النظام</h1>
-          </div>
-          
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
-            <p className="text-white text-lg font-semibold mb-2">تحذير!</p>
-            <p className="text-gray-300">
-              ستقوم هذه العملية بحذف كافة البيانات المتعلقة بالصف الدراسي المحدد بما في ذلك:
-            </p>
-            <ul className="list-disc list-inside text-gray-300 mt-2 space-y-1">
-              <li>درجات الطلاب</li>
-              <li>الفيديوهات التعليمية</li>
-              <li>الكتب والملفات</li>
-            </ul>
-            <p className="text-red-400 font-semibold mt-2">
-              هذه العملية لا يمكن التراجع عنها!
-            </p>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="grade" className="block text-white mb-2">
-                اختر الصف الدراسي
-              </label>
-              <select 
-                id="grade"
-                className="inputField" 
-                value={selectedGrade} 
-                onChange={e => setSelectedGrade(e.target.value as "first" | "second" | "third")}
-              >
-                <option value="first">الصف الأول الثانوي</option>
-                <option value="second">الصف الثاني الثانوي</option>
-                <option value="third">الصف الثالث الثانوي</option>
-              </select>
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-physics-dark rounded-lg p-6 shadow-lg mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <AlertTriangle size={28} className="text-red-500" />
+              <h1 className="text-2xl font-bold text-physics-gold">إعادة تعيين النظام</h1>
             </div>
             
-            <div>
-              <label htmlFor="confirm" className="block text-white mb-2">
-                اكتب "<span className="text-red-400">reset-{selectedGrade}</span>" للتأكيد
-              </label>
-              <input 
-                id="confirm"
-                type="text" 
-                className="inputField" 
-                value={confirmText} 
-                onChange={e => setConfirmText(e.target.value)} 
-                placeholder={`reset-${selectedGrade}`}
-              />
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+              <p className="text-white text-lg font-semibold mb-2">تحذير!</p>
+              <p className="text-gray-300">
+                ستقوم هذه العملية بحذف كافة البيانات المتعلقة بالصف الدراسي المحدد بما في ذلك:
+              </p>
+              <ul className="list-disc list-inside text-gray-300 mt-2 space-y-1">
+                <li>درجات الطلاب</li>
+                <li>الفيديوهات التعليمية</li>
+                <li>الكتب والملفات</li>
+              </ul>
+              <p className="text-red-400 font-semibold mt-2">
+                هذه العملية لا يمكن التراجع عنها!
+              </p>
             </div>
             
-            <div className="pt-4">
-              <button
-                onClick={handleReset}
-                disabled={confirmText !== `reset-${selectedGrade}` || isResetting}
-                className={`w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center ${
-                  confirmText === `reset-${selectedGrade}` && !isResetting 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
-                    : 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                {isResetting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    جاري إعادة التعيين...
-                  </>
-                ) : (
-                  `إعادة تعيين بيانات ${getGradeName(selectedGrade)}`
-                )}
-              </button>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="grade" className="block text-white mb-2">
+                  اختر الصف الدراسي
+                </label>
+                <select 
+                  id="grade"
+                  className="inputField" 
+                  value={selectedGrade} 
+                  onChange={e => setSelectedGrade(e.target.value as "first" | "second" | "third")}
+                >
+                  <option value="first">الصف الأول الثانوي</option>
+                  <option value="second">الصف الثاني الثانوي</option>
+                  <option value="third">الصف الثالث الثانوي</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="confirm" className="block text-white mb-2">
+                  اكتب "<span className="text-red-400">reset-{selectedGrade}</span>" للتأكيد
+                </label>
+                <input 
+                  id="confirm"
+                  type="text" 
+                  className="inputField" 
+                  value={confirmText} 
+                  onChange={e => setConfirmText(e.target.value)} 
+                  placeholder={`reset-${selectedGrade}`}
+                />
+              </div>
+              
+              <div className="pt-4">
+                <button
+                  onClick={handleReset}
+                  disabled={confirmText !== `reset-${selectedGrade}` || isResetting}
+                  className={`w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center ${
+                    confirmText === `reset-${selectedGrade}` && !isResetting 
+                      ? 'bg-red-600 hover:bg-red-700 text-white' 
+                      : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  {isResetting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      جاري إعادة التعيين...
+                    </>
+                  ) : (
+                    `إعادة تعيين بيانات ${getGradeName(selectedGrade)}`
+                  )}
+                </button>
+              </div>
             </div>
+          </div>
+          
+          {/* قسم حذف جميع البيانات */}
+          <div className="bg-physics-dark rounded-lg p-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-6">
+              <Trash2 size={28} className="text-red-500" />
+              <h1 className="text-2xl font-bold text-physics-gold">حذف جميع البيانات</h1>
+            </div>
+            
+            <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6">
+              <p className="text-white text-lg font-semibold mb-2">تحذير خطير!</p>
+              <p className="text-gray-300">
+                ستقوم هذه العملية بحذف <span className="text-red-400 font-bold">جميع البيانات</span> من قاعدة البيانات بما في ذلك:
+              </p>
+              <ul className="list-disc list-inside text-gray-300 mt-2 space-y-1">
+                <li>جميع بيانات الطلاب</li>
+                <li>جميع بيانات الحضور</li>
+                <li>جميع الدرجات</li>
+                <li>جميع سجلات الدفع</li>
+                <li>جميع الفيديوهات والكتب</li>
+                <li>جميع بيانات أولياء الأمور</li>
+              </ul>
+              <p className="text-red-400 font-bold mt-2">
+                هذه العملية خطيرة للغاية ولا يمكن التراجع عنها أبدًا!
+              </p>
+            </div>
+            
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 text-white"
+            >
+              <Trash2 size={20} />
+              حذف جميع البيانات من قاعدة البيانات
+            </button>
           </div>
         </div>
       </main>
+      
+      {/* مربع حوار تأكيد الحذف */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="bg-physics-dark border-red-500">
+          <DialogHeader>
+            <DialogTitle className="text-red-500 text-xl font-bold">تأكيد حذف جميع البيانات</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              هذا الإجراء سيحذف <span className="text-red-400 font-bold">جميع البيانات</span> من قاعدة البيانات نهائيًا ولا يمكن التراجع عنه.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-red-500/10 p-4 rounded-md">
+            <p className="text-white mb-4">
+              للتأكيد، يرجى كتابة "<span className="text-red-400 font-bold">delete-all-data</span>" أدناه:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="delete-all-data"
+              className="inputField w-full"
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteConfirm(false)}
+              className="bg-transparent border-gray-500 text-gray-300 hover:bg-gray-800"
+            >
+              إلغاء
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={deleteAllData}
+              disabled={deleteConfirmText !== "delete-all-data" || isDeleting}
+              className="bg-red-700 hover:bg-red-800"
+            >
+              {isDeleting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  جاري الحذف...
+                </>
+              ) : (
+                "تأكيد الحذف"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
