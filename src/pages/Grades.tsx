@@ -32,6 +32,8 @@ const Grades = () => {
         setStudentId(studentData.id);
         setStudentName(studentData.name);
         setStudentGroup(studentData.group || "");
+        
+        // Get and format grade records
         const records = getStudentGrades(studentData.id);
         setGradeRecords(records);
       }
@@ -39,6 +41,8 @@ const Grades = () => {
       setStudentId(currentUser.id);
       setStudentName(currentUser.name);
       setStudentGroup(currentUser.group || "");
+      
+      // Get and format grade records
       const records = getStudentGrades(currentUser.id);
       setGradeRecords(records);
     }

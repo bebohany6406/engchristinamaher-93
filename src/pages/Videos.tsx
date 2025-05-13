@@ -52,7 +52,7 @@ const Videos = () => {
       audio.play().catch(e => console.error("Sound play failed:", e));
       return;
     }
-    addVideo(title, url, grade);
+    addVideo(title, url, grade, useYouTube);
     setTitle("");
     setUrl("");
     setGrade("first");
@@ -67,7 +67,7 @@ const Videos = () => {
   
   const handleEditVideo = (e: React.FormEvent) => {
     e.preventDefault();
-    updateVideo(editId, editTitle, editUrl, editGrade);
+    updateVideo(editId, editTitle, editUrl, editGrade, editIsYouTube);
     setShowEditForm(false);
   };
   
@@ -348,5 +348,28 @@ const Videos = () => {
         </div>}
     </div>;
 };
+
+function handleDeleteVideo(id: string) {
+  if (window.confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
+    deleteVideo(id);
+    if (selectedVideo) {
+      setSelectedVideo(null);
+    }
+  }
+}
+
+function openEditForm(video: any) {
+  setEditId(video.id);
+  setEditTitle(video.title);
+  setEditUrl(video.url);
+  setEditGrade(video.grade);
+  setEditIsYouTube(video.isYouTube || false);
+  setShowEditForm(true);
+}
+
+function handleSelectVideo(video: any) {
+  setSelectedVideo(video.url);
+  setSelectedVideoIsYouTube(video.isYouTube || false);
+}
 
 export default Videos;

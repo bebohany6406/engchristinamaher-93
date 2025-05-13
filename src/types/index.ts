@@ -1,3 +1,4 @@
+
 export interface Attendance {
   id: string;
   studentId: string;
@@ -6,6 +7,10 @@ export interface Attendance {
   time: string;
   status: "present" | "absent";
   lessonNumber: number;
+  // Supabase fields
+  student_id?: string;
+  student_name?: string;
+  lesson_number?: number;
 }
 
 export interface Grade {
@@ -19,6 +24,14 @@ export interface Grade {
   lessonNumber: number;
   group: string;
   performanceIndicator: "excellent" | "very-good" | "good" | "fair" | "needs-improvement";
+  // Supabase fields
+  student_id?: string;
+  student_name?: string;
+  exam_name?: string;
+  total_score?: number;
+  lesson_number?: number;
+  group_name?: string;
+  performance_indicator?: string;
 }
 
 export interface Video {
@@ -29,6 +42,9 @@ export interface Video {
   uploadDate: string;
   grade: "first" | "second" | "third";
   isYouTube?: boolean;
+  // Supabase fields
+  upload_date?: string;
+  is_youtube?: boolean;
 }
 
 export interface Book {
@@ -37,6 +53,8 @@ export interface Book {
   url: string;
   uploadDate: string;
   grade: "first" | "second" | "third";
+  // Supabase fields
+  upload_date?: string;
 }
 
 export interface Student {
@@ -49,6 +67,9 @@ export interface Student {
   phone?: string;
   parentPhone?: string;
   role?: string;
+  // Supabase fields
+  group_name?: string;
+  parent_phone?: string;
 }
 
 export interface User {
@@ -70,6 +91,9 @@ export interface Parent {
   studentCode: string;
   studentName: string;
   password: string;
+  // Supabase fields
+  student_code?: string;
+  student_name?: string;
 }
 
 export interface PaidMonth {
@@ -86,4 +110,9 @@ export interface Payment {
   month: string;
   date: string;
   paidMonths: PaidMonth[];
+  // Supabase fields
+  student_id?: string;
+  student_name?: string;
+  student_code?: string;
+  student_group?: string;
 }
