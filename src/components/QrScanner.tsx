@@ -15,6 +15,7 @@ export function QrScanner() {
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = useState<{paid: boolean, studentName?: string} | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   
   const { getStudentByCode } = useAuth();
   const { addAttendance, getStudentLessonCount } = useData();
@@ -26,6 +27,7 @@ export function QrScanner() {
       const result = await navigator.mediaDevices.getUserMedia({ video: true });
       
       // If we get here, permission was granted
+      setPermissionDenied(false);
       return true;
     } catch (err) {
       console.error("Error accessing camera:", err);
@@ -52,7 +54,7 @@ export function QrScanner() {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
         setScanning(true);
-        setPermissionDenied(false);
+        setIsCameraActive(true);
         scanCode();
       }
     } catch (err) {
@@ -72,6 +74,7 @@ export function QrScanner() {
       const tracks = stream.getTracks();
       tracks.forEach(track => track.stop());
       setScanning(false);
+      setIsCameraActive(false);
     }
   };
 
@@ -138,6 +141,9 @@ export function QrScanner() {
           title: "✅ تم تسجيل الحضور",
           description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
         });
+        
+        // Clear code field after successful processing
+        setScannedCode("");
       } else {
         toast({
           variant: "destructive",
@@ -234,6 +240,9 @@ export function QrScanner() {
               <X className="text-white" size={24} />
             </button>
             <div className="absolute inset-0 border-2 border-physics-gold rounded-lg"></div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-1/2 h-1/2 border-2 border-physics-gold rounded-lg"></div>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center p-6">
@@ -249,6 +258,19 @@ export function QrScanner() {
             {permissionDenied && (
               <div className="mt-4 p-3 bg-red-500/20 text-white rounded-lg text-sm text-center">
                 تم رفض الوصول للكاميرا. يرجى تفعيل الكاميرا من إعدادات الجهاز ثم المحاولة مرة أخرى.
+              </div>
+            )}
+            
+            {/* Live preview for mobile camera */}
+            {isCameraActive && (
+              <div className="mt-4 w-full aspect-video">
+                <video 
+                  ref={videoRef} 
+                  className="w-full h-full rounded-lg"
+                  playsInline 
+                  muted 
+                  autoPlay
+                />
               </div>
             )}
             
