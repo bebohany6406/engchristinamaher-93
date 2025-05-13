@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +15,7 @@ export function QrScanner() {
   const [paymentStatus, setPaymentStatus] = useState<{paid: boolean, studentName?: string} | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   
   const { getStudentByCode } = useAuth();
   const { addAttendance, getStudentLessonCount } = useData();
@@ -28,6 +28,7 @@ export function QrScanner() {
       
       // If we get here, permission was granted
       setPermissionDenied(false);
+      setCameraStream(result);
       return true;
     } catch (err) {
       console.error("Error accessing camera:", err);
@@ -46,9 +47,11 @@ export function QrScanner() {
     if (!hasPermission) return;
     
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const stream = cameraStream || await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" }
       });
+      
+      setCameraStream(stream);
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -166,8 +169,11 @@ export function QrScanner() {
   useEffect(() => {
     return () => {
       stopScanner();
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, []);
+  }, [cameraStream]);
 
   const handleManualEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,12 +267,12 @@ export function QrScanner() {
               </div>
             )}
             
-            {/* Live preview for mobile camera */}
-            {isCameraActive && (
-              <div className="mt-4 w-full aspect-video">
+            {/* Small camera preview display */}
+            {!scanning && isCameraActive && (
+              <div className="mt-4 w-full aspect-video bg-physics-navy rounded-lg overflow-hidden">
                 <video 
                   ref={videoRef} 
-                  className="w-full h-full rounded-lg"
+                  className="w-full h-full object-cover"
                   playsInline 
                   muted 
                   autoPlay
