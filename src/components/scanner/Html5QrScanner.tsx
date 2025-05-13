@@ -50,13 +50,7 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        formatsToSupport: [
-          0, // QR Code
-          1, // Code 39
-          2, // Code 93
-          3  // Code 128
-        ]
+        aspectRatio: 1.0
       };
       
       await scannerRef.current.start(
@@ -67,8 +61,8 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
       );
       
       toast({
-        title: "تم تشغيل الكاميرا",
-        description: "وجه الكاميرا إلى رمز QR أو Barcode",
+        title: "✅ تم تشغيل الكاميرا",
+        description: "وجه الكاميرا إلى رمز QR أو Barcode"
       });
       
     } catch (err) {
@@ -79,6 +73,7 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
         description: "تأكد من أن لديك كاميرا متاحة وأنك منحتها الأذونات المناسبة"
       });
       setIsScanning(false);
+      onClose();
     }
   };
 
@@ -102,7 +97,7 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
     
     // تسجيل الحضور مباشرة في Supabase
     try {
-      // يمكننا التحقق أولاً مما إذا كان الكود صالحًا (اختياري)
+      // يمكننا التحقق أولاً مما إذا كان الكود صالحًا
       const { data: studentExists, error: checkError } = await supabase
         .from('students')
         .select('id, name')
@@ -179,12 +174,19 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
     console.error("خطأ في مسح الكود:", error);
   };
 
+  // تحسين CSS للاستخدام على الأجهزة المحمولة
+  const scannerStyle = {
+    width: '100%',
+    maxWidth: '100%'
+  };
+
   return (
     <div className="relative w-full rounded-lg overflow-hidden bg-physics-dark">
       {/* حاوية لعنصر الماسح الضوئي */}
       <div 
         ref={containerRef} 
         className="w-full aspect-video max-h-[60vh] relative"
+        style={scannerStyle}
       >
         {/* غطاء زاوي للإطار */}
         <div className="absolute inset-0 pointer-events-none z-10">

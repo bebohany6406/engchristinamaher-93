@@ -1,184 +1,91 @@
 
-import React, { useEffect, useState } from "react";
-import { useQrScanner } from "@/hooks/useQrScanner";
+import React, { useState } from "react";
 import { useStudentAttendance } from "@/hooks/useStudentAttendance";
-import { CameraPreview } from "@/components/scanner/CameraPreview";
-import { SmallCameraPreview } from "@/components/scanner/SmallCameraPreview";
-import { CameraScanButton } from "@/components/scanner/CameraScanButton";
+import { Html5QrScanner } from "@/components/scanner/Html5QrScanner";
 import { ManualCodeEntry } from "@/components/scanner/ManualCodeEntry";
 import { PaymentStatusDisplay } from "@/components/scanner/PaymentStatusDisplay";
 import { PermissionDeniedWarning } from "@/components/scanner/PermissionDeniedWarning";
 import { toast } from "@/hooks/use-toast";
-import { Camera, ScanLine } from "lucide-react";
+import { Camera } from "lucide-react";
 
 export function QrScanner() {
-  const [cameraError, setCameraError] = useState<string | undefined>();
-  const [showFallbackPrompt, setShowFallbackPrompt] = useState(false);
-  const [scanAttempts, setScanAttempts] = useState(0);
-  
-  const {
-    videoRef,
-    canvasRef,
-    scanning,
-    permissionDenied,
-    isProcessing,
-    isCameraActive,
-    startScanner,
-    stopScanner,
-    closeCamera,
-    scanCode
-  } = useQrScanner();
+  const [showScanner, setShowScanner] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   
   const {
     scannedCode,
     setScannedCode,
     paymentStatus,
+    isProcessing,
+    setIsProcessing,
     processScannedCode,
     handleManualEntry
   } = useStudentAttendance();
 
-  // معالجة بدء الكاميرا - مع تحسينات للتعامل مع الأخطاء
+  // معالجة بدء الكاميرا
   const handleStartCamera = async () => {
     try {
-      setCameraError(undefined);
-      setShowFallbackPrompt(false);
+      setIsProcessing(true);
+      setShowScanner(true);
       
       toast({
         title: "جاري تشغيل الكاميرا",
         description: "يرجى الانتظار لحظة..."
       });
       
-      console.log("بدء تشغيل الكاميرا من QrScanner");
-      await startScanner();
-      
     } catch (error) {
       console.error("Error starting camera:", error);
-      setCameraError("حدث خطأ أثناء تشغيل الكاميرا. يرجى التحقق من الأذونات والمحاولة مرة أخرى.");
-      setShowFallbackPrompt(true);
+      setPermissionDenied(true);
       
       toast({
         variant: "destructive",
         title: "❌ تعذر تشغيل الكاميرا",
         description: "يرجى التأكد من أن الكاميرا متصلة وأن لديك الأذونات المناسبة"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
   
-  // تتبع حالة مسح الرمز مع تحسين للتعرف على الرمز
-  useEffect(() => {
-    let animationFrameId: number;
-    let scanInterval: NodeJS.Timeout;
-    
-    const handleScan = () => {
-      if (!scanning) return;
-      
-      const code = scanCode();
-      if (code) {
-        console.log("وجدت الكود في رسم الإطار:", code);
-        stopScanner();
-        processScannedCode(code);
-        return;
-      }
-      
-      animationFrameId = requestAnimationFrame(handleScan);
-    };
-    
-    if (scanning) {
-      // زيادة معدل المسح للتأكد من التقاط الرمز
-      handleScan();
-      
-      // إضافة تقنية مسح ثانية باستخدام setInterval للتأكد من عمل المسح
-      scanInterval = setInterval(() => {
-        if (scanning) {
-          setScanAttempts(prev => prev + 1);
-          const code = scanCode();
-          if (code) {
-            console.log("وجدت الكود في الفاصل الزمني:", code);
-            stopScanner();
-            processScannedCode(code);
-            clearInterval(scanInterval);
-          }
-        }
-      }, 300); // مسح كل 300 مللي ثانية للحصول على معدل مسح أعلى
-    }
-    
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-      if (scanInterval) {
-        clearInterval(scanInterval);
-      }
-    };
-  }, [scanning, scanCode, processScannedCode, stopScanner, scanAttempts]);
+  const handleScanSuccess = (code: string) => {
+    setShowScanner(false);
+    processScannedCode(code);
+  };
   
-  // التحقق من الخطأ بعد تنشيط الكاميرا
-  useEffect(() => {
-    if (isCameraActive) {
-      // تحقق مباشرة
-      const checkCameraStatus = () => {
-        console.log("فحص حالة الكاميرا:", videoRef.current?.srcObject ? "متصلة" : "غير متصلة");
-        if (!videoRef.current?.srcObject) {
-          setCameraError("تعذر الوصول إلى الكاميرا. يرجى التأكد من تشغيلها وإعطاء الأذونات المطلوبة.");
-          setShowFallbackPrompt(true);
-        }
-      };
-      
-      // تحقق بعد لحظة للسماح بوقت التحميل
-      setTimeout(checkCameraStatus, 1500);
-    }
-  }, [isCameraActive, videoRef]);
-  
-  // تنظيف عند إلغاء تحميل المكون
-  useEffect(() => {
-    return () => {
-      closeCamera();
-    };
-  }, [closeCamera]);
+  const handleCloseScanner = () => {
+    setShowScanner(false);
+    setIsProcessing(false);
+  };
 
   return (
     <div className="w-full max-w-lg mx-auto">
       <div className="relative bg-physics-dark p-4 rounded-lg">
-        {scanning ? (
+        {showScanner ? (
           <div className="mb-4">
             <h2 className="text-lg font-bold text-physics-gold text-center mb-2">قم بتوجيه الكاميرا إلى كود QR</h2>
-            <CameraPreview 
-              videoRef={videoRef}
-              canvasRef={canvasRef}
-              scanning={scanning}
-              closeCamera={closeCamera}
-              error={cameraError}
+            <Html5QrScanner 
+              onScanSuccess={handleScanSuccess}
+              onClose={handleCloseScanner}
             />
           </div>
         ) : (
           <div className="flex flex-col items-center p-6">
-            <CameraScanButton 
+            <button 
               onClick={handleStartCamera}
-              isProcessing={isProcessing}
-            />
+              className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-4 px-6 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full md:w-3/4 text-lg mb-4"
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <span className="animate-pulse">جاري التحميل...</span>
+              ) : (
+                <>
+                  <Camera size={24} />
+                  <span>📷 مسح الكود بالكاميرا</span>
+                </>
+              )}
+            </button>
             
             {permissionDenied && <PermissionDeniedWarning />}
-            
-            {/* عرض الكاميرا الصغير - تم تحسين عرضه ليظهر بشكل واضح */}
-            {!scanning && isCameraActive && (
-              <div className="mt-4 w-full">
-                <SmallCameraPreview 
-                  videoRef={videoRef}
-                  closeCamera={closeCamera}
-                  error={cameraError}
-                />
-              </div>
-            )}
-            
-            {/* نص توجيهي إضافي في حالة فشل الكاميرا */}
-            {showFallbackPrompt && (
-              <div className="mt-4 p-3 bg-physics-navy/50 rounded-lg text-center">
-                <Camera className="mx-auto mb-2 text-physics-gold" size={24} />
-                <p className="text-white text-sm">
-                  يبدو أن هناك مشكلة في الوصول إلى الكاميرا. يمكنك إدخال الكود يدويًا أدناه.
-                </p>
-              </div>
-            )}
             
             <div className="my-4 text-center w-full">
               <p className="text-white mb-2">أو</p>
