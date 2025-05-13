@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import StudentsManagement from "./pages/StudentsManagement";
 import ParentsManagement from "./pages/ParentsManagement";
 import ScanCode from "./pages/ScanCode";
+import SimpleAttendance from "./pages/SimpleAttendance";
 import Videos from "./pages/Videos";
 import Books from "./pages/Books";
 import StudentCode from "./pages/StudentCode";
@@ -160,6 +161,7 @@ const App = () => {
                     <Route path="/students" element={<RequireAuth allowedRoles={["admin"]}><StudentsManagement /></RequireAuth>} />
                     <Route path="/parents" element={<RequireAuth allowedRoles={["admin"]}><ParentsManagement /></RequireAuth>} />
                     <Route path="/scan-code" element={<RequireAuth allowedRoles={["admin"]}><ScanCode /></RequireAuth>} />
+                    <Route path="/simple-attendance" element={<RequireAuth allowedRoles={["admin"]}><SimpleAttendance /></RequireAuth>} />
                     <Route path="/attendance-list" element={<RequireAuth allowedRoles={["admin"]}><AttendanceRecordList /></RequireAuth>} />
                     <Route path="/attendance-list/:grade" element={<RequireAuth allowedRoles={["admin"]}><AttendanceListByGrade /></RequireAuth>} />
                     <Route path="/grades-management" element={<RequireAuth allowedRoles={["admin"]}><GradesManagement /></RequireAuth>} />
