@@ -20,6 +20,7 @@ export function QrScanner() {
     canvasRef,
     scanning,
     permissionDenied,
+    isProcessing,
     isCameraActive,
     startScanner,
     stopScanner,
@@ -31,7 +32,6 @@ export function QrScanner() {
     scannedCode,
     setScannedCode,
     paymentStatus,
-    isProcessing,
     processScannedCode,
     handleManualEntry
   } = useStudentAttendance();
@@ -49,6 +49,13 @@ export function QrScanner() {
       });
       
       await startScanner();
+      
+      // تنبيه المستخدم أن الكاميرا قيد التشغيل
+      toast({
+        title: "✅ الكاميرا جاهزة",
+        description: "يمكنك الآن مسح الكود"
+      });
+      
     } catch (error) {
       console.error("Error starting camera:", error);
       setCameraError("حدث خطأ أثناء تشغيل الكاميرا. يرجى التحقق من الأذونات والمحاولة مرة أخرى.");
@@ -65,6 +72,7 @@ export function QrScanner() {
   // تتبع حالة مسح الرمز
   useEffect(() => {
     let animationFrameId: number;
+    let scanInterval: NodeJS.Timeout;
     
     const handleScan = () => {
       if (!scanning) return;
@@ -81,11 +89,23 @@ export function QrScanner() {
     
     if (scanning) {
       handleScan();
+      // إضافة تقنية مسح ثانية باستخدام setInterval للتأكد من عمل المسح
+      scanInterval = setInterval(() => {
+        const code = scanCode();
+        if (code) {
+          stopScanner();
+          processScannedCode(code);
+          clearInterval(scanInterval);
+        }
+      }, 500); // مسح كل 500 مللي ثانية
     }
     
     return () => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
+      }
+      if (scanInterval) {
+        clearInterval(scanInterval);
       }
     };
   }, [scanning, scanCode, processScannedCode, stopScanner]);
@@ -109,7 +129,7 @@ export function QrScanner() {
     // تحقق مرة أخرى بعد فترة قصيرة
     const timer = setTimeout(checkCameraStatus, 1000);
     return () => clearTimeout(timer);
-  }, [isCameraActive, videoRef.current?.srcObject]);
+  }, [isCameraActive, videoRef]);
   
   // تنظيف عند إلغاء تحميل المكون
   useEffect(() => {
@@ -119,16 +139,19 @@ export function QrScanner() {
   }, [closeCamera]);
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-lg mx-auto">
       <div className="relative bg-physics-dark p-4 rounded-lg">
         {scanning ? (
-          <CameraPreview 
-            videoRef={videoRef}
-            canvasRef={canvasRef}
-            scanning={scanning}
-            closeCamera={closeCamera}
-            error={cameraError}
-          />
+          <div className="mb-4">
+            <h2 className="text-lg text-physics-gold text-center mb-2">مسح كود الطالب</h2>
+            <CameraPreview 
+              videoRef={videoRef}
+              canvasRef={canvasRef}
+              scanning={scanning}
+              closeCamera={closeCamera}
+              error={cameraError}
+            />
+          </div>
         ) : (
           <div className="flex flex-col items-center p-6">
             <CameraScanButton 

@@ -11,12 +11,12 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
   return (
     <button 
       onClick={onClick}
-      className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-4 px-8 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full sm:w-auto text-lg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+      className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-5 px-8 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full sm:w-auto text-lg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
       disabled={isProcessing}
     >
       {/* Ripple effect for the button */}
       {!isProcessing && (
-        <span className="absolute inset-0 bg-white/20 animate-ping rounded-full opacity-0"></span>
+        <span className="absolute inset-0 bg-white/20 animate-pulse rounded-full opacity-0"></span>
       )}
       
       <Camera 
@@ -24,7 +24,7 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
         className={isProcessing ? "animate-pulse" : ""}
         strokeWidth={2.5}
       />
-      <span>{isProcessing ? "جاري تشغيل الكاميرا..." : "مسح الكود بالكاميرا"}</span>
+      <span className="text-xl">{isProcessing ? "جاري تشغيل الكاميرا..." : "مسح الكود بالكاميرا"}</span>
     </button>
   );
 }
