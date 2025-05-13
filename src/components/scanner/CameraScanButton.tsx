@@ -14,7 +14,6 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
       className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-4 px-6 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full text-lg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
       disabled={isProcessing}
     >
-      {/* تحسين تأثير النبض للزر */}
       {!isProcessing && (
         <span className="absolute inset-0 bg-white/20 animate-pulse rounded-full opacity-0"></span>
       )}

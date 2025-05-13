@@ -41,7 +41,7 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden" style={{ minHeight: '400px', maxHeight: '70vh' }}>
+    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden animate-pulse-border border-2 border-physics-gold/50" style={{ minHeight: '400px', maxHeight: '70vh' }}>
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -79,7 +79,7 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
       
       {/* Scanning area with guide frame - ENHANCED */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-4/5 h-3/5 border-4 border-physics-gold rounded-lg relative">
+        <div className="w-4/5 h-3/5 border-4 border-physics-gold rounded-lg relative animate-scan-border">
           {/* Corner markers for better visibility */}
           <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-physics-gold"></div>
           <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-physics-gold"></div>

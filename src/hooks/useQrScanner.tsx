@@ -64,54 +64,39 @@ export function useQrScanner() {
     try {
       console.log("طلب إذن الكاميرا...");
       
-      // استخدام الكاميرا الخلفية باستخدام القيم المثالية
-      const constraints = {
-        video: {
-          facingMode: { exact: "environment" }, // إجبار استخدام الكاميرا الخلفية
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 },
-          aspectRatio: { ideal: 1.7778 },
-          frameRate: { ideal: 30, max: 60 }
-        },
-        audio: false
-      };
-      
+      // المحاولة الأولى: استخدام الكاميرا الخلفية صراحة (للأجهزة المحمولة)
       try {
-        console.log("محاولة الوصول إلى الكاميرا الخلفية مع إعدادات مثالية");
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        console.log("تم الحصول على تدفق الكاميرا الخلفية بنجاح");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } },
+          audio: false
+        });
+        console.log("نجحت المحاولة 1: الوصول إلى الكاميرا الخلفية");
         return stream;
-      } catch (backCameraError) {
-        console.warn("فشل في الوصول إلى الكاميرا الخلفية مع الإعدادات المثالية:", backCameraError);
+      } catch (error1) {
+        console.log("فشلت المحاولة 1:", error1);
         
-        // محاولة استخدام كاميرا الجهاز المحمول الخلفية دون قيود صارمة
+        // المحاولة الثانية: استخدام الكاميرا الخلفية دون "exact"
         try {
-          console.log("محاولة الوصول إلى الكاميرا الخلفية دون قيود صارمة");
           const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            },
+            video: { facingMode: "environment" },
             audio: false
           });
-          console.log("تم الحصول على تدفق الكاميرا الخلفية");
+          console.log("نجحت المحاولة 2: الوصول إلى الكاميرا الخلفية بشكل أقل تقييدًا");
           return stream;
-        } catch (backCameraError2) {
-          console.warn("فشل في الوصول إلى الكاميرا الخلفية:", backCameraError2);
+        } catch (error2) {
+          console.log("فشلت المحاولة 2:", error2);
           
-          // محاولة استخدام أي كاميرا متاحة في الجهاز
+          // المحاولة الثالثة: استخدام أي كاميرا متاحة
           try {
-            console.log("محاولة استخدام أي كاميرا متاحة");
             const stream = await navigator.mediaDevices.getUserMedia({
               video: true,
               audio: false
             });
-            console.log("تم الحصول على تدفق كاميرا عام");
+            console.log("نجحت المحاولة 3: الوصول إلى أي كاميرا متاحة");
             return stream;
-          } catch (genericError) {
-            console.error("فشل في الوصول إلى أي كاميرا:", genericError);
-            throw genericError;
+          } catch (error3) {
+            console.error("فشلت جميع المحاولات للوصول إلى الكاميرا:", error3);
+            throw error3;
           }
         }
       }
@@ -133,9 +118,8 @@ export function useQrScanner() {
       try {
         stream = await requestCameraPermission();
         
-        // إظهار تنبيه للمستخدم أن الكاميرا قيد التشغيل
         toast({
-          title: "جاري تشغيل الكاميرا",
+          title: "✅ جاري تشغيل الكاميرا",
           description: "يرجى توجيه الكاميرا إلى رمز QR"
         });
         
@@ -153,56 +137,33 @@ export function useQrScanner() {
       // تخزين تدفق الكاميرا
       setCameraStream(stream);
       
-      // ربط تدفق الكاميرا بعنصر الفيديو بشكل مباشر
+      // ربط تدفق الكاميرا بعنصر الفيديو
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.style.display = "block";
         setIsCameraActive(true);
         
-        // التأكد من أن الفيديو يعمل قبل بدء المسح
+        // التأكد من أن الفيديو يعمل
         videoRef.current.onloadedmetadata = () => {
           if (videoRef.current) {
-            console.log("تم تحميل بيانات وصف الفيديو");
-            
-            // تفعيل الكاميرا مباشرة بعد تحميل البيانات
             videoRef.current.play()
               .then(() => {
                 console.log("تم تشغيل الفيديو بنجاح");
                 setIsProcessing(false);
-                setScanning(true);  // تم تحسين تسلسل بدء المسح
+                setScanning(true);
               })
               .catch(playError => {
                 console.error("خطأ في تشغيل الفيديو:", playError);
-                
-                // محاولة أخرى لتشغيل الفيديو بعد تأخير قصير
-                setTimeout(() => {
-                  if (videoRef.current) {
-                    videoRef.current.play()
-                      .then(() => {
-                        console.log("تم تشغيل الفيديو في المحاولة الثانية");
-                        setIsProcessing(false);
-                        setScanning(true);
-                        toast({
-                          title: "✅ الكاميرا جاهزة",
-                          description: "يمكنك الآن مسح الكود"
-                        });
-                      })
-                      .catch(secondPlayError => {
-                        console.error("فشل تشغيل الفيديو في المحاولة الثانية:", secondPlayError);
-                        setIsProcessing(false);
-                        toast({
-                          variant: "destructive",
-                          title: "❌ تعذر تشغيل الكاميرا",
-                          description: "حاول مرة أخرى أو استخدم الإدخال اليدوي"
-                        });
-                      });
-                  }
-                }, 1000);
+                setIsProcessing(false);
+                toast({
+                  variant: "destructive",
+                  title: "❌ تعذر تشغيل الكاميرا",
+                  description: "حاول مرة أخرى أو استخدم الإدخال اليدوي"
+                });
               });
           }
         };
         
-        // معالجة أخطاء الفيديو
         videoRef.current.onerror = (errorEvent) => {
           console.error("خطأ في عنصر الفيديو:", errorEvent);
           setIsProcessing(false);

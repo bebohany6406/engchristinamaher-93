@@ -48,6 +48,7 @@
   }
 }
 
+/* تحسين تأثير المسح الضوئي للكاميرا */
 @keyframes scan {
   0% {
     top: 5%;
@@ -68,7 +69,7 @@
   box-shadow: 0 0 12px 2px rgba(255, 215, 0, 0.8);
 }
 
-/* إضافة تأثيرات إضافية للماسح الضوئي */
+/* تحسين تأثير نبض الحدود */
 @keyframes pulse-border {
   0% {
     border-color: rgba(255, 215, 0, 0.5);
@@ -88,7 +89,7 @@
   animation: pulse-border 2s infinite;
 }
 
-/* تأثير جديد محسن للإطار المتحرك */
+/* تحسين تأثير الإطار المتحرك */
 @keyframes scan-border {
   0% {
     border-color: rgba(255, 215, 0, 0.3);
@@ -108,7 +109,7 @@
   animation: scan-border 1.5s infinite;
 }
 
-/* إضافة تأثيرات جديدة للتحسين */
+/* تأثير التوهج للحدود */
 @keyframes glow {
   0% {
     box-shadow: 0 0 5px 2px rgba(255, 215, 0, 0.3);
@@ -123,4 +124,58 @@
 
 .animate-glow {
   animation: glow 2s ease-in-out infinite;
+}
+
+/* تحسين مؤثرات الكاميرا */
+.camera-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background-color: #0f172a;
+}
+
+.camera-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, rgba(255,215,0,0), rgba(255,215,0,1), rgba(255,215,0,0));
+  box-shadow: 0 0 8px 2px rgba(255,215,0,0.6);
+  z-index: 20;
+}
+
+.camera-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: rgba(255,215,0,1);
+  border-style: solid;
+}
+
+.corner-top-left {
+  top: 0;
+  left: 0;
+  border-width: 3px 0 0 3px;
+  border-top-left-radius: 4px;
+}
+
+.corner-top-right {
+  top: 0;
+  right: 0;
+  border-width: 3px 3px 0 0;
+  border-top-right-radius: 4px;
+}
+
+.corner-bottom-left {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 3px 3px;
+  border-bottom-left-radius: 4px;
+}
+
+.corner-bottom-right {
+  bottom: 0;
+  right: 0;
+  border-width: 0 3px 3px 0;
+  border-bottom-right-radius: 4px;
 }

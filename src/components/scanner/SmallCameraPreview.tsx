@@ -34,7 +34,7 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center border-2 border-physics-gold shadow-lg">
+    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center border-2 border-physics-gold/50 shadow-lg animate-pulse-border">
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -59,7 +59,7 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
       {isVideoVisible && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 border-2 border-physics-gold/60 animate-glow rounded-lg"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 border-2 border-physics-gold rounded-md animate-scan-border"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 border-2 border-physics-gold rounded-md animate-scan-border"></div>
         </div>
       )}
       

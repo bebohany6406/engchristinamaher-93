@@ -43,7 +43,6 @@ export function QrScanner() {
       setCameraError(undefined);
       setShowFallbackPrompt(false);
       
-      // نعرض رسالة إعلامية للمستخدم
       toast({
         title: "جاري تشغيل الكاميرا",
         description: "يرجى الانتظار لحظة..."
@@ -163,7 +162,7 @@ export function QrScanner() {
             
             {permissionDenied && <PermissionDeniedWarning />}
             
-            {/* عرض الكاميرا الصغير */}
+            {/* عرض الكاميرا الصغير - تم تحسين عرضه ليظهر بشكل واضح */}
             {!scanning && isCameraActive && (
               <SmallCameraPreview 
                 videoRef={videoRef}
