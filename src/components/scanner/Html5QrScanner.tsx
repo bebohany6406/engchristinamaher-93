@@ -52,10 +52,10 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
         formatsToSupport: [
-          Html5Qrcode.FORMATS.QR_CODE, 
-          Html5Qrcode.FORMATS.CODE_39,
-          Html5Qrcode.FORMATS.CODE_93,
-          Html5Qrcode.FORMATS.CODE_128
+          0, // QR Code
+          1, // Code 39
+          2, // Code 93
+          3  // Code 128
         ]
       };
       
@@ -120,17 +120,25 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
         return;
       }
       
+      // حساب رقم الدرس الحالي
+      const { data: lessonsCount } = await supabase
+        .from('attendance')
+        .select('id')
+        .eq('student_id', studentExists.id);
+      
+      const currentLessonNumber = (lessonsCount?.length || 0) + 1;
+      
       // إضافة سجل حضور في قاعدة البيانات
       const { error: insertError } = await supabase
         .from('attendance')
-        .insert([{ 
+        .insert({
           student_id: studentExists.id,
-          student_code: decodedText,
           student_name: studentExists.name,
           status: 'present',
+          lesson_number: currentLessonNumber,
           date: new Date().toISOString().split('T')[0],
           time: new Date().toTimeString().split(' ')[0]
-        }]);
+        });
       
       if (insertError) {
         throw insertError;
