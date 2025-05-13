@@ -110,20 +110,64 @@ const SystemReset = () => {
         description: "يرجى الانتظار..."
       });
       
-      // حذف جميع البيانات من كافة الجداول
-      const tables = ['attendance', 'books', 'grades', 'paid_months', 'parents', 'payments', 'students', 'videos'];
+      // حذف جميع البيانات من كافة الجداول بطريقة تجنب مشاكل TypeScript
+      // نحدد كل جدول على حدة بدلاً من استخدام حلقة للمرور عبر مصفوفة أسماء الجداول
       
-      for (const table of tables) {
-        const { error } = await supabase
-          .from(table)
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // حذف كافة الصفوف
-        
-        if (error) {
-          console.error(`Error deleting from ${table}:`, error);
-          throw error;
-        }
-      }
+      // حذف البيانات من جدول attendance
+      const { error: attendanceError } = await supabase
+        .from('attendance')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (attendanceError) console.error("Error deleting from attendance:", attendanceError);
+      
+      // حذف البيانات من جدول books
+      const { error: booksError } = await supabase
+        .from('books')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (booksError) console.error("Error deleting from books:", booksError);
+      
+      // حذف البيانات من جدول grades
+      const { error: gradesError } = await supabase
+        .from('grades')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (gradesError) console.error("Error deleting from grades:", gradesError);
+      
+      // حذف البيانات من جدول paid_months
+      const { error: paidMonthsError } = await supabase
+        .from('paid_months')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (paidMonthsError) console.error("Error deleting from paid_months:", paidMonthsError);
+      
+      // حذف البيانات من جدول parents
+      const { error: parentsError } = await supabase
+        .from('parents')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (parentsError) console.error("Error deleting from parents:", parentsError);
+      
+      // حذف البيانات من جدول payments
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (paymentsError) console.error("Error deleting from payments:", paymentsError);
+      
+      // حذف البيانات من جدول students
+      const { error: studentsError } = await supabase
+        .from('students')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (studentsError) console.error("Error deleting from students:", studentsError);
+      
+      // حذف البيانات من جدول videos
+      const { error: videosError } = await supabase
+        .from('videos')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (videosError) console.error("Error deleting from videos:", videosError);
       
       toast({
         title: "✅ تم حذف جميع البيانات",
