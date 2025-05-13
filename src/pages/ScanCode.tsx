@@ -5,22 +5,16 @@ import { ArrowRight, QrCode, ClipboardList, Users } from "lucide-react";
 import { PhoneContact } from "@/components/PhoneContact";
 import { ManualAttendance } from "@/components/ManualAttendance";
 import PhysicsBackground from "@/components/PhysicsBackground";
-
 const ScanCode = () => {
   const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen bg-physics-navy flex flex-col relative">
+  return <div className="min-h-screen bg-physics-navy flex flex-col relative">
       <PhysicsBackground />
       <PhoneContact />
       
       {/* Header */}
       <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
-          <button 
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 text-physics-gold hover:opacity-80"
-          >
+          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
             <ArrowRight size={20} />
             <span>العودة للرئيسية</span>
           </button>
@@ -38,10 +32,7 @@ const ScanCode = () => {
             <div className="bg-physics-dark p-6 rounded-lg mb-6">
               <h2 className="text-xl font-bold mb-4 text-physics-gold">تسجيل الحضور بالباركود</h2>
               <div className="flex flex-col space-y-4">
-                <button 
-                  onClick={() => navigate("/simple-attendance")}
-                  className="goldBtn flex items-center justify-center gap-2"
-                >
+                <button onClick={() => navigate("/simple-attendance")} className="goldBtn flex items-center justify-center gap-2">
                   <QrCode size={20} />
                   <span>فتح ماسح الباركود</span>
                 </button>
@@ -50,16 +41,13 @@ const ScanCode = () => {
             
             {/* تسجيل الحضور اليدوي */}
             <div className="bg-physics-dark p-6 rounded-lg">
-              <h2 className="text-xl font-bold mb-4 text-physics-gold">تسجيل الحضور والغياب يدوياً</h2>
+              <h2 className="text-xl font-bold mb-4 text-physics-gold">تسجيل الغياب يدوياً</h2>
               <div className="flex flex-col space-y-4">
                 <ManualAttendance />
                 
                 {/* زر للانتقال إلى صفحة تسجيل الحضور لجميع الطلاب */}
                 <div className="mt-4">
-                  <button 
-                    onClick={() => navigate("/manual-attendance-all")}
-                    className="w-full flex items-center justify-center gap-2 bg-physics-navy hover:bg-physics-navy/80 text-white py-3 px-4 rounded-lg"
-                  >
+                  <button onClick={() => navigate("/manual-attendance-all")} className="w-full flex items-center justify-center gap-2 bg-physics-navy hover:bg-physics-navy/80 text-white py-3 px-4 rounded-lg">
                     <Users size={20} />
                     <span>تسجيل الحضور/الغياب لجميع الطلاب</span>
                   </button>
@@ -68,23 +56,10 @@ const ScanCode = () => {
             </div>
             
             {/* عرض سجل الحضور */}
-            <div className="bg-physics-dark p-6 rounded-lg">
-              <h2 className="text-xl font-bold mb-4 text-physics-gold">سجلات الحضور</h2>
-              <div className="flex flex-col space-y-4">
-                <button 
-                  onClick={() => navigate("/attendance-list")}
-                  className="goldBtn flex items-center justify-center gap-2"
-                >
-                  <ClipboardList size={20} />
-                  <span>عرض سجلات الحضور</span>
-                </button>
-              </div>
-            </div>
+            
           </div>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default ScanCode;
