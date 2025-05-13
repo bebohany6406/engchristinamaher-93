@@ -76,16 +76,18 @@ export function useQrScanner() {
       
       // محاولة مع الكاميرا الخلفية على الهاتف المحمول
       try {
+        // الحصول على قائمة أجهزة الفيديو المتاحة
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
         console.log("أجهزة الفيديو المتاحة:", videoDevices.length);
         
-        // إذا كان هناك أكثر من كاميرا، افترض أن الكاميرا الثانية هي الكاميرا الخلفية (على معظم الأجهزة المحمولة)
+        // إذا كانت هناك أكثر من كاميرا، حاول استخدام الكاميرا الخلفية
         if (videoDevices.length > 1) {
           try {
-            console.log("محاولة استخدام الكاميرا الخلفية المحددة");
+            console.log("محاولة استخدام الكاميرا الثانية (الخلفية)");
+            // نستخدم الجهاز الثاني لأنه عادة ما يكون الكاميرا الخلفية
             const stream = await navigator.mediaDevices.getUserMedia({
-              video: { deviceId: { exact: videoDevices[1].deviceId } },
+              video: { deviceId: { exact: videoDevices[videoDevices.length - 1].deviceId } },
               audio: false
             });
             console.log("تم الحصول على تدفق الكاميرا الخلفية المحددة");
@@ -96,47 +98,19 @@ export function useQrScanner() {
           }
         }
         
-        // المحاولة الأولى: استخدام الكاميرا الخلفية صراحة (للأجهزة المحمولة)
+        // المحاولات المتسلسلة للحصول على الكاميرا
+        // المحاولة 1: استخدام أي كاميرا متاحة
         try {
-          console.log("المحاولة 1: استخدام facingMode: environment");
+          console.log("محاولة استخدام أي كاميرا متاحة");
           const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: "environment" } },
+            video: true,
             audio: false
           });
-          console.log("نجحت المحاولة 1: الوصول إلى الكاميرا الخلفية");
+          console.log("نجحت المحاولة: الوصول إلى الكاميرا المتاحة");
           return stream;
-        } catch (error1) {
-          console.log("فشلت المحاولة 1:", error1);
-          
-          // المحاولة الثانية: استخدام الكاميرا الخلفية دون "exact"
-          try {
-            console.log("المحاولة 2: استخدام facingMode: environment بدون exact");
-            const stream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: "environment" },
-              audio: false
-            });
-            console.log("نجحت المحاولة 2: الوصول إلى الكاميرا الخلفية بشكل أقل تقييدًا");
-            return stream;
-          } catch (error2) {
-            console.log("فشلت المحاولة 2:", error2);
-            
-            // المحاولة الثالثة: استخدام أي كاميرا متاحة
-            try {
-              console.log("المحاولة 3: استخدام أي كاميرا");
-              const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                  width: { ideal: 1280 },
-                  height: { ideal: 720 }
-                },
-                audio: false
-              });
-              console.log("نجحت المحاولة 3: الوصول إلى أي كاميرا متاحة");
-              return stream;
-            } catch (error3) {
-              console.error("فشلت جميع المحاولات للوصول إلى الكاميرا:", error3);
-              throw error3;
-            }
-          }
+        } catch (error) {
+          console.log("فشلت محاولة الكاميرا المتاحة:", error);
+          throw error;  // أعد رمي الخطأ إذا فشلت جميع المحاولات
         }
       } catch (err) {
         console.error("خطأ في أذونات الوسائط:", err);
@@ -180,11 +154,18 @@ export function useQrScanner() {
       // تخزين تدفق الكاميرا
       setCameraStream(stream);
       
-      // ربط تدفق الكاميرا بعنصر الفيديو
+      // ربط تدفق الكاميرا بعنصر الفيديو - مع تحسينات التوقيت
       if (videoRef.current) {
         console.log("ربط تدفق الكاميرا بعنصر الفيديو");
-        videoRef.current.srcObject = stream;
+        
+        // تعيين حجم وأنماط الفيديو مباشرة
+        videoRef.current.style.width = "100%";
+        videoRef.current.style.height = "100%";
+        videoRef.current.style.objectFit = "cover";
         videoRef.current.style.display = "block";
+        
+        // ربط التدفق
+        videoRef.current.srcObject = stream;
         setIsCameraActive(true);
         
         // التأكد من أن الفيديو يعمل
@@ -194,8 +175,11 @@ export function useQrScanner() {
             videoRef.current.play()
               .then(() => {
                 console.log("تم تشغيل الفيديو بنجاح");
-                setIsProcessing(false);
-                setScanning(true);
+                // محاولات متعددة للتأكد من تشغيل الفيديو بشكل صحيح
+                setTimeout(() => {
+                  setIsProcessing(false);
+                  setScanning(true);
+                }, 500);
               })
               .catch(playError => {
                 console.error("خطأ في تشغيل الفيديو:", playError);
@@ -209,6 +193,7 @@ export function useQrScanner() {
           }
         };
         
+        // معالجة أخطاء عنصر الفيديو
         videoRef.current.onerror = (errorEvent) => {
           console.error("خطأ في عنصر الفيديو:", errorEvent);
           setIsProcessing(false);
@@ -275,7 +260,7 @@ export function useQrScanner() {
           // الحصول على بيانات الصورة من Canvas
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           
-          // تحليل بيانات الصورة للعثور على رمز QR مع ضبط اعدادات أكثر تسامحًا
+          // تحليل بيانات الصورة للعثور على رمز QR
           const code = jsQR(imageData.data, imageData.width, imageData.height, {
             inversionAttempts: "attemptBoth",
           });

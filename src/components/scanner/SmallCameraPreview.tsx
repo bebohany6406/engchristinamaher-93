@@ -27,15 +27,21 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
       }
     };
     
+    // اختبار فوري
     checkVideoVisibility();
     
     // تحقق مرة أخرى بعد فترة قصيرة للتأكد من تحميل الفيديو
-    const timer = setTimeout(checkVideoVisibility, 1000);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(checkVideoVisibility, 500);
+    const secondTimer = setTimeout(checkVideoVisibility, 1500);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(secondTimer);
+    };
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center border-2 border-physics-gold/50 shadow-lg">
+    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center border-2 border-physics-gold/50 shadow-lg camera-container">
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -50,7 +56,8 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
       
       <video 
         ref={videoRef} 
-        className={`w-full h-full object-cover ${isVideoVisible ? 'block' : 'hidden'}`}
+        className="w-full h-full object-cover"
+        style={{ display: isVideoVisible ? 'block' : 'none' }}
         playsInline 
         muted 
         autoPlay

@@ -9,7 +9,7 @@ import { ManualCodeEntry } from "@/components/scanner/ManualCodeEntry";
 import { PaymentStatusDisplay } from "@/components/scanner/PaymentStatusDisplay";
 import { PermissionDeniedWarning } from "@/components/scanner/PermissionDeniedWarning";
 import { toast } from "@/hooks/use-toast";
-import { Camera } from "lucide-react";
+import { Camera, ScanLine } from "lucide-react";
 
 export function QrScanner() {
   const [cameraError, setCameraError] = useState<string | undefined>();
@@ -114,24 +114,19 @@ export function QrScanner() {
   
   // التحقق من الخطأ بعد تنشيط الكاميرا
   useEffect(() => {
-    const checkCameraStatus = () => {
-      if (isCameraActive && videoRef.current) {
-        console.log("فحص حالة الكاميرا:", videoRef.current.srcObject ? "متصلة" : "غير متصلة");
-        if (!videoRef.current.srcObject) {
+    if (isCameraActive) {
+      // تحقق مباشرة
+      const checkCameraStatus = () => {
+        console.log("فحص حالة الكاميرا:", videoRef.current?.srcObject ? "متصلة" : "غير متصلة");
+        if (!videoRef.current?.srcObject) {
           setCameraError("تعذر الوصول إلى الكاميرا. يرجى التأكد من تشغيلها وإعطاء الأذونات المطلوبة.");
           setShowFallbackPrompt(true);
-        } else {
-          setCameraError(undefined);
-          setShowFallbackPrompt(false);
         }
-      }
-    };
-    
-    checkCameraStatus();
-    
-    // تحقق مرة أخرى بعد فترة قصيرة
-    const timer = setTimeout(checkCameraStatus, 2000);
-    return () => clearTimeout(timer);
+      };
+      
+      // تحقق بعد لحظة للسماح بوقت التحميل
+      setTimeout(checkCameraStatus, 1500);
+    }
   }, [isCameraActive, videoRef]);
   
   // تنظيف عند إلغاء تحميل المكون
@@ -166,11 +161,13 @@ export function QrScanner() {
             
             {/* عرض الكاميرا الصغير - تم تحسين عرضه ليظهر بشكل واضح */}
             {!scanning && isCameraActive && (
-              <SmallCameraPreview 
-                videoRef={videoRef}
-                closeCamera={closeCamera}
-                error={cameraError}
-              />
+              <div className="mt-4 w-full">
+                <SmallCameraPreview 
+                  videoRef={videoRef}
+                  closeCamera={closeCamera}
+                  error={cameraError}
+                />
+              </div>
             )}
             
             {/* نص توجيهي إضافي في حالة فشل الكاميرا */}

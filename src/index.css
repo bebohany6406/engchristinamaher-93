@@ -26,9 +26,11 @@
   /* تحسينات لعناصر الفيديو */
   video {
     @apply rounded-lg overflow-hidden;
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
+    object-fit: cover !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    background-color: #000;
   }
 }
 
@@ -79,6 +81,7 @@
 }
 
 .animate-scan {
+  position: absolute;
   animation: scan 2s ease-in-out infinite;
   box-shadow: 0 0 12px 2px rgba(255, 215, 0, 0.8);
 }
@@ -146,6 +149,8 @@
   overflow: hidden;
   border-radius: 0.5rem;
   background-color: #0f172a;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
 .camera-scan-line {
@@ -192,4 +197,10 @@
   right: 0;
   border-width: 0 3px 3px 0;
   border-bottom-right-radius: 4px;
+}
+
+/* تحسين ظهور الفيديو */
+video {
+  background-color: #000;
+  display: block !important;
 }

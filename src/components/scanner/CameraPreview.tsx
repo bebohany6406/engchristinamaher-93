@@ -33,15 +33,23 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
       }
     };
     
+    // اختبار فوري
     checkVideoVisibility();
     
-    // تحقق مرة أخرى بعد فترة قصيرة للتأكد من تحميل الفيديو
-    const timer = setTimeout(checkVideoVisibility, 1000);
-    return () => clearTimeout(timer);
+    // تحقق مرة أخرى بعد فترات متعددة للتأكد من تحميل الفيديو
+    const timer1 = setTimeout(checkVideoVisibility, 500);
+    const timer2 = setTimeout(checkVideoVisibility, 1500);
+    const timer3 = setTimeout(checkVideoVisibility, 3000);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden animate-pulse-border border-2 border-physics-gold/50" style={{ minHeight: '300px', maxHeight: '60vh' }}>
+    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden camera-container" style={{ minHeight: '300px', maxHeight: '60vh' }}>
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -57,7 +65,8 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
       {/* Video Element - Make sure it's visible with good size */}
       <video 
         ref={videoRef} 
-        className={`w-full h-full object-cover ${isVideoVisible ? 'block' : 'hidden'}`}
+        className="w-full h-full object-cover"
+        style={{ display: isVideoVisible ? 'block' : 'none' }}
         playsInline
         muted
         autoPlay
@@ -75,7 +84,7 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
       </button>
       
       {/* Scanner overlay with improved visibility */}
-      <div className="absolute inset-0 border-2 border-physics-gold/70 rounded-lg pointer-events-none"></div>
+      <div className="absolute inset-0 border-2 border-physics-gold/70 rounded-lg pointer-events-none animate-pulse-border"></div>
       
       {/* Scanning area with guide frame - ENHANCED */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
