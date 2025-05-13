@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useQrScanner } from "@/hooks/useQrScanner";
 import { useStudentAttendance } from "@/hooks/useStudentAttendance";
 import { CameraPreview } from "@/components/scanner/CameraPreview";
@@ -10,6 +10,8 @@ import { PaymentStatusDisplay } from "@/components/scanner/PaymentStatusDisplay"
 import { PermissionDeniedWarning } from "@/components/scanner/PermissionDeniedWarning";
 
 export function QrScanner() {
+  const [cameraError, setCameraError] = useState<string | undefined>();
+  
   const {
     videoRef,
     canvasRef,
@@ -30,6 +32,17 @@ export function QrScanner() {
     processScannedCode,
     handleManualEntry
   } = useStudentAttendance();
+
+  // Handle camera start
+  const handleStartCamera = async () => {
+    try {
+      setCameraError(undefined);
+      await startScanner();
+    } catch (error) {
+      console.error("Error starting camera:", error);
+      setCameraError("حدث خطأ أثناء تشغيل الكاميرا. يرجى التحقق من الأذونات والمحاولة مرة أخرى.");
+    }
+  };
   
   // Effect to handle QR code detection
   useEffect(() => {
@@ -59,6 +72,15 @@ export function QrScanner() {
     };
   }, [scanning, scanCode, processScannedCode, stopScanner]);
   
+  // Check for error after camera activation
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && !videoRef.current.srcObject) {
+      setCameraError("تعذر الوصول إلى الكاميرا. يرجى التأكد من تشغيلها وإعطاء الأذونات المطلوبة.");
+    } else if (isCameraActive && videoRef.current && videoRef.current.srcObject) {
+      setCameraError(undefined);
+    }
+  }, [isCameraActive, videoRef.current?.srcObject]);
+  
   // Cleanup effect
   useEffect(() => {
     return () => {
@@ -75,21 +97,23 @@ export function QrScanner() {
             canvasRef={canvasRef}
             scanning={scanning}
             closeCamera={closeCamera}
+            error={cameraError}
           />
         ) : (
           <div className="flex flex-col items-center p-6">
             <CameraScanButton 
-              onClick={startScanner}
+              onClick={handleStartCamera}
               isProcessing={isProcessing}
             />
             
             {permissionDenied && <PermissionDeniedWarning />}
             
             {/* عرض الكاميرا الصغير */}
-            {!scanning && isCameraActive && videoRef.current && videoRef.current.srcObject && (
+            {!scanning && isCameraActive && (
               <SmallCameraPreview 
                 videoRef={videoRef}
                 closeCamera={closeCamera}
+                error={cameraError}
               />
             )}
             

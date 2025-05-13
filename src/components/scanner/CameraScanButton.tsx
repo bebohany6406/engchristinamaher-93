@@ -11,11 +11,11 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
   return (
     <button 
       onClick={onClick}
-      className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-4 px-8 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full sm:w-auto text-lg"
+      className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-4 px-8 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full sm:w-auto text-lg disabled:opacity-50 disabled:cursor-not-allowed"
       disabled={isProcessing}
     >
-      <Camera size={28} />
-      <span>مسح الكود بالكاميرا</span>
+      <Camera size={28} className={isProcessing ? "animate-pulse" : ""} />
+      <span>{isProcessing ? "جاري التحميل..." : "مسح الكود بالكاميرا"}</span>
     </button>
   );
 }

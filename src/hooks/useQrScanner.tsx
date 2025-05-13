@@ -57,20 +57,34 @@ export function useQrScanner() {
   const requestCameraPermission = async () => {
     try {
       console.log("طلب إذن الكاميرا...");
-      // طلب إذن الكاميرا بشكل صريح
-      const result = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
+      
+      // طلب إذن الكاميرا بشكل صريح - نجرب أولاً كاميرا المحمول الخلفية
+      let stream;
+      try {
+        // أولاً نحاول استخدام الكاميرا الخلفية (للمحمول)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+      } catch (mobileError) {
+        console.log("فشل في الوصول إلى الكاميرا الخلفية، جاري تجربة الكاميرا الأمامية:", mobileError);
+        
+        // إذا فشلت الكاميرا الخلفية، نجرب الكاميرا الأمامية أو أي كاميرا متاحة
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+      }
       
       // إذا وصلنا إلى هنا، فقد تم منح الإذن
       console.log("تم منح إذن الكاميرا بنجاح");
       setPermissionDenied(false);
-      setCameraStream(result);
-      return result;
+      setCameraStream(stream);
+      return stream;
     } catch (err) {
       console.error("خطأ في الوصول إلى الكاميرا:", err);
       setPermissionDenied(true);
@@ -79,15 +93,15 @@ export function useQrScanner() {
         title: "❌ تم رفض الوصول للكاميرا",
         description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز ثم المحاولة مرة أخرى"
       });
-      return null;
+      throw err;
     }
   };
   
   const startScanner = async () => {
     try {
+      setIsProcessing(true);
       console.log("بدء تشغيل الماسح الضوئي...");
       const stream = await requestCameraPermission();
-      if (!stream) return;
       
       console.log("تم الحصول على تدفق الكاميرا:", stream);
       setCameraStream(stream);
@@ -95,41 +109,50 @@ export function useQrScanner() {
       if (videoRef.current) {
         console.log("ربط تدفق الكاميرا بعنصر الفيديو");
         videoRef.current.srcObject = stream;
+        setIsCameraActive(true);
         
         // التأكد من أن الفيديو يعمل قبل بدء المسح
         videoRef.current.onloadedmetadata = () => {
           console.log("تم تحميل بيانات الفيديو، بدء التشغيل...");
-          videoRef.current!.play()
-            .then(() => {
-              console.log("تم تشغيل الفيديو بنجاح");
-              setScanning(true);
-              setIsCameraActive(true);
-            })
-            .catch(e => {
-              console.error("خطأ في تشغيل الفيديو:", e);
-              // محاولة أخرى لتشغيل الفيديو على الأجهزة المحمولة
-              setTimeout(() => {
-                if (videoRef.current) {
-                  videoRef.current.play()
-                    .then(() => {
-                      console.log("تم تشغيل الفيديو بنجاح في المحاولة الثانية");
-                      setScanning(true);
-                      setIsCameraActive(true);
-                    })
-                    .catch(e2 => console.error("فشل في تشغيل الفيديو مرة أخرى:", e2));
-                }
-              }, 500);
-            });
+          if (videoRef.current) {
+            videoRef.current.play()
+              .then(() => {
+                console.log("تم تشغيل الفيديو بنجاح");
+                setScanning(true);
+                setIsProcessing(false);
+              })
+              .catch(e => {
+                console.error("خطأ في تشغيل الفيديو:", e);
+                setIsProcessing(false);
+                
+                // محاولة أخرى لتشغيل الفيديو على الأجهزة المحمولة
+                setTimeout(() => {
+                  if (videoRef.current) {
+                    videoRef.current.play()
+                      .then(() => {
+                        console.log("تم تشغيل الفيديو بنجاح في المحاولة الثانية");
+                        setScanning(true);
+                      })
+                      .catch(e2 => {
+                        console.error("فشل في تشغيل الفيديو مرة أخرى:", e2);
+                        throw e2;
+                      });
+                  }
+                }, 500);
+              });
+          }
         };
       }
     } catch (err) {
       console.error("خطأ في الوصول إلى الكاميرا:", err);
       setPermissionDenied(true);
+      setIsProcessing(false);
       toast({
         variant: "destructive",
         title: "❌ فشل الوصول للكاميرا",
         description: "يرجى التأكد من السماح للتطبيق باستخدام الكاميرا",
       });
+      throw err;
     }
   };
 
@@ -147,7 +170,10 @@ export function useQrScanner() {
     
     if (cameraStream) {
       console.log("إيقاف جميع مسارات الكاميرا");
-      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream.getTracks().forEach(track => {
+        console.log("إيقاف مسار:", track.kind, track.label);
+        track.stop();
+      });
       setCameraStream(null);
     }
     
@@ -169,15 +195,19 @@ export function useQrScanner() {
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
-        
-        if (code) {
-          console.log("تم العثور على رمز QR:", code.data);
-          // تم العثور على رمز QR
-          return code.data;
+        try {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          
+          if (code) {
+            console.log("تم العثور على رمز QR:", code.data);
+            // تم العثور على رمز QR
+            return code.data;
+          }
+        } catch (error) {
+          console.error("خطأ في تحليل رمز QR:", error);
         }
       }
     }

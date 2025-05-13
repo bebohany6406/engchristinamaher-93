@@ -1,15 +1,18 @@
 
-import React, { useEffect } from "react";
-import { X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { X, AlertCircle } from "lucide-react";
 
 interface CameraPreviewProps {
   videoRef: React.RefObject<HTMLVideoElement>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   scanning: boolean;
   closeCamera: () => void;
+  error?: string;
 }
 
-export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera }: CameraPreviewProps) {
+export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, error }: CameraPreviewProps) {
+  const [isVideoVisible, setIsVideoVisible] = useState(false);
+
   // تأكد من أن الفيديو يظهر بشكل صحيح عند التحميل
   useEffect(() => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -18,15 +21,25 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera }: Ca
       videoRef.current.style.height = "auto";
       videoRef.current.style.objectFit = "cover";
       videoRef.current.style.display = "block"; // تأكد من أن الفيديو مرئي
+      setIsVideoVisible(true);
+    } else {
+      setIsVideoVisible(false);
     }
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative w-full h-full bg-physics-dark rounded-lg overflow-hidden">
+    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+      {error ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
+          <AlertCircle className="text-red-500 mb-2" size={32} />
+          <p className="text-white text-sm">{error}</p>
+        </div>
+      ) : null}
+      
       <video 
         ref={videoRef} 
-        className="w-full h-full object-cover"
-        style={{ maxHeight: '50vh', display: 'block' }}
+        className={`w-full h-full object-cover ${isVideoVisible ? 'block' : 'hidden'}`}
+        style={{ maxHeight: '50vh', display: isVideoVisible ? 'block' : 'none' }}
         playsInline
         muted
         autoPlay
