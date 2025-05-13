@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { X, AlertCircle } from "lucide-react";
+import { X, AlertCircle, Camera } from "lucide-react";
 
 interface CameraPreviewProps {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -13,18 +13,26 @@ interface CameraPreviewProps {
 export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, error }: CameraPreviewProps) {
   const [isVideoVisible, setIsVideoVisible] = useState(false);
 
-  // تأكد من أن الفيديو يظهر بشكل صحيح عند التحميل
+  // تحقق من حالة الفيديو بعد التحميل
   useEffect(() => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      console.log("تهيئة عرض الكاميرا في العرض الكامل");
-      videoRef.current.style.width = "100%";
-      videoRef.current.style.height = "auto";
-      videoRef.current.style.objectFit = "cover";
-      videoRef.current.style.display = "block"; // تأكد من أن الفيديو مرئي
-      setIsVideoVisible(true);
-    } else {
-      setIsVideoVisible(false);
-    }
+    const checkVideoVisibility = () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        console.log("تهيئة عرض الكاميرا في العرض الكامل");
+        videoRef.current.style.width = "100%";
+        videoRef.current.style.height = "100%";
+        videoRef.current.style.objectFit = "cover";
+        videoRef.current.style.display = "block";
+        setIsVideoVisible(true);
+      } else {
+        setIsVideoVisible(false);
+      }
+    };
+    
+    checkVideoVisibility();
+    
+    // تحقق مرة أخرى بعد فترة قصيرة للتأكد من تحميل الفيديو
+    const timer = setTimeout(checkVideoVisibility, 500);
+    return () => clearTimeout(timer);
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
@@ -34,18 +42,23 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
           <AlertCircle className="text-red-500 mb-2" size={32} />
           <p className="text-white text-sm">{error}</p>
         </div>
+      ) : !isVideoVisible ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+          <Camera className="text-white/50 mb-2" size={32} />
+          <p className="text-white/70 text-sm">جاري تهيئة الكاميرا...</p>
+        </div>
       ) : null}
       
       <video 
         ref={videoRef} 
         className={`w-full h-full object-cover ${isVideoVisible ? 'block' : 'hidden'}`}
-        style={{ maxHeight: '50vh', display: isVideoVisible ? 'block' : 'none' }}
+        style={{ maxHeight: '50vh' }}
         playsInline
         muted
         autoPlay
-      ></video>
+      />
       
-      <canvas ref={canvasRef} className="hidden absolute top-0 left-0 w-full h-full"></canvas>
+      <canvas ref={canvasRef} className="hidden absolute top-0 left-0 w-full h-full" />
       
       <button 
         onClick={closeCamera}

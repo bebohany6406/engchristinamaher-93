@@ -15,7 +15,7 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
       disabled={isProcessing}
     >
       <Camera size={28} className={isProcessing ? "animate-pulse" : ""} />
-      <span>{isProcessing ? "جاري التحميل..." : "مسح الكود بالكاميرا"}</span>
+      <span>{isProcessing ? "جاري تشغيل الكاميرا..." : "مسح الكود بالكاميرا"}</span>
     </button>
   );
 }

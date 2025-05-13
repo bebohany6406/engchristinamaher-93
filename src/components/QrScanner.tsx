@@ -8,6 +8,7 @@ import { CameraScanButton } from "@/components/scanner/CameraScanButton";
 import { ManualCodeEntry } from "@/components/scanner/ManualCodeEntry";
 import { PaymentStatusDisplay } from "@/components/scanner/PaymentStatusDisplay";
 import { PermissionDeniedWarning } from "@/components/scanner/PermissionDeniedWarning";
+import { toast } from "@/hooks/use-toast";
 
 export function QrScanner() {
   const [cameraError, setCameraError] = useState<string | undefined>();
@@ -33,18 +34,31 @@ export function QrScanner() {
     handleManualEntry
   } = useStudentAttendance();
 
-  // Handle camera start
+  // معالجة بدء الكاميرا
   const handleStartCamera = async () => {
     try {
       setCameraError(undefined);
+      
+      // نعرض رسالة إعلامية للمستخدم
+      toast({
+        title: "جاري تشغيل الكاميرا",
+        description: "يرجى الانتظار لحظة..."
+      });
+      
       await startScanner();
     } catch (error) {
       console.error("Error starting camera:", error);
       setCameraError("حدث خطأ أثناء تشغيل الكاميرا. يرجى التحقق من الأذونات والمحاولة مرة أخرى.");
+      
+      toast({
+        variant: "destructive",
+        title: "❌ تعذر تشغيل الكاميرا",
+        description: "يرجى التأكد من أن الكاميرا متصلة وأن لديك الأذونات المناسبة"
+      });
     }
   };
   
-  // Effect to handle QR code detection
+  // تتبع حالة مسح الرمز
   useEffect(() => {
     let animationFrameId: number;
     
@@ -72,16 +86,26 @@ export function QrScanner() {
     };
   }, [scanning, scanCode, processScannedCode, stopScanner]);
   
-  // Check for error after camera activation
+  // التحقق من الخطأ بعد تنشيط الكاميرا
   useEffect(() => {
-    if (isCameraActive && videoRef.current && !videoRef.current.srcObject) {
-      setCameraError("تعذر الوصول إلى الكاميرا. يرجى التأكد من تشغيلها وإعطاء الأذونات المطلوبة.");
-    } else if (isCameraActive && videoRef.current && videoRef.current.srcObject) {
-      setCameraError(undefined);
-    }
+    const checkCameraStatus = () => {
+      if (isCameraActive && videoRef.current) {
+        if (!videoRef.current.srcObject) {
+          setCameraError("تعذر الوصول إلى الكاميرا. يرجى التأكد من تشغيلها وإعطاء الأذونات المطلوبة.");
+        } else {
+          setCameraError(undefined);
+        }
+      }
+    };
+    
+    checkCameraStatus();
+    
+    // تحقق مرة أخرى بعد فترة قصيرة
+    const timer = setTimeout(checkCameraStatus, 1000);
+    return () => clearTimeout(timer);
   }, [isCameraActive, videoRef.current?.srcObject]);
   
-  // Cleanup effect
+  // تنظيف عند إلغاء تحميل المكون
   useEffect(() => {
     return () => {
       closeCamera();

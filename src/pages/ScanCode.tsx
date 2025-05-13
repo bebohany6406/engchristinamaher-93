@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { ArrowRight, QrCode, UserMinus } from "lucide-react";
@@ -7,10 +7,28 @@ import { QrScanner } from "@/components/QrScanner";
 import { ManualAttendance } from "@/components/ManualAttendance";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
+import { useMobile } from "@/hooks/use-mobile";
 
 const ScanCode = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"scan" | "absence">("scan");
+  const { isMobile } = useMobile();
+  
+  // طلب الإذن بالإشعارات من أجل تجربة أفضل
+  useEffect(() => {
+    const requestNotificationPermission = async () => {
+      if ('Notification' in window) {
+        try {
+          const permission = await Notification.requestPermission();
+          console.log("Notification permission:", permission);
+        } catch (error) {
+          console.error("Error requesting notification permission:", error);
+        }
+      }
+    };
+    
+    requestNotificationPermission();
+  }, []);
 
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col relative">
@@ -32,8 +50,8 @@ const ScanCode = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 relative z-10">
-        <div className="max-w-md mx-auto">
+      <main className="flex-1 p-4 md:p-6 relative z-10">
+        <div className={`mx-auto ${isMobile ? 'w-full' : 'max-w-md'}`}>
           <h1 className="text-2xl font-bold text-physics-gold text-center mb-6">تسجيل الحضور</h1>
           
           {/* Tabs */}
