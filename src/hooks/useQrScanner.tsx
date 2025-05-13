@@ -59,52 +59,60 @@ export function useQrScanner() {
     };
   }, []);
   
-  // طلب إذن الكاميرا والحصول على دفق الكاميرا
+  // تحسين طلب إذن الكاميرا والحصول على دفق الكاميرا
   const requestCameraPermission = async () => {
     try {
       console.log("طلب إذن الكاميرا...");
       
-      // استخدام الكاميرا الخلفية بالأولوية
+      // استخدام الكاميرا الخلفية باستخدام القيم المثالية
+      const constraints = {
+        video: {
+          facingMode: { exact: "environment" }, // إجبار استخدام الكاميرا الخلفية
+          width: { min: 640, ideal: 1280, max: 1920 },
+          height: { min: 480, ideal: 720, max: 1080 },
+          aspectRatio: { ideal: 1.7778 },
+          frameRate: { ideal: 30, max: 60 }
+        },
+        audio: false
+      };
+      
       try {
-        // محاولة استخدام كاميرا الجهاز المحمول الخلفية أولاً مع إعدادات محسنة
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",  // هذا يضمن استخدام الكاميرا الخلفية فقط
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 }
-          },
-          audio: false
-        });
-        
-        console.log("تم الحصول على تدفق الكاميرا الخلفية");
+        console.log("محاولة الوصول إلى الكاميرا الخلفية مع إعدادات مثالية");
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("تم الحصول على تدفق الكاميرا الخلفية بنجاح");
         return stream;
       } catch (backCameraError) {
-        console.log("فشل في الوصول إلى الكاميرا الخلفية، جاري تجربة الكاميرا الأمامية:", backCameraError);
+        console.warn("فشل في الوصول إلى الكاميرا الخلفية مع الإعدادات المثالية:", backCameraError);
         
-        // إذا فشلت الكاميرا الخلفية، نجرب الكاميرا الأمامية
+        // محاولة استخدام كاميرا الجهاز المحمول الخلفية دون قيود صارمة
         try {
+          console.log("محاولة الوصول إلى الكاميرا الخلفية دون قيود صارمة");
           const stream = await navigator.mediaDevices.getUserMedia({
             video: {
-              facingMode: "user",
+              facingMode: "environment",
               width: { ideal: 1280 },
               height: { ideal: 720 }
             },
             audio: false
           });
-          
-          console.log("تم الحصول على تدفق الكاميرا الأمامية");
+          console.log("تم الحصول على تدفق الكاميرا الخلفية");
           return stream;
-        } catch (frontError) {
-          console.log("فشل في الوصول إلى الكاميرا الأمامية، جاري تجربة أي كاميرا متاحة:", frontError);
+        } catch (backCameraError2) {
+          console.warn("فشل في الوصول إلى الكاميرا الخلفية:", backCameraError2);
           
-          // محاولة أخيرة - استخدام أي كاميرا متاحة
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-          });
-          
-          console.log("تم الحصول على تدفق الكاميرا العامة");
-          return stream;
+          // محاولة استخدام أي كاميرا متاحة في الجهاز
+          try {
+            console.log("محاولة استخدام أي كاميرا متاحة");
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: false
+            });
+            console.log("تم الحصول على تدفق كاميرا عام");
+            return stream;
+          } catch (genericError) {
+            console.error("فشل في الوصول إلى أي كاميرا:", genericError);
+            throw genericError;
+          }
         }
       }
     } catch (err) {
@@ -114,7 +122,7 @@ export function useQrScanner() {
     }
   };
   
-  // بدء المسح الضوئي
+  // بدء المسح الضوئي مع تحسينات للأداء
   const startScanner = async () => {
     try {
       setIsProcessing(true);
@@ -124,6 +132,13 @@ export function useQrScanner() {
       let stream;
       try {
         stream = await requestCameraPermission();
+        
+        // إظهار تنبيه للمستخدم أن الكاميرا قيد التشغيل
+        toast({
+          title: "جاري تشغيل الكاميرا",
+          description: "يرجى توجيه الكاميرا إلى رمز QR"
+        });
+        
       } catch (err) {
         console.error("خطأ في الوصول إلى الكاميرا:", err);
         toast({
@@ -138,59 +153,52 @@ export function useQrScanner() {
       // تخزين تدفق الكاميرا
       setCameraStream(stream);
       
-      // ربط تدفق الكاميرا بعنصر الفيديو
+      // ربط تدفق الكاميرا بعنصر الفيديو بشكل مباشر
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.style.display = "block";
         setIsCameraActive(true);
         
         // التأكد من أن الفيديو يعمل قبل بدء المسح
         videoRef.current.onloadedmetadata = () => {
           if (videoRef.current) {
-            // تفعيل الكاميرا مباشرة بعد تحميل البيانات
-            setScanning(true);
+            console.log("تم تحميل بيانات وصف الفيديو");
             
-            const playPromise = videoRef.current.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log("تم تشغيل الفيديو بنجاح");
-                  setIsProcessing(false);
-                  
-                  // تنبيه المستخدم أن الكاميرا جاهزة
-                  toast({
-                    title: "✅ الكاميرا جاهزة",
-                    description: "يمكنك الآن مسح الكود"
-                  });
-                })
-                .catch(playError => {
-                  console.error("خطأ في تشغيل الفيديو:", playError);
-                  
-                  // محاولة أخرى لتشغيل الفيديو بعد تأخير قصير
-                  setTimeout(() => {
-                    if (videoRef.current) {
-                      videoRef.current.play()
-                        .then(() => {
-                          console.log("تم تشغيل الفيديو في المحاولة الثانية");
-                          setIsProcessing(false);
-                          // تنبيه المستخدم أن الكاميرا جاهزة
-                          toast({
-                            title: "✅ الكاميرا جاهزة",
-                            description: "يمكنك الآن مسح الكود"
-                          });
-                        })
-                        .catch(secondPlayError => {
-                          console.error("فشل تشغيل الفيديو في المحاولة الثانية:", secondPlayError);
-                          setIsProcessing(false);
-                          toast({
-                            variant: "destructive",
-                            title: "❌ تعذر تشغيل الكاميرا",
-                            description: "حاول مرة أخرى أو استخدم الإدخال اليدوي"
-                          });
+            // تفعيل الكاميرا مباشرة بعد تحميل البيانات
+            videoRef.current.play()
+              .then(() => {
+                console.log("تم تشغيل الفيديو بنجاح");
+                setIsProcessing(false);
+                setScanning(true);  // تم تحسين تسلسل بدء المسح
+              })
+              .catch(playError => {
+                console.error("خطأ في تشغيل الفيديو:", playError);
+                
+                // محاولة أخرى لتشغيل الفيديو بعد تأخير قصير
+                setTimeout(() => {
+                  if (videoRef.current) {
+                    videoRef.current.play()
+                      .then(() => {
+                        console.log("تم تشغيل الفيديو في المحاولة الثانية");
+                        setIsProcessing(false);
+                        setScanning(true);
+                        toast({
+                          title: "✅ الكاميرا جاهزة",
+                          description: "يمكنك الآن مسح الكود"
                         });
-                    }
-                  }, 1000);
-                });
-            }
+                      })
+                      .catch(secondPlayError => {
+                        console.error("فشل تشغيل الفيديو في المحاولة الثانية:", secondPlayError);
+                        setIsProcessing(false);
+                        toast({
+                          variant: "destructive",
+                          title: "❌ تعذر تشغيل الكاميرا",
+                          description: "حاول مرة أخرى أو استخدم الإدخال اليدوي"
+                        });
+                      });
+                  }
+                }, 1000);
+              });
           }
         };
         

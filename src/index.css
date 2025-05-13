@@ -88,6 +88,26 @@
   animation: pulse-border 2s infinite;
 }
 
+/* تأثير جديد محسن للإطار المتحرك */
+@keyframes scan-border {
+  0% {
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    border-color: rgba(255, 215, 0, 1);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+  }
+}
+
+.animate-scan-border {
+  animation: scan-border 1.5s infinite;
+}
+
 /* إضافة تأثيرات جديدة للتحسين */
 @keyframes glow {
   0% {
