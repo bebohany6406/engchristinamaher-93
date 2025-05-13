@@ -66,6 +66,38 @@ const ParentsManagement = () => {
         );
     }
   });
+
+  // New function to handle student code change and auto-fill parent phone
+  const handleStudentCodeChange = async (code: string) => {
+    setStudentCode(code);
+    
+    if (code.trim().length > 0) {
+      try {
+        const student = await getStudentByCode(code);
+        if (student && student.parentPhone) {
+          setPhone(student.parentPhone);
+        }
+      } catch (error) {
+        console.error("Error fetching student:", error);
+      }
+    }
+  };
+
+  // Similar function for edit form
+  const handleEditStudentCodeChange = async (code: string) => {
+    setEditStudentCode(code);
+    
+    if (code.trim().length > 0) {
+      try {
+        const student = await getStudentByCode(code);
+        if (student && student.parentPhone) {
+          setEditPhone(student.parentPhone);
+        }
+      } catch (error) {
+        console.error("Error fetching student:", error);
+      }
+    }
+  };
   
   const handleAddParent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,6 +353,17 @@ const ParentsManagement = () => {
             
             <form onSubmit={handleAddParent} className="space-y-4">
               <div>
+                <label className="block text-white mb-1">كود الطالب</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={studentCode}
+                  onChange={(e) => handleStudentCodeChange(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
                 <label className="block text-white mb-1">رقم الهاتف</label>
                 <input
                   type="text"
@@ -328,17 +371,7 @@ const ParentsManagement = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">كود الطالب</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={studentCode}
-                  onChange={(e) => setStudentCode(e.target.value)}
-                  required
+                  placeholder="سيتم تعبئته تلقائيًا من بيانات الطالب"
                 />
               </div>
               
@@ -381,23 +414,23 @@ const ParentsManagement = () => {
             
             <form onSubmit={handleEditParent} className="space-y-4">
               <div>
+                <label className="block text-white mb-1">كود الطالب</label>
+                <input
+                  type="text"
+                  className="inputField"
+                  value={editStudentCode}
+                  onChange={(e) => handleEditStudentCodeChange(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
                 <label className="block text-white mb-1">رقم الهاتف</label>
                 <input
                   type="text"
                   className="inputField"
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-white mb-1">كود الطالب</label>
-                <input
-                  type="text"
-                  className="inputField"
-                  value={editStudentCode}
-                  onChange={(e) => setEditStudentCode(e.target.value)}
                   required
                 />
               </div>
