@@ -7,12 +7,12 @@ import { QrScanner } from "@/components/QrScanner";
 import { ManualAttendance } from "@/components/ManualAttendance";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ScanCode = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"scan" | "absence">("scan");
-  const { isMobile } = useMobile();
+  const isMobile = useIsMobile();
   
   // طلب الإذن بالإشعارات من أجل تجربة أفضل
   useEffect(() => {
