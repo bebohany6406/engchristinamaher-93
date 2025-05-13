@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -13,7 +14,7 @@ import {
   Attendance,
 } from "@/types";
 
-interface DataContextType {
+export interface DataContextType {
   grades: Grade[];
   videos: Video[];
   books: Book[];
@@ -24,6 +25,7 @@ interface DataContextType {
   fetchAttendance: () => Promise<void>;
   getStudentGrades: (studentId: string) => Grade[];
   getVideosByGrade: (grade: "first" | "second" | "third") => Video[];
+  getAllVideos: () => Video[]; // Added missing function
   getStudentAttendance: (studentId: string) => Attendance[];
   getStudentLessonCount: (studentId: string) => number;
   deleteAttendanceRecord: (recordId: string) => Promise<void>;
@@ -108,6 +110,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const getVideosByGrade = useCallback(
     (grade: "first" | "second" | "third"): Video[] => {
       return videos.filter((video) => video.grade === grade);
+    },
+    [videos]
+  );
+  
+  // Add the missing getAllVideos function
+  const getAllVideos = useCallback(
+    (): Video[] => {
+      return videos;
     },
     [videos]
   );
@@ -440,6 +450,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       fetchAttendance,
       getStudentGrades,
       getVideosByGrade,
+      getAllVideos, // Add the new function to the context
       getStudentAttendance,
       getStudentLessonCount,
       deleteAttendanceRecord,
