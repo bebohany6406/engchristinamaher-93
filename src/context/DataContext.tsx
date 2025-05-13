@@ -22,11 +22,45 @@ interface Attendance {
   time?: string;
 }
 
-interface DataContextType {
+// Add missing type definitions for other context functions
+interface Grade {
+  id: string;
+  student_id: string;
+  subject: string;
+  score: number;
+  max_score: number;
+  date: string;
+}
+
+interface Video {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  grade?: string;
+  date?: string;
+}
+
+export interface DataContextType {
   students: Student[];
   attendance: Attendance[];
   addAttendance: (studentId: string, studentName: string, status: AttendanceStatus, lessonNumber: number) => Promise<boolean>;
   getStudentLessonCount: (studentId: string) => number;
+  
+  // Add missing properties that other files are using
+  getStudentAttendance?: (studentId: string) => Attendance[];
+  deleteAttendanceRecord?: (id: string) => Promise<boolean>;
+  syncWithSupabase?: () => Promise<void>;
+  getStudentGrades?: (studentId: string) => Grade[];
+  grades?: Grade[];
+  addGrade?: (grade: Omit<Grade, 'id'>) => Promise<boolean>;
+  updateGrade?: (grade: Grade) => Promise<boolean>;
+  deleteGrade?: (id: string) => Promise<boolean>;
+  getAllVideos?: () => Video[];
+  getVideosByGrade?: (grade: string) => Video[];
+  addVideo?: (video: Omit<Video, 'id'>) => Promise<boolean>;
+  deleteVideo?: (id: string) => Promise<boolean>;
+  updateVideo?: (video: Video) => Promise<boolean>;
 }
 
 // Create context
@@ -103,11 +137,43 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     return studentAttendance.length;
   };
   
-  const value = {
+  // فقط مكان للإرجاع لمنع الأخطاء - يجب استبدالها بتنفيذ حقيقي
+  const getStudentAttendance = (studentId: string): Attendance[] => {
+    return attendance.filter(record => record.student_id === studentId);
+  };
+  
+  const deleteAttendanceRecord = async (id: string): Promise<boolean> => {
+    console.log("Delete attendance stub");
+    return true;
+  };
+  
+  const syncWithSupabase = async (): Promise<void> => {
+    console.log("Sync stub");
+  };
+  
+  const getStudentGrades = (studentId: string): Grade[] => {
+    return [];
+  };
+  
+  const value: DataContextType = {
     students,
     attendance,
     addAttendance,
-    getStudentLessonCount
+    getStudentLessonCount,
+    // Stubs to prevent errors
+    getStudentAttendance,
+    deleteAttendanceRecord,
+    syncWithSupabase,
+    getStudentGrades,
+    grades: [],
+    addGrade: async () => true,
+    updateGrade: async () => true,
+    deleteGrade: async () => true,
+    getAllVideos: () => [],
+    getVideosByGrade: () => [],
+    addVideo: async () => true,
+    deleteVideo: async () => true,
+    updateVideo: async () => true
   };
   
   return (

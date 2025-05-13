@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "@/hooks/use-toast";
 import { X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Html5QrScannerProps {
   onScanSuccess: (code: string) => void;
@@ -95,74 +94,14 @@ export function Html5QrScanner({ onScanSuccess, onClose }: Html5QrScannerProps) 
     // إيقاف الماسح الضوئي بعد النجاح
     await stopScanner();
     
-    // تسجيل الحضور مباشرة في Supabase
-    try {
-      // يمكننا التحقق أولاً مما إذا كان الكود صالحًا
-      const { data: studentExists, error: checkError } = await supabase
-        .from('students')
-        .select('id, name')
-        .eq('code', decodedText)
-        .single();
-      
-      if (checkError || !studentExists) {
-        toast({
-          variant: "destructive",
-          title: "كود غير صالح",
-          description: "لم يتم العثور على طالب بهذا الكود"
-        });
-        // إعادة تشغيل الماسح
-        startScanner();
-        return;
-      }
-      
-      // حساب رقم الدرس الحالي
-      const { data: lessonsCount } = await supabase
-        .from('attendance')
-        .select('id')
-        .eq('student_id', studentExists.id);
-      
-      const currentLessonNumber = (lessonsCount?.length || 0) + 1;
-      
-      // إضافة سجل حضور في قاعدة البيانات
-      const { error: insertError } = await supabase
-        .from('attendance')
-        .insert({
-          student_id: studentExists.id,
-          student_name: studentExists.name,
-          status: 'present',
-          lesson_number: currentLessonNumber,
-          date: new Date().toISOString().split('T')[0],
-          time: new Date().toTimeString().split(' ')[0]
-        });
-      
-      if (insertError) {
-        throw insertError;
-      }
-      
-      // تشغيل صوت النجاح
-      const audio = new Audio("/attendance-present.mp3");
-      audio.play().catch(e => console.error("Sound play failed:", e));
-      
-      // إظهار رسالة نجاح
-      toast({
-        title: "✅ تم تسجيل الحضور",
-        description: `تم تسجيل حضور الطالب ${studentExists.name}`
-      });
-      
-      // استدعاء الدالة المخصصة للنجاح
-      onScanSuccess(decodedText);
-      
-    } catch (error) {
-      console.error("خطأ في تسجيل الحضور:", error);
-      toast({
-        variant: "destructive",
-        title: "❌ خطأ في تسجيل الحضور",
-        description: "حدث خطأ أثناء محاولة تسجيل الحضور"
-      });
-      
-      // إعادة تشغيل الماسح
-      startScanner();
-    }
+    // نُرجع الكود المقروء دون تسجيل الحضور تلقائيًا
+    toast({
+      title: "✅ تم قراءة الكود",
+      description: "تم ملء الحقل بكود الطالب"
+    });
+    
+    // استدعاء الدالة المخصصة للنجاح مع الكود المقروء
+    onScanSuccess(decodedText);
   };
 
   const handleQrCodeError = (error: any) => {
