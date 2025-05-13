@@ -34,7 +34,7 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center">
+    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center border border-physics-navy shadow-lg">
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -42,7 +42,7 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
         </div>
       ) : !isVideoVisible ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-          <Camera className="text-white/50 mb-2" size={32} />
+          <Camera className="text-white/50 mb-2 animate-pulse" size={32} />
           <p className="text-white/70 text-sm">جاري تهيئة الكاميرا...</p>
         </div>
       ) : null}
@@ -55,9 +55,18 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
         autoPlay
       />
       
+      {/* Overlay guide frame for the small preview */}
+      {isVideoVisible && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 border border-physics-gold/50 rounded-lg"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 border border-physics-gold rounded-md"></div>
+        </div>
+      )}
+      
       <button 
         onClick={closeCamera}
-        className="absolute top-2 right-2 p-1 bg-physics-dark rounded-full z-10"
+        className="absolute top-2 right-2 p-1 bg-physics-dark rounded-full z-10 shadow-md"
+        aria-label="إغلاق الكاميرا"
       >
         <X className="text-white" size={18} />
       </button>
