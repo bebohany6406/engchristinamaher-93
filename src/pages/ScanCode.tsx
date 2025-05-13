@@ -8,6 +8,7 @@ import { ManualAttendance } from "@/components/ManualAttendance";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "@/hooks/use-toast";
 
 const ScanCode = () => {
   const navigate = useNavigate();
@@ -28,6 +29,12 @@ const ScanCode = () => {
     };
     
     requestNotificationPermission();
+    
+    // إضافة توست للترحيب وتوجيه المستخدم
+    toast({
+      title: "صفحة تسجيل الحضور",
+      description: "اضغط على زر مسح الكود لفتح الكاميرا"
+    });
   }, []);
 
   return (
@@ -50,7 +57,7 @@ const ScanCode = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-6 relative z-10">
+      <main className="flex-1 p-4 md:p-6 relative z-10 flex flex-col">
         <div className={`mx-auto ${isMobile ? 'w-full' : 'max-w-md'}`}>
           <h1 className="text-2xl font-bold text-physics-gold text-center mb-6">تسجيل الحضور</h1>
           
@@ -81,15 +88,17 @@ const ScanCode = () => {
           </div>
           
           {/* Tab Content */}
-          {activeTab === "scan" ? (
-            <QrScanner />
-          ) : (
-            <ManualAttendance />
-          )}
+          <div className="flex-1 flex flex-col">
+            {activeTab === "scan" ? (
+              <QrScanner />
+            ) : (
+              <ManualAttendance />
+            )}
+          </div>
         </div>
       </main>
     </div>
   );
-};
+}
 
 export default ScanCode;

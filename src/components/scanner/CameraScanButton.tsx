@@ -30,7 +30,7 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
           strokeWidth={2.5}
         />
       )}
-      <span>{isProcessing ? "جاري تنشيط الكاميرا..." : "مسح الكود بالكاميرا الخلفية"}</span>
+      <span>{isProcessing ? "جاري تفعيل الكاميرا..." : "مسح الكود بالكاميرا"}</span>
     </button>
   );
 }

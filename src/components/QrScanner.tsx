@@ -37,7 +37,7 @@ export function QrScanner() {
     handleManualEntry
   } = useStudentAttendance();
 
-  // معالجة بدء الكاميرا
+  // معالجة بدء الكاميرا - مع تحسينات للتعامل مع الأخطاء
   const handleStartCamera = async () => {
     try {
       setCameraError(undefined);
@@ -48,6 +48,7 @@ export function QrScanner() {
         description: "يرجى الانتظار لحظة..."
       });
       
+      console.log("بدء تشغيل الكاميرا من QrScanner");
       await startScanner();
       
     } catch (error) {
@@ -115,6 +116,7 @@ export function QrScanner() {
   useEffect(() => {
     const checkCameraStatus = () => {
       if (isCameraActive && videoRef.current) {
+        console.log("فحص حالة الكاميرا:", videoRef.current.srcObject ? "متصلة" : "غير متصلة");
         if (!videoRef.current.srcObject) {
           setCameraError("تعذر الوصول إلى الكاميرا. يرجى التأكد من تشغيلها وإعطاء الأذونات المطلوبة.");
           setShowFallbackPrompt(true);
@@ -128,7 +130,7 @@ export function QrScanner() {
     checkCameraStatus();
     
     // تحقق مرة أخرى بعد فترة قصيرة
-    const timer = setTimeout(checkCameraStatus, 1000);
+    const timer = setTimeout(checkCameraStatus, 2000);
     return () => clearTimeout(timer);
   }, [isCameraActive, videoRef]);
   

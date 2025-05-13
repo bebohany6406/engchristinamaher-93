@@ -36,12 +36,12 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
     checkVideoVisibility();
     
     // تحقق مرة أخرى بعد فترة قصيرة للتأكد من تحميل الفيديو
-    const timer = setTimeout(checkVideoVisibility, 500);
+    const timer = setTimeout(checkVideoVisibility, 1000);
     return () => clearTimeout(timer);
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden animate-pulse-border border-2 border-physics-gold/50" style={{ minHeight: '400px', maxHeight: '70vh' }}>
+    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden animate-pulse-border border-2 border-physics-gold/50" style={{ minHeight: '300px', maxHeight: '60vh' }}>
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -54,7 +54,7 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
         </div>
       ) : null}
       
-      {/* Video Element */}
+      {/* Video Element - Make sure it's visible with good size */}
       <video 
         ref={videoRef} 
         className={`w-full h-full object-cover ${isVideoVisible ? 'block' : 'hidden'}`}

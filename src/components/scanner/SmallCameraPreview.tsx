@@ -16,6 +16,7 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
     const checkVideoVisibility = () => {
       if (videoRef.current && videoRef.current.srcObject) {
         console.log("تهيئة عرض الكاميرا في العرض الصغير");
+        // تأكد من أن الفيديو مرئي ويأخذ المساحة المناسبة
         videoRef.current.style.display = "block";
         videoRef.current.style.width = "100%";
         videoRef.current.style.height = "100%";
@@ -29,12 +30,12 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
     checkVideoVisibility();
     
     // تحقق مرة أخرى بعد فترة قصيرة للتأكد من تحميل الفيديو
-    const timer = setTimeout(checkVideoVisibility, 500);
+    const timer = setTimeout(checkVideoVisibility, 1000);
     return () => clearTimeout(timer);
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center border-2 border-physics-gold/50 shadow-lg animate-pulse-border">
+    <div className="relative mt-4 w-full aspect-video bg-physics-dark rounded-lg overflow-hidden flex items-center justify-center border-2 border-physics-gold/50 shadow-lg">
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -43,7 +44,7 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
       ) : !isVideoVisible ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
           <ScanLine className="text-physics-gold mb-2 animate-pulse" size={32} />
-          <p className="text-white/70 text-sm">جاري تنشيط الكاميرا الخلفية...</p>
+          <p className="text-white/70 text-sm">جاري تنشيط الكاميرا...</p>
         </div>
       ) : null}
       

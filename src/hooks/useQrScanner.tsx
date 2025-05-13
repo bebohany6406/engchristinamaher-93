@@ -19,27 +19,31 @@ export function useQrScanner() {
       try {
         // تحقق مما إذا كانت واجهة برمجة التطبيقات للأذونات متاحة
         if (navigator.permissions && navigator.permissions.query) {
-          const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
-          console.log("حالة إذن الكاميرا:", result.state);
-          setPermissionState(result.state);
-          
-          if (result.state === 'denied') {
-            setPermissionDenied(true);
-          } else {
-            setPermissionDenied(false);
-          }
-          
-          // الاستماع لتغييرات حالة الإذن
-          result.addEventListener('change', () => {
-            console.log("تغيرت حالة الإذن إلى:", result.state);
+          try {
+            const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+            console.log("حالة إذن الكاميرا:", result.state);
             setPermissionState(result.state);
-            if (result.state === 'granted') {
-              setPermissionDenied(false);
-            } else if (result.state === 'denied') {
+            
+            if (result.state === 'denied') {
               setPermissionDenied(true);
-              stopScanner();
+            } else {
+              setPermissionDenied(false);
             }
-          });
+            
+            // الاستماع لتغييرات حالة الإذن
+            result.addEventListener('change', () => {
+              console.log("تغيرت حالة الإذن إلى:", result.state);
+              setPermissionState(result.state);
+              if (result.state === 'granted') {
+                setPermissionDenied(false);
+              } else if (result.state === 'denied') {
+                setPermissionDenied(true);
+                stopScanner();
+              }
+            });
+          } catch (error) {
+            console.error("خطأ في استعلام أذونات الكاميرا:", error);
+          }
         }
       } catch (error) {
         console.error("خطأ في طلب الأذونات:", error);
@@ -64,41 +68,80 @@ export function useQrScanner() {
     try {
       console.log("طلب إذن الكاميرا...");
       
-      // المحاولة الأولى: استخدام الكاميرا الخلفية صراحة (للأجهزة المحمولة)
+      // تحقق من دعم getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error("getUserMedia غير مدعوم في هذا المتصفح");
+        throw new Error("الكاميرا غير مدعومة في هذا المتصفح");
+      }
+      
+      // محاولة مع الكاميرا الخلفية على الهاتف المحمول
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } },
-          audio: false
-        });
-        console.log("نجحت المحاولة 1: الوصول إلى الكاميرا الخلفية");
-        return stream;
-      } catch (error1) {
-        console.log("فشلت المحاولة 1:", error1);
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        console.log("أجهزة الفيديو المتاحة:", videoDevices.length);
         
-        // المحاولة الثانية: استخدام الكاميرا الخلفية دون "exact"
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
-            audio: false
-          });
-          console.log("نجحت المحاولة 2: الوصول إلى الكاميرا الخلفية بشكل أقل تقييدًا");
-          return stream;
-        } catch (error2) {
-          console.log("فشلت المحاولة 2:", error2);
-          
-          // المحاولة الثالثة: استخدام أي كاميرا متاحة
+        // إذا كان هناك أكثر من كاميرا، افترض أن الكاميرا الثانية هي الكاميرا الخلفية (على معظم الأجهزة المحمولة)
+        if (videoDevices.length > 1) {
           try {
+            console.log("محاولة استخدام الكاميرا الخلفية المحددة");
             const stream = await navigator.mediaDevices.getUserMedia({
-              video: true,
+              video: { deviceId: { exact: videoDevices[1].deviceId } },
               audio: false
             });
-            console.log("نجحت المحاولة 3: الوصول إلى أي كاميرا متاحة");
+            console.log("تم الحصول على تدفق الكاميرا الخلفية المحددة");
             return stream;
-          } catch (error3) {
-            console.error("فشلت جميع المحاولات للوصول إلى الكاميرا:", error3);
-            throw error3;
+          } catch (error) {
+            console.log("فشلت محاولة الكاميرا المحددة:", error);
+            // استمر بالمحاولات التالية
           }
         }
+        
+        // المحاولة الأولى: استخدام الكاميرا الخلفية صراحة (للأجهزة المحمولة)
+        try {
+          console.log("المحاولة 1: استخدام facingMode: environment");
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: "environment" } },
+            audio: false
+          });
+          console.log("نجحت المحاولة 1: الوصول إلى الكاميرا الخلفية");
+          return stream;
+        } catch (error1) {
+          console.log("فشلت المحاولة 1:", error1);
+          
+          // المحاولة الثانية: استخدام الكاميرا الخلفية دون "exact"
+          try {
+            console.log("المحاولة 2: استخدام facingMode: environment بدون exact");
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: "environment" },
+              audio: false
+            });
+            console.log("نجحت المحاولة 2: الوصول إلى الكاميرا الخلفية بشكل أقل تقييدًا");
+            return stream;
+          } catch (error2) {
+            console.log("فشلت المحاولة 2:", error2);
+            
+            // المحاولة الثالثة: استخدام أي كاميرا متاحة
+            try {
+              console.log("المحاولة 3: استخدام أي كاميرا");
+              const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 }
+                },
+                audio: false
+              });
+              console.log("نجحت المحاولة 3: الوصول إلى أي كاميرا متاحة");
+              return stream;
+            } catch (error3) {
+              console.error("فشلت جميع المحاولات للوصول إلى الكاميرا:", error3);
+              throw error3;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("خطأ في أذونات الوسائط:", err);
+        setPermissionDenied(true);
+        throw err;
       }
     } catch (err) {
       console.error("خطأ في أذونات الوسائط:", err);
@@ -139,6 +182,7 @@ export function useQrScanner() {
       
       // ربط تدفق الكاميرا بعنصر الفيديو
       if (videoRef.current) {
+        console.log("ربط تدفق الكاميرا بعنصر الفيديو");
         videoRef.current.srcObject = stream;
         videoRef.current.style.display = "block";
         setIsCameraActive(true);
@@ -146,6 +190,7 @@ export function useQrScanner() {
         // التأكد من أن الفيديو يعمل
         videoRef.current.onloadedmetadata = () => {
           if (videoRef.current) {
+            console.log("تم تحميل بيانات الفيديو، جاري التشغيل...");
             videoRef.current.play()
               .then(() => {
                 console.log("تم تشغيل الفيديو بنجاح");
