@@ -1,5 +1,5 @@
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 import jsQR from "jsqr";
 
@@ -105,7 +105,21 @@ export function useQrScanner() {
               setScanning(true);
               setIsCameraActive(true);
             })
-            .catch(e => console.error("خطأ في تشغيل الفيديو:", e));
+            .catch(e => {
+              console.error("خطأ في تشغيل الفيديو:", e);
+              // محاولة أخرى لتشغيل الفيديو على الأجهزة المحمولة
+              setTimeout(() => {
+                if (videoRef.current) {
+                  videoRef.current.play()
+                    .then(() => {
+                      console.log("تم تشغيل الفيديو بنجاح في المحاولة الثانية");
+                      setScanning(true);
+                      setIsCameraActive(true);
+                    })
+                    .catch(e2 => console.error("فشل في تشغيل الفيديو مرة أخرى:", e2));
+                }
+              }, 500);
+            });
         };
       }
     } catch (err) {
@@ -119,14 +133,14 @@ export function useQrScanner() {
     }
   };
 
-  const stopScanner = () => {
+  const stopScanner = useCallback(() => {
     if (scanning) {
       console.log("إيقاف الماسح الضوئي");
       setScanning(false);
     }
-  };
+  }, [scanning]);
   
-  const closeCamera = () => {
+  const closeCamera = useCallback(() => {
     console.log("إغلاق الكاميرا");
     setScanning(false);
     setIsCameraActive(false);
@@ -140,9 +154,9 @@ export function useQrScanner() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-  };
+  }, [cameraStream]);
 
-  const scanCode = () => {
+  const scanCode = useCallback(() => {
     if (!scanning) return null;
 
     const video = videoRef.current;
@@ -169,7 +183,7 @@ export function useQrScanner() {
     }
     
     return null;
-  };
+  }, [scanning, videoRef, canvasRef]);
 
   return {
     videoRef,

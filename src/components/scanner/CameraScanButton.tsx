@@ -11,10 +11,10 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
   return (
     <button 
       onClick={onClick}
-      className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-3 px-6 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full sm:w-auto"
+      className="flex items-center justify-center gap-2 bg-physics-gold text-physics-navy rounded-full py-4 px-8 font-bold shadow-lg hover:bg-physics-gold/90 transition-all transform active:scale-95 w-full sm:w-auto text-lg"
       disabled={isProcessing}
     >
-      <Camera size={24} />
+      <Camera size={28} />
       <span>مسح الكود بالكاميرا</span>
     </button>
   );

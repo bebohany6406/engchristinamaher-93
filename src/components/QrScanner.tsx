@@ -64,7 +64,7 @@ export function QrScanner() {
     return () => {
       closeCamera();
     };
-  }, []);
+  }, [closeCamera]);
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -85,7 +85,7 @@ export function QrScanner() {
             
             {permissionDenied && <PermissionDeniedWarning />}
             
-            {/* Small camera preview display */}
+            {/* عرض الكاميرا الصغير */}
             {!scanning && isCameraActive && videoRef.current && videoRef.current.srcObject && (
               <SmallCameraPreview 
                 videoRef={videoRef}
