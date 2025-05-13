@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Camera } from "lucide-react";
+import { Camera, ScanLine } from "lucide-react";
 
 interface CameraScanButtonProps {
   onClick: () => void;
@@ -19,12 +19,19 @@ export function CameraScanButton({ onClick, isProcessing }: CameraScanButtonProp
         <span className="absolute inset-0 bg-white/20 animate-pulse rounded-full opacity-0"></span>
       )}
       
-      <Camera 
-        size={28} 
-        className={isProcessing ? "animate-pulse" : ""}
-        strokeWidth={2.5}
-      />
-      <span className="text-xl">{isProcessing ? "جاري تشغيل الكاميرا..." : "مسح الكود بالكاميرا"}</span>
+      {isProcessing ? (
+        <ScanLine 
+          size={28} 
+          className="animate-pulse"
+          strokeWidth={2.5}
+        />
+      ) : (
+        <Camera 
+          size={28} 
+          strokeWidth={2.5}
+        />
+      )}
+      <span className="text-xl">{isProcessing ? "جاري تشغيل الكاميرا..." : "مسح الكود بالكاميرا الخلفية"}</span>
     </button>
   );
 }

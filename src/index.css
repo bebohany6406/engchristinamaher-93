@@ -51,18 +51,21 @@
 @keyframes scan {
   0% {
     top: 5%;
+    opacity: 1;
   }
   50% {
     top: 95%;
+    opacity: 0.8;
   }
   100% {
     top: 5%;
+    opacity: 1;
   }
 }
 
 .animate-scan {
   animation: scan 2s ease-in-out infinite;
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+  box-shadow: 0 0 12px 2px rgba(255, 215, 0, 0.8);
 }
 
 /* إضافة تأثيرات إضافية للماسح الضوئي */
@@ -83,4 +86,21 @@
 
 .animate-pulse-border {
   animation: pulse-border 2s infinite;
+}
+
+/* إضافة تأثيرات جديدة للتحسين */
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px 2px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 5px 2px rgba(255, 215, 0, 0.3);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
 }

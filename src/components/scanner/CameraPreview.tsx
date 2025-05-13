@@ -41,7 +41,7 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
   }, [videoRef, videoRef.current?.srcObject]);
 
   return (
-    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+    <div className="relative w-full bg-physics-dark rounded-lg overflow-hidden" style={{ minHeight: '400px', maxHeight: '70vh' }}>
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 p-4 text-center z-20">
           <AlertCircle className="text-red-500 mb-2" size={32} />
@@ -58,7 +58,6 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
       <video 
         ref={videoRef} 
         className={`w-full h-full object-cover ${isVideoVisible ? 'block' : 'hidden'}`}
-        style={{ maxHeight: '70vh' }}
         playsInline
         muted
         autoPlay
@@ -80,27 +79,27 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
       
       {/* Scanning area with guide frame - ENHANCED */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-4/5 h-3/5 border-2 border-physics-gold rounded-lg relative">
+        <div className="w-4/5 h-3/5 border-4 border-physics-gold rounded-lg relative">
           {/* Corner markers for better visibility */}
-          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-physics-gold"></div>
-          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-physics-gold"></div>
-          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-physics-gold"></div>
-          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-physics-gold"></div>
+          <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-physics-gold"></div>
+          <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-physics-gold"></div>
+          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-physics-gold"></div>
+          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-physics-gold"></div>
         </div>
       </div>
       
-      {/* Scanning line animation */}
+      {/* Scanning line animation - ENHANCED */}
       {scanningAnimation && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="relative w-4/5 h-3/5">
-            <div className="absolute inset-x-0 h-1 bg-physics-gold animate-scan"></div>
+            <div className="absolute inset-x-0 h-2 bg-physics-gold/70 animate-scan"></div>
           </div>
         </div>
       )}
       
-      {/* Scanning instruction */}
-      <div className="absolute bottom-4 left-0 right-0 text-center">
-        <p className="text-white text-sm bg-physics-navy/80 py-2 px-4 rounded-full inline-block shadow-lg">
+      {/* Scanning instruction - ENHANCED */}
+      <div className="absolute bottom-4 left-0 right-0 text-center z-10">
+        <p className="text-white font-bold bg-physics-navy/90 py-3 px-6 rounded-full inline-block shadow-lg border border-physics-gold/50">
           ضع رمز QR داخل المربع للمسح
         </p>
       </div>

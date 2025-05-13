@@ -14,6 +14,7 @@ import { Camera } from "lucide-react";
 export function QrScanner() {
   const [cameraError, setCameraError] = useState<string | undefined>();
   const [showFallbackPrompt, setShowFallbackPrompt] = useState(false);
+  const [scanAttempts, setScanAttempts] = useState(0);
   
   const {
     videoRef,
@@ -50,12 +51,6 @@ export function QrScanner() {
       
       await startScanner();
       
-      // تنبيه المستخدم أن الكاميرا قيد التشغيل
-      toast({
-        title: "✅ الكاميرا جاهزة",
-        description: "يمكنك الآن مسح الكود"
-      });
-      
     } catch (error) {
       console.error("Error starting camera:", error);
       setCameraError("حدث خطأ أثناء تشغيل الكاميرا. يرجى التحقق من الأذونات والمحاولة مرة أخرى.");
@@ -69,7 +64,7 @@ export function QrScanner() {
     }
   };
   
-  // تتبع حالة مسح الرمز
+  // تتبع حالة مسح الرمز مع تحسين للتعرف على الرمز
   useEffect(() => {
     let animationFrameId: number;
     let scanInterval: NodeJS.Timeout;
@@ -79,6 +74,7 @@ export function QrScanner() {
       
       const code = scanCode();
       if (code) {
+        console.log("وجدت الكود في رسم الإطار:", code);
         stopScanner();
         processScannedCode(code);
         return;
@@ -88,16 +84,22 @@ export function QrScanner() {
     };
     
     if (scanning) {
+      // زيادة معدل المسح للتأكد من التقاط الرمز
       handleScan();
+      
       // إضافة تقنية مسح ثانية باستخدام setInterval للتأكد من عمل المسح
       scanInterval = setInterval(() => {
-        const code = scanCode();
-        if (code) {
-          stopScanner();
-          processScannedCode(code);
-          clearInterval(scanInterval);
+        if (scanning) {
+          setScanAttempts(prev => prev + 1);
+          const code = scanCode();
+          if (code) {
+            console.log("وجدت الكود في الفاصل الزمني:", code);
+            stopScanner();
+            processScannedCode(code);
+            clearInterval(scanInterval);
+          }
         }
-      }, 500); // مسح كل 500 مللي ثانية
+      }, 300); // مسح كل 300 مللي ثانية للحصول على معدل مسح أعلى
     }
     
     return () => {
@@ -108,7 +110,7 @@ export function QrScanner() {
         clearInterval(scanInterval);
       }
     };
-  }, [scanning, scanCode, processScannedCode, stopScanner]);
+  }, [scanning, scanCode, processScannedCode, stopScanner, scanAttempts]);
   
   // التحقق من الخطأ بعد تنشيط الكاميرا
   useEffect(() => {
@@ -143,7 +145,7 @@ export function QrScanner() {
       <div className="relative bg-physics-dark p-4 rounded-lg">
         {scanning ? (
           <div className="mb-4">
-            <h2 className="text-lg text-physics-gold text-center mb-2">مسح كود الطالب</h2>
+            <h2 className="text-lg font-bold text-physics-gold text-center mb-2">قم بتوجيه الكاميرا إلى كود QR</h2>
             <CameraPreview 
               videoRef={videoRef}
               canvasRef={canvasRef}

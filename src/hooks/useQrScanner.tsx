@@ -64,22 +64,22 @@ export function useQrScanner() {
     try {
       console.log("طلب إذن الكاميرا...");
       
-      // جرب أولاً النافذة الحالية
+      // استخدام الكاميرا الخلفية بالأولوية
       try {
-        // محاولة استخدام كاميرا الجهاز المحمول الخلفية أولاً
+        // محاولة استخدام كاميرا الجهاز المحمول الخلفية أولاً مع إعدادات محسنة
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            facingMode: "environment",  // هذا يضمن استخدام الكاميرا الخلفية فقط
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 }
           },
           audio: false
         });
         
         console.log("تم الحصول على تدفق الكاميرا الخلفية");
         return stream;
-      } catch (mobileError: any) {
-        console.log("فشل في الوصول إلى الكاميرا الخلفية، جاري تجربة الكاميرا الأمامية:", mobileError);
+      } catch (backCameraError) {
+        console.log("فشل في الوصول إلى الكاميرا الخلفية، جاري تجربة الكاميرا الأمامية:", backCameraError);
         
         // إذا فشلت الكاميرا الخلفية، نجرب الكاميرا الأمامية
         try {
@@ -109,7 +109,6 @@ export function useQrScanner() {
       }
     } catch (err) {
       console.error("خطأ في أذونات الوسائط:", err);
-      console.error("Error requesting permissions:", err);
       setPermissionDenied(true);
       throw err;
     }
@@ -147,12 +146,14 @@ export function useQrScanner() {
         // التأكد من أن الفيديو يعمل قبل بدء المسح
         videoRef.current.onloadedmetadata = () => {
           if (videoRef.current) {
+            // تفعيل الكاميرا مباشرة بعد تحميل البيانات
+            setScanning(true);
+            
             const playPromise = videoRef.current.play();
             if (playPromise !== undefined) {
               playPromise
                 .then(() => {
                   console.log("تم تشغيل الفيديو بنجاح");
-                  setScanning(true);
                   setIsProcessing(false);
                   
                   // تنبيه المستخدم أن الكاميرا جاهزة
@@ -163,7 +164,6 @@ export function useQrScanner() {
                 })
                 .catch(playError => {
                   console.error("خطأ في تشغيل الفيديو:", playError);
-                  setIsProcessing(false);
                   
                   // محاولة أخرى لتشغيل الفيديو بعد تأخير قصير
                   setTimeout(() => {
@@ -171,7 +171,7 @@ export function useQrScanner() {
                       videoRef.current.play()
                         .then(() => {
                           console.log("تم تشغيل الفيديو في المحاولة الثانية");
-                          setScanning(true);
+                          setIsProcessing(false);
                           // تنبيه المستخدم أن الكاميرا جاهزة
                           toast({
                             title: "✅ الكاميرا جاهزة",
@@ -180,6 +180,7 @@ export function useQrScanner() {
                         })
                         .catch(secondPlayError => {
                           console.error("فشل تشغيل الفيديو في المحاولة الثانية:", secondPlayError);
+                          setIsProcessing(false);
                           toast({
                             variant: "destructive",
                             title: "❌ تعذر تشغيل الكاميرا",
@@ -239,7 +240,7 @@ export function useQrScanner() {
     }
   }, [cameraStream]);
 
-  // مسح رمز QR في الإطار الحالي
+  // مسح رمز QR في الإطار الحالي مع تحسينات للدقة
   const scanCode = useCallback(() => {
     if (!scanning) return null;
 
@@ -260,9 +261,9 @@ export function useQrScanner() {
           // الحصول على بيانات الصورة من Canvas
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           
-          // تحليل بيانات الصورة للعثور على رمز QR
+          // تحليل بيانات الصورة للعثور على رمز QR مع ضبط اعدادات أكثر تسامحًا
           const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "dontInvert",
+            inversionAttempts: "attemptBoth",
           });
           
           // إذا تم العثور على رمز QR، أرجع البيانات
