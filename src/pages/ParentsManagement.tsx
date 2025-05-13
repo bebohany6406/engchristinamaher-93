@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, UserPlus, Search, Trash2, Edit, X } from "lucide-react";
+import { ArrowRight, UserPlus, Search, Trash2, Edit, X, Filter, Users } from "lucide-react";
 import { Parent, Student } from "@/types";
 import { toast } from "@/hooks/use-toast";
 import { sanitizeSearchText } from "@/lib/utils";
@@ -19,6 +19,7 @@ const ParentsManagement = () => {
   const [parents, setParents] = useState<Parent[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showStudentsWithoutParents, setShowStudentsWithoutParents] = useState(false);
   
   // Form state
   const [phone, setPhone] = useState("");
@@ -41,28 +42,66 @@ const ParentsManagement = () => {
     return student?.group || "";
   };
   
-  const filteredParents = parents.filter(parent => {
+  // Function to get students without parent accounts
+  const getStudentsWithoutParents = () => {
+    // Get all student codes that have parent accounts
+    const studentCodesWithParents = new Set(parents.map(parent => parent.studentCode));
+    
+    // Filter students that don't have parent accounts
+    return students.filter(student => !studentCodesWithParents.has(student.code));
+  };
+  
+  const filteredParents = showStudentsWithoutParents
+    ? [] // When showing students without parents, we don't show parents
+    : parents.filter(parent => {
+        const query = sanitizeSearchText(searchQuery);
+        if (!query) return true;
+        
+        const studentGroup = getStudentGroupByCode(parent.studentCode);
+        
+        switch (searchField) {
+          case "name":
+            return sanitizeSearchText(parent.studentName).includes(query);
+          case "phone":
+            return sanitizeSearchText(parent.phone).includes(query);
+          case "code":
+            return sanitizeSearchText(parent.studentCode).includes(query);
+          case "group":
+            return sanitizeSearchText(studentGroup).includes(query);
+          case "all":
+          default:
+            return (
+              sanitizeSearchText(parent.studentName).includes(query) ||
+              sanitizeSearchText(parent.phone).includes(query) ||
+              sanitizeSearchText(parent.studentCode).includes(query) ||
+              sanitizeSearchText(studentGroup).includes(query)
+            );
+        }
+      });
+  
+  // Filter students without parents
+  const studentsWithoutParents = getStudentsWithoutParents().filter(student => {
     const query = sanitizeSearchText(searchQuery);
     if (!query) return true;
     
-    const studentGroup = getStudentGroupByCode(parent.studentCode);
-    
     switch (searchField) {
       case "name":
-        return sanitizeSearchText(parent.studentName).includes(query);
+        return sanitizeSearchText(student.name).includes(query);
       case "phone":
-        return sanitizeSearchText(parent.phone).includes(query);
+        return sanitizeSearchText(student.phone || "").includes(query) || 
+               sanitizeSearchText(student.parentPhone || "").includes(query);
       case "code":
-        return sanitizeSearchText(parent.studentCode).includes(query);
+        return sanitizeSearchText(student.code).includes(query);
       case "group":
-        return sanitizeSearchText(studentGroup).includes(query);
+        return sanitizeSearchText(student.group || "").includes(query);
       case "all":
       default:
         return (
-          sanitizeSearchText(parent.studentName).includes(query) ||
-          sanitizeSearchText(parent.phone).includes(query) ||
-          sanitizeSearchText(parent.studentCode).includes(query) ||
-          sanitizeSearchText(studentGroup).includes(query)
+          sanitizeSearchText(student.name).includes(query) ||
+          sanitizeSearchText(student.phone || "").includes(query) ||
+          sanitizeSearchText(student.parentPhone || "").includes(query) ||
+          sanitizeSearchText(student.code).includes(query) ||
+          sanitizeSearchText(student.group || "").includes(query)
         );
     }
   });
@@ -211,6 +250,17 @@ const ParentsManagement = () => {
     }
   };
   
+  // Function to add a parent account for a student without one
+  const handleAddParentForStudent = (student: Student) => {
+    setStudentCode(student.code);
+    if (student.parentPhone) {
+      setPhone(student.parentPhone);
+    } else {
+      setPhone("");
+    }
+    setShowAddForm(true);
+  };
+  
   return (
     <div className="min-h-screen bg-transparent flex flex-col">
       <PhoneContact />
@@ -233,7 +283,28 @@ const ParentsManagement = () => {
       <main className="flex-1 p-6 relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-physics-gold">إدارة أولياء الأمور</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-physics-gold">
+                {showStudentsWithoutParents ? "الطلاب بدون أولياء أمور" : "إدارة أولياء الأمور"}
+              </h1>
+              <button
+                onClick={() => setShowStudentsWithoutParents(!showStudentsWithoutParents)}
+                className="flex items-center gap-1 px-3 py-1 bg-physics-navy rounded-lg text-sm text-white hover:bg-physics-navy/80"
+                title={showStudentsWithoutParents ? "عرض أولياء الأمور" : "عرض الطلاب بدون أولياء أمور"}
+              >
+                {showStudentsWithoutParents ? (
+                  <>
+                    <Users size={16} />
+                    <span>عرض أولياء الأمور</span>
+                  </>
+                ) : (
+                  <>
+                    <Filter size={16} />
+                    <span>عرض الطلاب بدون أولياء أمور</span>
+                  </>
+                )}
+              </button>
+            </div>
             <button 
               onClick={() => setShowAddForm(true)}
               className="goldBtn flex items-center gap-2"
@@ -265,25 +336,66 @@ const ParentsManagement = () => {
               <input
                 type="text"
                 className="inputField pr-12 w-full"
-                placeholder="ابحث عن ولي أمر..."
+                placeholder={showStudentsWithoutParents ? "ابحث عن طالب..." : "ابحث عن ولي أمر..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
           
-          {/* Parents List */}
+          {/* Display Students Without Parents or Parents List */}
           <div className="bg-physics-dark/80 rounded-lg overflow-hidden">
             {isLoading ? (
               <div className="p-8 text-center">
                 <div className="w-12 h-12 border-4 border-physics-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-white text-lg">جاري تحميل البيانات...</p>
               </div>
+            ) : showStudentsWithoutParents ? (
+              // Students without parents table
+              studentsWithoutParents.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-white text-lg">جميع الطلاب لديهم حسابات أولياء أمور</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-physics-navy/50 text-physics-gold">
+                        <th className="text-right py-3 px-4">اسم الطالب</th>
+                        <th className="text-right py-3 px-4">كود الطالب</th>
+                        <th className="text-right py-3 px-4">رقم الهاتف</th>
+                        <th className="text-right py-3 px-4">المجموعة</th>
+                        <th className="text-center py-3 px-4">خيارات</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentsWithoutParents.map((student) => (
+                        <tr key={student.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
+                          <td className="py-3 px-4 text-white">{student.name}</td>
+                          <td className="py-3 px-4 text-white">{student.code}</td>
+                          <td className="py-3 px-4 text-white">{student.parentPhone || "—"}</td>
+                          <td className="py-3 px-4 text-white">{student.group || "—"}</td>
+                          <td className="py-3 px-4 text-white text-center">
+                            <button 
+                              className="goldBtn text-sm py-1 px-3"
+                              onClick={() => handleAddParentForStudent(student)}
+                            >
+                              <span>إضافة ولي أمر</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
             ) : filteredParents.length === 0 ? (
+              // No parents found
               <div className="p-8 text-center">
                 <p className="text-white text-lg">لا يوجد أولياء أمور مسجلين</p>
               </div>
             ) : (
+              // Parents list
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
