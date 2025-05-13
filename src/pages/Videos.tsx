@@ -349,27 +349,4 @@ const Videos = () => {
     </div>;
 };
 
-function handleDeleteVideo(id: string) {
-  if (window.confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
-    deleteVideo(id);
-    if (selectedVideo) {
-      setSelectedVideo(null);
-    }
-  }
-}
-
-function openEditForm(video: any) {
-  setEditId(video.id);
-  setEditTitle(video.title);
-  setEditUrl(video.url);
-  setEditGrade(video.grade);
-  setEditIsYouTube(video.isYouTube || false);
-  setShowEditForm(true);
-}
-
-function handleSelectVideo(video: any) {
-  setSelectedVideo(video.url);
-  setSelectedVideoIsYouTube(video.isYouTube || false);
-}
-
 export default Videos;

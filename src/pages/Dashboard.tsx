@@ -52,7 +52,7 @@ const DashboardItem = ({
 const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const { syncWithSupabase, getStudentAttendance, getStudentLessonCount } = useData();
+  const { getStudentAttendance, getStudentLessonCount } = useData();
 
   // إحصائيات الحضور للطالب
   const attendanceStats = currentUser?.role === "student" ? {
