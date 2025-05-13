@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { X } from "lucide-react";
 
 interface SmallCameraPreviewProps {
@@ -8,6 +8,16 @@ interface SmallCameraPreviewProps {
 }
 
 export function SmallCameraPreview({ videoRef, closeCamera }: SmallCameraPreviewProps) {
+  // تأكد من أن الفيديو يظهر بشكل صحيح في العرض الصغير
+  useEffect(() => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      console.log("Video element initialized in small preview");
+      videoRef.current.style.display = "block";
+      videoRef.current.style.width = "100%";
+      videoRef.current.style.height = "auto";
+    }
+  }, [videoRef]);
+
   return (
     <div className="relative mt-4 w-full aspect-video bg-physics-navy rounded-lg overflow-hidden">
       <video 

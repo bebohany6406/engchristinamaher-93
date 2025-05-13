@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { X } from "lucide-react";
 
 interface CameraPreviewProps {
@@ -10,11 +10,22 @@ interface CameraPreviewProps {
 }
 
 export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera }: CameraPreviewProps) {
+  // تأكد من أن الفيديو يملأ الشاشة بشكل صحيح
+  useEffect(() => {
+    if (videoRef.current) {
+      // تعيين المحتوى ليملأ الشاشة بشكل صحيح
+      videoRef.current.style.width = "100%";
+      videoRef.current.style.height = "auto";
+      videoRef.current.style.objectFit = "cover";
+    }
+  }, [videoRef]);
+
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       <video 
         ref={videoRef} 
         className="w-full rounded-lg"
+        style={{ display: 'block', maxHeight: '50vh' }}
         playsInline
         muted
         autoPlay

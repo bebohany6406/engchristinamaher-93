@@ -13,23 +13,23 @@ export function useQrScanner() {
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   
-  // Check camera permission status on component mount
+  // تحقق من حالة إذن الكاميرا عند تحميل المكون
   useEffect(() => {
     const checkPermissions = async () => {
       try {
-        // Check if permissions API is available
+        // تحقق مما إذا كانت واجهة برمجة التطبيقات للأذونات متاحة
         if (navigator.permissions && navigator.permissions.query) {
           const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
-          console.info("Camera permission:", result.state);
+          console.log("حالة إذن الكاميرا:", result.state);
           setPermissionState(result.state);
           
           if (result.state === 'denied') {
             setPermissionDenied(true);
           }
           
-          // Listen for changes to permission state
+          // الاستماع لتغييرات حالة الإذن
           result.addEventListener('change', () => {
-            console.info("Permission state changed to:", result.state);
+            console.log("تغيرت حالة الإذن إلى:", result.state);
             setPermissionState(result.state);
             if (result.state === 'granted') {
               setPermissionDenied(false);
@@ -40,13 +40,13 @@ export function useQrScanner() {
           });
         }
       } catch (error) {
-        console.info("Error requesting permissions:", error);
+        console.error("خطأ في طلب الأذونات:", error);
       }
     };
     
     checkPermissions();
     
-    // Cleanup
+    // تنظيف
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
@@ -56,45 +56,60 @@ export function useQrScanner() {
   
   const requestCameraPermission = async () => {
     try {
-      // Request camera permission explicitly
-      const result = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log("طلب إذن الكاميرا...");
+      // طلب إذن الكاميرا بشكل صريح
+      const result = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
       
-      // If we get here, permission was granted
+      // إذا وصلنا إلى هنا، فقد تم منح الإذن
+      console.log("تم منح إذن الكاميرا بنجاح");
       setPermissionDenied(false);
       setCameraStream(result);
-      return true;
+      return result;
     } catch (err) {
-      console.error("Error accessing camera:", err);
+      console.error("خطأ في الوصول إلى الكاميرا:", err);
       setPermissionDenied(true);
       toast({
         variant: "destructive",
         title: "❌ تم رفض الوصول للكاميرا",
         description: "يرجى السماح للتطبيق باستخدام الكاميرا من إعدادات الجهاز ثم المحاولة مرة أخرى"
       });
-      return false;
+      return null;
     }
   };
   
   const startScanner = async () => {
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
-    
     try {
-      const stream = cameraStream || await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      });
+      console.log("بدء تشغيل الماسح الضوئي...");
+      const stream = await requestCameraPermission();
+      if (!stream) return;
       
+      console.log("تم الحصول على تدفق الكاميرا:", stream);
       setCameraStream(stream);
       
       if (videoRef.current) {
+        console.log("ربط تدفق الكاميرا بعنصر الفيديو");
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setScanning(true);
-        setIsCameraActive(true);
-        scanCode();
+        
+        // التأكد من أن الفيديو يعمل قبل بدء المسح
+        videoRef.current.onloadedmetadata = () => {
+          console.log("تم تحميل بيانات الفيديو، بدء التشغيل...");
+          videoRef.current!.play()
+            .then(() => {
+              console.log("تم تشغيل الفيديو بنجاح");
+              setScanning(true);
+              setIsCameraActive(true);
+            })
+            .catch(e => console.error("خطأ في تشغيل الفيديو:", e));
+        };
       }
     } catch (err) {
-      console.error("Error accessing camera:", err);
+      console.error("خطأ في الوصول إلى الكاميرا:", err);
       setPermissionDenied(true);
       toast({
         variant: "destructive",
@@ -106,15 +121,18 @@ export function useQrScanner() {
 
   const stopScanner = () => {
     if (scanning) {
+      console.log("إيقاف الماسح الضوئي");
       setScanning(false);
     }
   };
   
   const closeCamera = () => {
+    console.log("إغلاق الكاميرا");
     setScanning(false);
     setIsCameraActive(false);
     
     if (cameraStream) {
+      console.log("إيقاف جميع مسارات الكاميرا");
       cameraStream.getTracks().forEach(track => track.stop());
       setCameraStream(null);
     }
@@ -125,7 +143,7 @@ export function useQrScanner() {
   };
 
   const scanCode = () => {
-    if (!scanning) return;
+    if (!scanning) return null;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -143,15 +161,11 @@ export function useQrScanner() {
         });
         
         if (code) {
-          // QR code found
+          console.log("تم العثور على رمز QR:", code.data);
+          // تم العثور على رمز QR
           return code.data;
         }
       }
-    }
-    
-    // Continue scanning if no code was found
-    if (scanning) {
-      requestAnimationFrame(scanCode);
     }
     
     return null;
