@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,6 @@ import StudentsManagement from "./pages/StudentsManagement";
 import ParentsManagement from "./pages/ParentsManagement";
 import ScanCode from "./pages/ScanCode";
 import SimpleAttendance from "./pages/SimpleAttendance";
-import ManualAttendanceAll from "./pages/ManualAttendanceAll";
 import Videos from "./pages/Videos";
 import Books from "./pages/Books";
 import StudentCode from "./pages/StudentCode";
@@ -164,7 +162,6 @@ const App = () => {
                     <Route path="/parents" element={<RequireAuth allowedRoles={["admin"]}><ParentsManagement /></RequireAuth>} />
                     <Route path="/scan-code" element={<RequireAuth allowedRoles={["admin"]}><ScanCode /></RequireAuth>} />
                     <Route path="/simple-attendance" element={<RequireAuth allowedRoles={["admin"]}><SimpleAttendance /></RequireAuth>} />
-                    <Route path="/manual-attendance-all" element={<RequireAuth allowedRoles={["admin"]}><ManualAttendanceAll /></RequireAuth>} />
                     <Route path="/attendance-list" element={<RequireAuth allowedRoles={["admin"]}><AttendanceRecordList /></RequireAuth>} />
                     <Route path="/attendance-list/:grade" element={<RequireAuth allowedRoles={["admin"]}><AttendanceListByGrade /></RequireAuth>} />
                     <Route path="/grades-management" element={<RequireAuth allowedRoles={["admin"]}><GradesManagement /></RequireAuth>} />
