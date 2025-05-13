@@ -47,10 +47,15 @@ export function QrScanner() {
     }
   };
   
-  // تم تعديل هذه الدالة لتُعبئ حقل الإدخال بدلاً من تسجيل الحضور مباشرة
+  // تم تعديل هذه الدالة لتُعبئ حقل الإدخال فقط بدلاً من تسجيل الحضور مباشرة
   const handleScanSuccess = (code: string) => {
     setShowScanner(false);
     setScannedCode(code); // ملء حقل الإدخال بالكود المقروء
+    
+    toast({
+      title: "تم مسح الكود",
+      description: "تم إدخال الكود، اضغط على زر تسجيل الحضور للتأكيد"
+    });
   };
   
   const handleCloseScanner = () => {

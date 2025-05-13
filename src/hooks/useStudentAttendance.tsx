@@ -15,7 +15,8 @@ export function useStudentAttendance() {
   const { hasStudentPaidForCurrentLesson } = usePayments();
 
   const processScannedCode = async (code: string) => {
-    setScannedCode(code);
+    // لا نقوم بتعيين الكود في المتغير لمنع ظهور الإشعارات تلقائياً
+    // فقط بعد الضغط على زر التسجيل سيتم معالجة الكود
     setIsProcessing(true);
     
     try {

@@ -27,7 +27,7 @@ export function PaymentStatusDisplay({ paymentStatus }: PaymentStatusDisplayProp
       <p className="text-sm text-white mt-1">
         {paymentStatus.paid 
           ? 'الطالب مدفوع الاشتراك للدرس الحالي' 
-          : 'الطالب غير مدفوع الاشتراك للدرس الحالي'}
+          : 'الطالب غير مدفوع الاشتراك للدرس الحالي - يرجى التنبيه'}
       </p>
     </div>
   );

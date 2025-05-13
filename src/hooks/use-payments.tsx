@@ -4,6 +4,9 @@ import { Payment, PaidMonth } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+// ثابت لعدد الحصص في الشهر الواحد
+const LESSONS_PER_MONTH = 8;
+
 export function usePayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -272,15 +275,35 @@ export function usePayments() {
     const studentPayment = payments.find(p => p.studentId === studentId);
     if (!studentPayment) return false;
     
-    // Each month includes 8 lessons
-    // If student has paid and hasn't reached 8 lessons yet, they're considered paid
-    const lessonsPerMonth = 8;
+    // كل شهر يتضمن 8 حصص
+    // إذا دفع الطالب ولم يصل إلى 8 حصص بعد، فيعتبر دافعًا
     
-    // Calculate how many months they should have paid for
-    const requiredMonths = Math.ceil(lessonNumber / lessonsPerMonth);
+    // حساب عدد الأشهر المطلوب دفعها بناءً على رقم الحصة
+    const requiredMonths = Math.ceil(lessonNumber / LESSONS_PER_MONTH);
     
-    // Check if they have enough paid months
-    return studentPayment.paidMonths.length >= requiredMonths;
+    // التحقق مما إذا كان لديه عدد كافٍ من الأشهر المدفوعة
+    const hasPaidEnough = studentPayment.paidMonths.length >= requiredMonths;
+    
+    console.log(`Student ${studentId} - Lesson ${lessonNumber} - Required Months ${requiredMonths} - Paid Months ${studentPayment.paidMonths.length} - Has Paid: ${hasPaidEnough}`);
+    
+    return hasPaidEnough;
+  };
+
+  // تحديد الشهر الحالي للطالب بناءً على رقم الحصة
+  const getCurrentMonthByLessonNumber = (lessonNumber: number) => {
+    return Math.ceil(lessonNumber / LESSONS_PER_MONTH);
+  };
+
+  // حساب الحصة الأولى في الشهر الحالي
+  const getFirstLessonInCurrentMonth = (lessonNumber: number) => {
+    const currentMonth = getCurrentMonthByLessonNumber(lessonNumber);
+    return ((currentMonth - 1) * LESSONS_PER_MONTH) + 1;
+  };
+
+  // حساب الحصة الأخيرة في الشهر الحالي
+  const getLastLessonInCurrentMonth = (lessonNumber: number) => {
+    const currentMonth = getCurrentMonthByLessonNumber(lessonNumber);
+    return currentMonth * LESSONS_PER_MONTH;
   };
 
   // Debug function to check hook state
@@ -288,7 +311,8 @@ export function usePayments() {
     console.log("Current payments state:", payments);
     return {
       stateCount: payments.length,
-      supabaseIntegrated: true
+      supabaseIntegrated: true,
+      lessonsPerMonth: LESSONS_PER_MONTH
     };
   };
 
@@ -300,6 +324,9 @@ export function usePayments() {
     getAllPayments,
     getStudentPayments,
     hasStudentPaidForCurrentLesson,
+    getCurrentMonthByLessonNumber,
+    getFirstLessonInCurrentMonth,
+    getLastLessonInCurrentMonth,
     debugPaymentsState
   };
 }
