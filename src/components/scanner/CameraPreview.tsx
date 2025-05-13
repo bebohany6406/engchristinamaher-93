@@ -62,7 +62,7 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
         </div>
       ) : null}
       
-      {/* Video Element - Make sure it's visible with good size */}
+      {/* عنصر الفيديو */}
       <video 
         ref={videoRef} 
         className="w-full h-full object-cover"
@@ -74,7 +74,7 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
       
       <canvas ref={canvasRef} className="hidden absolute top-0 left-0 w-full h-full" />
       
-      {/* Close button */}
+      {/* زر الإغلاق */}
       <button 
         onClick={closeCamera}
         className="absolute top-2 right-2 p-2 bg-physics-navy rounded-full z-30 shadow-md"
@@ -83,35 +83,43 @@ export function CameraPreview({ videoRef, canvasRef, scanning, closeCamera, erro
         <X className="text-white" size={24} />
       </button>
       
-      {/* Scanner overlay with improved visibility */}
-      <div className="absolute inset-0 border-2 border-physics-gold/70 rounded-lg pointer-events-none animate-pulse-border"></div>
-      
-      {/* Scanning area with guide frame - ENHANCED */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-4/5 h-3/5 border-4 border-physics-gold rounded-lg relative animate-scan-border">
-          {/* Corner markers for better visibility */}
-          <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-physics-gold"></div>
-          <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-physics-gold"></div>
-          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-physics-gold"></div>
-          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-physics-gold"></div>
-        </div>
-      </div>
-      
-      {/* Scanning line animation - ENHANCED */}
-      {scanningAnimation && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-4/5 h-3/5">
-            <div className="absolute inset-x-0 h-2 bg-physics-gold/70 animate-scan"></div>
+      {/* مكون القراءة مع تحسين مرئي على شكل تطبيقات QR الشائعة */}
+      {isVideoVisible && (
+        <div className="absolute inset-0 pointer-events-none z-10">
+          <div className="absolute inset-0">
+            {/* قناع شفاف أسود حول منطقة المسح */}
+            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+            
+            {/* منطقة المسح الشفافة */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[70vw] max-w-[280px] h-[70vw] max-h-[280px] bg-transparent"></div>
           </div>
+          
+          {/* إطار منطقة المسح المميز */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[70vw] max-w-[280px] h-[70vw] max-h-[280px] border-0">
+            {/* الزوايا المميزة مثل تطبيقات QR الشهيرة */}
+            <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-physics-gold"></div>
+            <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-physics-gold"></div>
+            <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-physics-gold"></div>
+            <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-physics-gold"></div>
+          </div>
+          
+          {/* خط المسح المتحرك مع تأثير توهج */}
+          {scanningAnimation && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[70vw] max-w-[280px] h-[70vw] max-h-[280px] pointer-events-none">
+              <div className="absolute inset-x-0 h-1 bg-physics-gold/70 shadow-[0_0_10px_2px_rgba(255,215,0,0.7)] animate-scan"></div>
+            </div>
+          )}
         </div>
       )}
       
-      {/* Scanning instruction - ENHANCED */}
-      <div className="absolute bottom-4 left-0 right-0 text-center z-10">
-        <p className="text-white font-bold bg-physics-navy/90 py-3 px-6 rounded-full inline-block shadow-lg border border-physics-gold/50">
-          ضع رمز QR داخل المربع للمسح
-        </p>
-      </div>
+      {/* نص توجيهي محسن */}
+      {isVideoVisible && (
+        <div className="absolute bottom-8 left-0 right-0 text-center z-20">
+          <p className="text-white font-bold bg-physics-navy/90 py-3 px-6 rounded-full inline-block shadow-lg border border-physics-gold/50">
+            ضع رمز QR داخل الإطار للمسح
+          </p>
+        </div>
+      )}
     </div>
   );
 }

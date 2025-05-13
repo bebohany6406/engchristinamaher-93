@@ -74,46 +74,50 @@ export function useQrScanner() {
         throw new Error("الكاميرا غير مدعومة في هذا المتصفح");
       }
       
-      // محاولة مع الكاميرا الخلفية على الهاتف المحمول
+      // الحصول على قائمة أجهزة الفيديو المتاحة
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log("أجهزة الفيديو المتاحة:", videoDevices.length);
+      
+      // محاولات متسلسلة للحصول على أفضل كاميرا للاستخدام
+      
+      // المحاولة 1: استخدام الكاميرا الخلفية (المفضلة لمسح QR)
       try {
-        // الحصول على قائمة أجهزة الفيديو المتاحة
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        console.log("أجهزة الفيديو المتاحة:", videoDevices.length);
-        
-        // إذا كانت هناك أكثر من كاميرا، حاول استخدام الكاميرا الخلفية
-        if (videoDevices.length > 1) {
-          try {
-            console.log("محاولة استخدام الكاميرا الثانية (الخلفية)");
-            // نستخدم الجهاز الثاني لأنه عادة ما يكون الكاميرا الخلفية
-            const stream = await navigator.mediaDevices.getUserMedia({
-              video: { deviceId: { exact: videoDevices[videoDevices.length - 1].deviceId } },
-              audio: false
-            });
-            console.log("تم الحصول على تدفق الكاميرا الخلفية المحددة");
-            return stream;
-          } catch (error) {
-            console.log("فشلت محاولة الكاميرا المحددة:", error);
-            // استمر بالمحاولات التالية
-          }
-        }
-        
-        // المحاولات المتسلسلة للحصول على الكاميرا
-        // المحاولة 1: استخدام أي كاميرا متاحة
-        try {
-          console.log("محاولة استخدام أي كاميرا متاحة");
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-          });
-          console.log("نجحت المحاولة: الوصول إلى الكاميرا المتاحة");
-          return stream;
-        } catch (error) {
-          console.log("فشلت محاولة الكاميرا المتاحة:", error);
-          throw error;  // أعد رمي الخطأ إذا فشلت جميع المحاولات
-        }
+        console.log("المحاولة 1: استخدام facingMode: environment");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } },
+          audio: false
+        });
+        console.log("نجحت المحاولة 1: استخدام الكاميرا الخلفية");
+        return stream;
       } catch (err) {
-        console.error("خطأ في أذونات الوسائط:", err);
+        console.log("فشلت المحاولة 1:", err);
+      }
+      
+      // المحاولة 2: استخدام الكاميرا الخلفية بدون exact
+      try {
+        console.log("المحاولة 2: استخدام facingMode: environment بدون exact");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
+        console.log("نجحت المحاولة 2: استخدام الكاميرا الخلفية بدون exact");
+        return stream;
+      } catch (err) {
+        console.log("فشلت المحاولة 2:", err);
+      }
+      
+      // المحاولة 3: استخدام أي كاميرا متاحة
+      console.log("المحاولة 3: استخدام أي كاميرا");
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        console.log("نجحت المحاولة 3: استخدام أي كاميرا متاحة");
+        return stream;
+      } catch (err) {
+        console.error("فشلت جميع المحاولات للوصول إلى الكاميرا:", err);
         setPermissionDenied(true);
         throw err;
       }
@@ -175,7 +179,7 @@ export function useQrScanner() {
             videoRef.current.play()
               .then(() => {
                 console.log("تم تشغيل الفيديو بنجاح");
-                // محاولات متعددة للتأكد من تشغيل الفيديو بشكل صحيح
+                // تأخير قصير للتأكد من تشغيل الفيديو بشكل صحيح
                 setTimeout(() => {
                   setIsProcessing(false);
                   setScanning(true);

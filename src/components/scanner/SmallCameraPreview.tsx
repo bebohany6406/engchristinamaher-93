@@ -63,11 +63,24 @@ export function SmallCameraPreview({ videoRef, closeCamera, error }: SmallCamera
         autoPlay
       />
       
-      {/* تحسين إطار دليل المسح مع تأثيرات بصرية جذابة */}
+      {/* إطار مسح QR مع تأثيرات احترافية */}
       {isVideoVisible && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 border-2 border-physics-gold/60 animate-glow rounded-lg"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 border-2 border-physics-gold rounded-md animate-scan-border"></div>
+          <div className="absolute inset-0 border-2 border-physics-gold/60 animate-pulse-border rounded-lg"></div>
+          
+          {/* مؤثر خطوط الزوايا المثل تطبيقات QR الشهيرة */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 border-0 rounded-md">
+            {/* الزوايا المميزة */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-physics-gold"></div>
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-physics-gold"></div>
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-physics-gold"></div>
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-physics-gold"></div>
+          </div>
+          
+          {/* خط المسح المتحرك */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4">
+            <div className="absolute inset-x-0 h-1 bg-physics-gold/70 animate-scan shadow-[0_0_10px_2px_rgba(255,215,0,0.7)]"></div>
+          </div>
         </div>
       )}
       
