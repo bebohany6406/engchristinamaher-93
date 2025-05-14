@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Payment, PaidMonth } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
-// Constant for number of lessons per month
+// ثابت لعدد الحصص في الشهر الواحد
 const LESSONS_PER_MONTH = 8;
 
 export function usePayments() {
@@ -243,7 +244,7 @@ export function usePayments() {
         throw error;
       }
 
-      // Update local state immediately after successful database deletion
+      // Update local state
       setPayments(prevPayments => prevPayments.filter(payment => payment.id !== paymentId));
 
       return {
@@ -274,12 +275,13 @@ export function usePayments() {
     const studentPayment = payments.find(p => p.studentId === studentId);
     if (!studentPayment) return false;
     
-    // Each month includes 8 lessons
-    // Calculate required months based on lesson number
-    // New payment is required after every 8 lessons regardless of previous payment timing
+    // كل شهر يتضمن 8 حصص
+    // إذا دفع الطالب ولم يصل إلى 8 حصص بعد، فيعتبر دافعًا
+    
+    // حساب عدد الأشهر المطلوب دفعها بناءً على رقم الحصة
     const requiredMonths = Math.ceil(lessonNumber / LESSONS_PER_MONTH);
     
-    // Check if student has enough paid months
+    // التحقق مما إذا كان لديه عدد كافٍ من الأشهر المدفوعة
     const hasPaidEnough = studentPayment.paidMonths.length >= requiredMonths;
     
     console.log(`Student ${studentId} - Lesson ${lessonNumber} - Required Months ${requiredMonths} - Paid Months ${studentPayment.paidMonths.length} - Has Paid: ${hasPaidEnough}`);
@@ -287,18 +289,18 @@ export function usePayments() {
     return hasPaidEnough;
   };
 
-  // Determine current month based on lesson number
+  // تحديد الشهر الحالي للطالب بناءً على رقم الحصة
   const getCurrentMonthByLessonNumber = (lessonNumber: number) => {
     return Math.ceil(lessonNumber / LESSONS_PER_MONTH);
   };
 
-  // Calculate first lesson in current month
+  // حساب الحصة الأولى في الشهر الحالي
   const getFirstLessonInCurrentMonth = (lessonNumber: number) => {
     const currentMonth = getCurrentMonthByLessonNumber(lessonNumber);
     return ((currentMonth - 1) * LESSONS_PER_MONTH) + 1;
   };
 
-  // Calculate last lesson in current month
+  // حساب الحصة الأخيرة في الشهر الحالي
   const getLastLessonInCurrentMonth = (lessonNumber: number) => {
     const currentMonth = getCurrentMonthByLessonNumber(lessonNumber);
     return currentMonth * LESSONS_PER_MONTH;

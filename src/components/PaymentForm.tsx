@@ -1,11 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { usePayments } from "@/hooks/use-payments";
 import { Student, Payment } from "@/types";
 import { Search, X } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { sanitizeSearchText } from "@/lib/utils";
-import { useLocation } from "react-router-dom";
 
 interface PaymentFormProps {
   onClose: () => void;
@@ -21,39 +21,8 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
   const [searchResults, setSearchResults] = useState<Student[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { getAllStudents, getStudentByCode } = useAuth();
-  const { addPayment, getCurrentMonthByLessonNumber } = usePayments();
-  const location = useLocation();
-  
-  // Check URL parameters for pre-selected student
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const studentId = params.get("studentId");
-    const studentCode = params.get("code");
-    const lessonNumber = params.get("lessonNumber");
-    
-    const autoSelectStudent = async () => {
-      if (studentCode) {
-        const student = await getStudentByCode(studentCode);
-        if (student) {
-          setSelectedStudent(student);
-          
-          // If lessonNumber is provided, set the month based on it
-          if (lessonNumber) {
-            const nextMonth = Math.ceil(parseInt(lessonNumber) / 8);
-            const date = new Date();
-            const monthName = date.toLocaleDateString('ar-EG', { month: 'long' });
-            const year = date.getFullYear();
-            setMonth(`${monthName} ${year} (الشهر ${nextMonth})`);
-          }
-        }
-      }
-    };
-    
-    if (studentCode) {
-      autoSelectStudent();
-    }
-  }, [location, getStudentByCode]);
+  const { getAllStudents } = useAuth();
+  const { addPayment } = usePayments();
   
   // Handle search with field type
   useEffect(() => {
@@ -119,7 +88,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
       );
       
       if (result.success) {
-        // Send payment data to onPaymentAdded function
+        // بعد إضافة الدفعة بنجاح، نقوم بإرسال بيانات الدفعة للدالة onPaymentAdded
         onPaymentAdded(result.payment);
         
         toast({
@@ -155,7 +124,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Student search */}
+        {/* بحث عن الطالب */}
         {!selectedStudent && (
           <div>
             <div className="flex mb-2 gap-2">
@@ -185,7 +154,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
               </div>
             </div>
             
-            {/* Search results */}
+            {/* نتائج البحث */}
             {showResults && searchResults.length > 0 && (
               <div className="absolute z-10 mt-1 w-full max-w-md bg-physics-navy border border-physics-gold rounded-md shadow-lg max-h-60 overflow-auto">
                 {searchResults.map(student => (
@@ -209,7 +178,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
           </div>
         )}
         
-        {/* Selected student info */}
+        {/* بيانات الطالب المحدد */}
         {selectedStudent && (
           <div className="bg-physics-navy/50 p-3 rounded-lg">
             <div className="flex justify-between mb-2">
@@ -230,7 +199,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
           </div>
         )}
         
-        {/* Month field - text input */}
+        {/* حقل الشهر - مدخل نصي */}
         <div>
           <label className="block text-white mb-1 text-sm">اسم الشهر</label>
           <input

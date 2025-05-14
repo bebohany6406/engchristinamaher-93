@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
 import { ArrowRight, DollarSign, Trash2 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
@@ -18,33 +19,33 @@ const PaymentsManagement = () => {
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
   
-  // Filter payments based on user type
+  // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
     if (!currentUser) {
       setFilteredPayments([]);
       return;
     }
 
-    // Make sure data is loaded from local storage
+    // تأكد من تحميل البيانات من المخزن المحلي
     const state = debugPaymentsState();
     console.log("Payments data:", state);
     
     if (currentUser.role === "admin") {
-      // Admin sees all payments
+      // المدير يرى جميع المدفوعات
       setFilteredPayments(payments);
     } else if (currentUser.role === "student") {
-      // Student sees only their payments
+      // الطالب يرى مدفوعاته فقط
       const studentPayments = payments.filter(payment => payment.studentId === currentUser.id);
       setFilteredPayments(studentPayments);
     } else if (currentUser.role === "parent") {
-      // Parent sees their child's payments
+      // ولي الأمر يرى مدفوعات الطالب التابع له
       const associatedStudent = currentUser.name.replace("ولي أمر ", "");
       const studentPayments = payments.filter(payment => payment.studentName === associatedStudent);
       setFilteredPayments(studentPayments);
     }
   }, [currentUser, payments, debugPaymentsState]);
   
-  // Check user permissions
+  // التحقق من صلاحيات المستخدم
   useEffect(() => {
     if (!currentUser) {
       toast({
@@ -57,31 +58,23 @@ const PaymentsManagement = () => {
   }, [currentUser, navigate]);
 
   const handlePaymentAdded = (payment: Payment) => {
-    // Show the newest payment
+    // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
-    // We'll need to manually update the payments list to show changes immediately
-    debugPaymentsState(); // Check data in console
+    // سنحتاج لتحديث قائمة المدفوعات يدوياً هنا لعرض التغييرات على الفور
+    debugPaymentsState(); // للتحقق من البيانات في الكونسول
   };
   
-  const handleDeletePayment = async (paymentId: string) => {
+  const handleDeletePayment = (paymentId: string) => {
     if (window.confirm("هل أنت متأكد من حذف سجل الدفع هذا؟ لا يمكن التراجع عن هذه العملية.")) {
-      const result = await deletePayment(paymentId);
+      deletePayment(paymentId);
+      // تحديث القائمة بعد الحذف
+      const updatedPayments = payments.filter(p => p.id !== paymentId);
+      setFilteredPayments(updatedPayments);
       
-      if (result.success) {
-        // Update the filtered payments list immediately
-        setFilteredPayments(prevPayments => prevPayments.filter(payment => payment.id !== paymentId));
-        
-        toast({
-          title: "✅ تم الحذف",
-          description: "تم حذف سجل الدفع بنجاح",
-        });
-      } else {
-        toast({
-          title: "❌ خطأ في الحذف",
-          description: result.message,
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "✅ تم الحذف",
+        description: "تم حذف سجل الدفع بنجاح",
+      });
     }
   };
 
@@ -106,7 +99,7 @@ const PaymentsManagement = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
             
-            {/* Show add payment button for admin only */}
+            {/* إظهار زر إضافة دفع جديد للمدير فقط */}
             {currentUser?.role === "admin" && (
               <button 
                 onClick={() => setShowAddForm(true)} 
@@ -118,7 +111,7 @@ const PaymentsManagement = () => {
             )}
           </div>
           
-          {/* Payment form (admin only) */}
+          {/* نموذج إضافة دفعة (للمدير فقط) */}
           {showAddForm && currentUser?.role === "admin" && (
             <PaymentForm 
               onClose={() => setShowAddForm(false)} 
@@ -126,7 +119,7 @@ const PaymentsManagement = () => {
             />
           )}
           
-          {/* Show newest added payment */}
+          {/* عرض أحدث دفعة تم إضافتها */}
           {recentPayment && (
             <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6">
               <h2 className="text-physics-gold font-bold mb-2">تم إضافة دفعة جديدة</h2>
@@ -161,7 +154,7 @@ const PaymentsManagement = () => {
             </div>
           )}
           
-          {/* Payments list */}
+          {/* قائمة المدفوعات */}
           <div className="bg-physics-dark rounded-lg overflow-hidden mt-6">
             <PaymentsList 
               payments={filteredPayments} 
