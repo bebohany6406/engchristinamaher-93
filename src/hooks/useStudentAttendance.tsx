@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { usePayments } from "@/hooks/use-payments";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useStudentAttendance() {
