@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Student, Parent } from "@/types";
 import { generateRandomCode, generateUniquePassword } from "@/lib/utils";
@@ -32,6 +31,7 @@ interface AuthContextType {
   updateParent: (id: string, phone: string, studentCode: string, password: string) => Promise<void>;
   deleteParent: (id: string) => Promise<void>;
   getStudentByCode: (code: string) => Promise<Student | undefined>;
+  getStudentByPhone: (phone: string) => Promise<Student | undefined>;
   getAllStudents: () => Student[];
   getAllParents: () => Parent[];
 }
@@ -648,6 +648,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return students.find(student => student.code === code);
   };
 
+  const getStudentByPhone = async (phone: string): Promise<Student | undefined> => {
+    try {
+      // Try to fetch from Supabase first
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (error) {
+        console.error("Error fetching student by phone from Supabase:", error);
+        // Fall back to local data
+        return students.find(student => student.phone === phone);
+      }
+
+      if (data) {
+        return {
+          id: data.id,
+          name: data.name,
+          phone: data.phone,
+          password: data.password,
+          code: data.code,
+          parentPhone: data.parent_phone,
+          group: data.group_name,
+          grade: data.grade as "first" | "second" | "third",
+          role: "student"
+        };
+      }
+    } catch (error) {
+      console.error("Failed to get student by phone:", error);
+    }
+
+    // Fall back to local data
+    return students.find(student => student.phone === phone);
+  };
+
   const getAllStudents = (): Student[] => {
     return students;
   };
@@ -669,6 +705,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateParent,
     deleteParent,
     getStudentByCode,
+    getStudentByPhone,
     getAllStudents,
     getAllParents,
   };
