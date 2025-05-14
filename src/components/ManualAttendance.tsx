@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { toast } from "@/hooks/use-toast";
-import { AlertCircle, CheckCircle2, Camera } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function ManualAttendance() {
@@ -38,6 +39,12 @@ export function ManualAttendance() {
       console.error("Error fetching lesson count:", error);
       return 0;
     }
+  };
+
+  // حساب رقم الحصة داخل دورة الـ 8 حصص
+  const calculateLessonNumberInCycle = (totalLessons: number): number => {
+    // إذا كان رقم الحصة 9، سيعود إلى 1، وهكذا
+    return (totalLessons % 8) + 1;
   };
 
   // التحقق من دفع الطالب للدرس الحالي
@@ -77,7 +84,10 @@ export function ManualAttendance() {
       if (student) {
         // الحصول على عدد الدروس الحالية
         const currentLessonCount = await fetchStudentLessonCount(student.id);
-        const lessonNumber = currentLessonCount + 1; // +1 لأننا على وشك إضافة حضور جديد
+        const nextTotalLessons = currentLessonCount + 1; // +1 لأننا على وشك إضافة حضور جديد
+        
+        // حساب رقم الدرس داخل دورة الـ 8 دروس
+        const lessonNumber = calculateLessonNumberInCycle(nextTotalLessons);
         
         // التحقق من حالة الدفع
         const hasPaid = await checkStudentPayment(student.id, lessonNumber);
@@ -126,7 +136,7 @@ export function ManualAttendance() {
         
         toast({
           title: "تم تسجيل الغياب",
-          description: `تم تسجيل غياب الطالب ${studentInfo.name}`
+          description: `تم تسجيل غياب الطالب ${studentInfo.name} (الدرس ${studentInfo.lessonNumber})`
         });
         
         setStudentCode("");

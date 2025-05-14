@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, Camera, QrCode, UserCheck, Send } from "lucide-react";
+import { ArrowRight, Camera, UserCheck, Send } from "lucide-react";
 import { Html5QrScanner } from "@/components/scanner/Html5QrScanner";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
@@ -10,17 +10,25 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { usePayments } from "@/hooks/use-payments";
+import { useStudentAttendance } from "@/hooks/useStudentAttendance";
 
 const SimpleAttendance = () => {
   const navigate = useNavigate();
   const [showScanner, setShowScanner] = useState<boolean>(false);
-  const [scannedCode, setScannedCode] = useState<string>("");
-  const [successfulScans, setSuccessfulScans] = useState<{ code: string, name: string, paid: boolean }[]>([]);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [successfulScans, setSuccessfulScans] = useState<{ code: string, name: string, paid: boolean, lessonNumber: number }[]>([]);
   
   const { getStudentByCode } = useAuth();
-  const { addAttendance, getStudentLessonCount } = useData();
+  const { addAttendance } = useData();
   const { hasStudentPaidForCurrentLesson } = usePayments();
+  
+  // Use the student attendance hook
+  const {
+    scannedCode,
+    setScannedCode,
+    isProcessing,
+    setIsProcessing,
+    getLessonNumberInCycle
+  } = useStudentAttendance();
   
   // تحديث: فصل مسح الكود عن تسجيل الحضور
   const handleScanSuccess = (code: string) => {
@@ -44,8 +52,8 @@ const SimpleAttendance = () => {
       const student = await getStudentByCode(scannedCode);
       
       if (student) {
-        // حساب رقم الدرس الحالي للطالب
-        const lessonNumber = getStudentLessonCount(student.id) + 1;
+        // حساب رقم الدرس الحالي للطالب ضمن دورة الـ 8 دروس
+        const lessonNumber = await getLessonNumberInCycle(student.id);
         
         // التحقق من حالة الدفع
         const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonNumber);
@@ -63,13 +71,14 @@ const SimpleAttendance = () => {
           { 
             code: scannedCode, 
             name: student.name,
-            paid: hasPaid 
+            paid: hasPaid,
+            lessonNumber: lessonNumber
           }
         ]);
         
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
+          description: `تم تسجيل حضور الطالب ${student.name} (الدرس ${lessonNumber})${!hasPaid ? ' (غير مدفوع)' : ''}`
         });
         
         // مسح الكود بعد التسجيل
