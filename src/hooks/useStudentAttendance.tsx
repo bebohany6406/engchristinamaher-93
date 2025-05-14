@@ -8,7 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useStudentAttendance() {
   const [scannedCode, setScannedCode] = useState<string>("");
-  const [paymentStatus, setPaymentStatus] = useState<{paid: boolean, studentName?: string} | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<{
+    paid: boolean, 
+    studentName?: string,
+    studentId?: string,
+    group?: string,
+    studentCode?: string,
+    lessonNumber?: number
+  } | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   const { getStudentByCode } = useAuth();
@@ -47,10 +54,14 @@ export function useStudentAttendance() {
         // Check if student has paid for this lesson
         const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonNumber);
         
-        // Update payment status state
+        // Update payment status state with more student info
         setPaymentStatus({
           paid: hasPaid,
-          studentName: student.name
+          studentName: student.name,
+          studentId: student.id,
+          group: student.group,
+          studentCode: code,
+          lessonNumber: lessonNumber
         });
         
         // Record attendance regardless of payment status
@@ -60,9 +71,13 @@ export function useStudentAttendance() {
         const audio = new Audio("/attendance-present.mp3");
         audio.play().catch(e => console.error("Sound play failed:", e));
         
-        // Include lesson number in toast notification
-        const paymentMessage = !hasPaid ? 
-          (lessonNumber === 1 ? ' (مطلوب دفع الشهر الجديد)' : ' (غير مدفوع)') : '';
+        // Include lesson number and payment request in toast notification
+        let paymentMessage = '';
+        if (!hasPaid) {
+          paymentMessage = lessonNumber === 1 ? 
+            ' (مطلوب دفع الشهر الجديد)' : 
+            ' (غير مدفوع)';
+        }
         
         toast({
           title: "✅ تم تسجيل الحضور",

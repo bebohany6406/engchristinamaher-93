@@ -1,12 +1,13 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
-import { User, Lock } from "lucide-react";
+import { User, Lock, WalletCards } from "lucide-react";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
 import { toast } from "@/hooks/use-toast";
+import { usePayments } from "@/hooks/use-payments";
+import { useData } from "@/context/DataContext";
 
 const Login = () => {
   const [phone, setPhone] = useState("");
@@ -15,8 +16,18 @@ const Login = () => {
   const [loginError, setLoginError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [paymentNeeded, setPaymentNeeded] = useState<{
+    studentId: string;
+    studentName: string;
+    group: string;
+    code: string;
+    lessonCount: number;
+  } | null>(null);
+  
   const navigate = useNavigate();
-  const { login, currentUser } = useAuth();
+  const { login, currentUser, getStudentByPhone } = useAuth();
+  const { hasStudentPaidForCurrentLesson } = usePayments();
+  const { getStudentLessonCount } = useData();
 
   useEffect(() => {
     if (currentUser) {
@@ -82,6 +93,46 @@ const Login = () => {
     }
   };
 
+  // Function to check if the student needs to pay after 8 lessons
+  const checkPaymentStatus = async (phone: string) => {
+    if (loginType === "student") {
+      try {
+        const student = await getStudentByPhone(phone);
+        if (student) {
+          const lessonCount = getStudentLessonCount(student.id);
+          console.log(`Student ${student.name} has attended ${lessonCount} lessons`);
+          
+          // If they've completed 8 lessons (or multiples of 8), check payment status
+          if (lessonCount > 0 && lessonCount % 8 === 0) {
+            // Check if they've paid for the next lesson cycle
+            const nextLessonNumber = lessonCount + 1;
+            const hasPaid = hasStudentPaidForCurrentLesson(student.id, nextLessonNumber);
+            
+            if (!hasPaid) {
+              // Student needs to pay for the next month
+              setPaymentNeeded({
+                studentId: student.id,
+                studentName: student.name,
+                group: student.group,
+                code: student.code,
+                lessonCount: lessonCount
+              });
+              
+              // Show toast notification
+              toast({
+                title: "تنبيه بالدفع",
+                description: `لقد أكملت ${lessonCount} حصص. يرجى دفع اشتراك الشهر الجديد`,
+                variant: "default"
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking payment status:", error);
+      }
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -103,6 +154,9 @@ const Login = () => {
       
       if (success) {
         await requestNotificationPermission();
+        
+        // Check payment status for students
+        await checkPaymentStatus(phone);
         
         localStorage.setItem("userLoggedIn", "true");
         
@@ -134,6 +188,12 @@ const Login = () => {
       audio.play().catch(e => console.error("Sound play failed:", e));
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handlePayNow = () => {
+    if (paymentNeeded) {
+      navigate(`/payments?studentId=${paymentNeeded.studentId}&name=${encodeURIComponent(paymentNeeded.studentName)}&group=${encodeURIComponent(paymentNeeded.group)}&code=${paymentNeeded.code}`);
     }
   };
 
@@ -197,6 +257,24 @@ const Login = () => {
                 {loginType === "admin" ? "دخول المسؤول" : loginType === "student" ? "دخول الطالب" : "دخول ولي الأمر"}
               </h1>
             </div>
+
+            {/* Payment Needed Alert */}
+            {paymentNeeded && (
+              <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-4 mb-6 text-center">
+                <div className="text-white mb-2">
+                  <h3 className="font-bold text-xl">تنبيه هام</h3>
+                  <p>لقد أكملت {paymentNeeded.lessonCount} حصص</p>
+                  <p className="text-yellow-300">يرجى دفع اشتراك الشهر الجديد</p>
+                </div>
+                <button 
+                  onClick={handlePayNow}
+                  className="mt-2 bg-physics-gold text-physics-navy flex items-center justify-center gap-2 px-4 py-2 rounded-lg mx-auto"
+                >
+                  <WalletCards size={18} />
+                  <span>دفع الشهر {Math.ceil((paymentNeeded.lessonCount + 1) / 8)}</span>
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="relative">
