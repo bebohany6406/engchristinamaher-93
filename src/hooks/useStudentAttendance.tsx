@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { usePayments } from "@/hooks/use-payments";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useStudentAttendance() {
@@ -59,9 +60,13 @@ export function useStudentAttendance() {
         const audio = new Audio("/attendance-present.mp3");
         audio.play().catch(e => console.error("Sound play failed:", e));
         
+        // Include lesson number in toast notification
+        const paymentMessage = !hasPaid ? 
+          (lessonNumber === 1 ? ' (مطلوب دفع الشهر الجديد)' : ' (غير مدفوع)') : '';
+        
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
+          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${lessonNumber})${paymentMessage}`
         });
         
         // Clear code field after successful processing
@@ -103,6 +108,6 @@ export function useStudentAttendance() {
     setIsProcessing,
     processScannedCode,
     handleManualEntry,
-    getLessonNumberInCycle // Export this function so it can be used in other components
+    getLessonNumberInCycle
   };
 }

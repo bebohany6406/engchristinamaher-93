@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -76,9 +75,13 @@ const SimpleAttendance = () => {
           }
         ]);
         
+        // إضافة رسالة خاصة للدرس الأول في الشهر الجديد
+        const paymentMessage = !hasPaid ? 
+          (lessonNumber === 1 ? ' (مطلوب دفع الشهر الجديد)' : ' (غير مدفوع)') : '';
+        
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name} (الدرس ${lessonNumber})${!hasPaid ? ' (غير مدفوع)' : ''}`
+          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${lessonNumber})${paymentMessage}`
         });
         
         // مسح الكود بعد التسجيل
@@ -202,11 +205,11 @@ const SimpleAttendance = () => {
                     <UserCheck className={scan.paid ? "text-green-500" : "text-red-500"} size={20} />
                     <div>
                       <span className="text-white block">{scan.name}</span>
-                      <span className="text-white/70 text-xs">كود: {scan.code}</span>
+                      <span className="text-white/70 text-xs">كود: {scan.code} | الحصة: {scan.lessonNumber}</span>
                     </div>
                     {!scan.paid && (
                       <span className="mr-auto text-xs bg-red-500/20 px-2 py-1 rounded text-red-300">
-                        غير مدفوع
+                        {scan.lessonNumber === 1 ? 'مطلوب دفع الشهر الجديد' : 'غير مدفوع'}
                       </span>
                     )}
                   </div>

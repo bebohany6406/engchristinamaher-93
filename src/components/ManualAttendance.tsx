@@ -59,9 +59,12 @@ export function ManualAttendance() {
       
       if (error) throw error;
       
+      // التحقق من دفع الشهر الجديد إذا كانت الحصة الأولى
+      const monthNumber = Math.ceil(lessonNumber / 8);
+      
       // افتراض أن الدفع مقبول إذا وجدنا أي سجل دفع
-      // في التطبيق الحقيقي، يجب التحقق من الدفع المرتبط بالدرس المحدد
-      return data && data.length > 0;
+      // في التطبيق الحقيقي، يجب التحقق من عدد الأشهر المدفوعة
+      return data && data.length >= monthNumber;
     } catch (error) {
       console.error("Error checking payment:", error);
       return false;
@@ -134,9 +137,12 @@ export function ManualAttendance() {
         const audio = new Audio("/attendance-absent.mp3");
         audio.play().catch(e => console.error("Sound play failed:", e));
         
+        const paymentMessage = !studentInfo.hasPaid ? 
+          (studentInfo.lessonNumber === 1 ? ' (مطلوب دفع الشهر الجديد)' : ' (غير مدفوع)') : '';
+        
         toast({
           title: "تم تسجيل الغياب",
-          description: `تم تسجيل غياب الطالب ${studentInfo.name} (الدرس ${studentInfo.lessonNumber})`
+          description: `تم تسجيل غياب الطالب ${studentInfo.name} (الحصة ${studentInfo.lessonNumber})${paymentMessage}`
         });
         
         setStudentCode("");
@@ -200,8 +206,10 @@ export function ManualAttendance() {
             
             <div className="text-sm text-gray-300 mb-2">
               {studentInfo.hasPaid 
-                ? 'الطالب مدفوع الاشتراك للدرس الحالي' 
-                : 'الطالب غير مدفوع الاشتراك للدرس الحالي'}
+                ? `الطالب مدفوع الاشتراك للحصة الحالية (${studentInfo.lessonNumber})` 
+                : studentInfo.lessonNumber === 1 
+                  ? `مطلوب دفع الشهر الجديد (الحصة ${studentInfo.lessonNumber})`
+                  : `الطالب غير مدفوع الاشتراك للحصة الحالية (${studentInfo.lessonNumber})`}
             </div>
             
             <button 
