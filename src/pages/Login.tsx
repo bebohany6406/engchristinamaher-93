@@ -5,7 +5,7 @@ import { Logo } from "@/components/Logo";
 import { User, Lock, WalletCards } from "lucide-react";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { useData } from "@/context/DataContext";
 
@@ -193,6 +193,7 @@ const Login = () => {
 
   const handlePayNow = () => {
     if (paymentNeeded) {
+      // Navigate to payments page with required student info
       navigate(`/payments?studentId=${paymentNeeded.studentId}&name=${encodeURIComponent(paymentNeeded.studentName)}&group=${encodeURIComponent(paymentNeeded.group)}&code=${paymentNeeded.code}`);
     }
   };

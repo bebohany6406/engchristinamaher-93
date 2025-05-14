@@ -3,7 +3,7 @@ import { Payment, PaidMonth } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
-// ثابت لعدد الحصص في الشهر الواحد
+// Constant for number of lessons per month
 const LESSONS_PER_MONTH = 8;
 
 export function usePayments() {
@@ -274,12 +274,12 @@ export function usePayments() {
     const studentPayment = payments.find(p => p.studentId === studentId);
     if (!studentPayment) return false;
     
-    // كل شهر يتضمن 8 حصص
-    // حساب عدد الأشهر المطلوب دفعها بناءً على رقم الحصة
-    // يتم طلب دفع جديد بعد كل 8 حصص بغض النظر عن توقيت الدفع السابق
+    // Each month includes 8 lessons
+    // Calculate required months based on lesson number
+    // New payment is required after every 8 lessons regardless of previous payment timing
     const requiredMonths = Math.ceil(lessonNumber / LESSONS_PER_MONTH);
     
-    // التحقق مما إذا كان لديه عدد كافٍ من الأشهر المدفوعة
+    // Check if student has enough paid months
     const hasPaidEnough = studentPayment.paidMonths.length >= requiredMonths;
     
     console.log(`Student ${studentId} - Lesson ${lessonNumber} - Required Months ${requiredMonths} - Paid Months ${studentPayment.paidMonths.length} - Has Paid: ${hasPaidEnough}`);
@@ -287,18 +287,18 @@ export function usePayments() {
     return hasPaidEnough;
   };
 
-  // تحديد الشهر الحالي للطالب بناءً على رقم الحصة
+  // Determine current month based on lesson number
   const getCurrentMonthByLessonNumber = (lessonNumber: number) => {
     return Math.ceil(lessonNumber / LESSONS_PER_MONTH);
   };
 
-  // حساب الحصة الأولى في الشهر الحالي
+  // Calculate first lesson in current month
   const getFirstLessonInCurrentMonth = (lessonNumber: number) => {
     const currentMonth = getCurrentMonthByLessonNumber(lessonNumber);
     return ((currentMonth - 1) * LESSONS_PER_MONTH) + 1;
   };
 
-  // حساب الحصة الأخيرة في الشهر الحالي
+  // Calculate last lesson in current month
   const getLastLessonInCurrentMonth = (lessonNumber: number) => {
     const currentMonth = getCurrentMonthByLessonNumber(lessonNumber);
     return currentMonth * LESSONS_PER_MONTH;

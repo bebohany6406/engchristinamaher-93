@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -19,33 +18,33 @@ const PaymentsManagement = () => {
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
   
-  // فلترة المدفوعات حسب نوع المستخدم
+  // Filter payments based on user type
   useEffect(() => {
     if (!currentUser) {
       setFilteredPayments([]);
       return;
     }
 
-    // تأكد من تحميل البيانات من المخزن المحلي
+    // Make sure data is loaded from local storage
     const state = debugPaymentsState();
     console.log("Payments data:", state);
     
     if (currentUser.role === "admin") {
-      // المدير يرى جميع المدفوعات
+      // Admin sees all payments
       setFilteredPayments(payments);
     } else if (currentUser.role === "student") {
-      // الطالب يرى مدفوعاته فقط
+      // Student sees only their payments
       const studentPayments = payments.filter(payment => payment.studentId === currentUser.id);
       setFilteredPayments(studentPayments);
     } else if (currentUser.role === "parent") {
-      // ولي الأمر يرى مدفوعات الطالب التابع له
+      // Parent sees their child's payments
       const associatedStudent = currentUser.name.replace("ولي أمر ", "");
       const studentPayments = payments.filter(payment => payment.studentName === associatedStudent);
       setFilteredPayments(studentPayments);
     }
   }, [currentUser, payments, debugPaymentsState]);
   
-  // التحقق من صلاحيات المستخدم
+  // Check user permissions
   useEffect(() => {
     if (!currentUser) {
       toast({
@@ -58,10 +57,10 @@ const PaymentsManagement = () => {
   }, [currentUser, navigate]);
 
   const handlePaymentAdded = (payment: Payment) => {
-    // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
+    // Show the newest payment
     setRecentPayment(payment);
-    // سنحتاج لتحديث قائمة المدفوعات يدوياً هنا لعرض التغييرات على الفور
-    debugPaymentsState(); // للتحقق من البيانات في الكونسول
+    // We'll need to manually update the payments list to show changes immediately
+    debugPaymentsState(); // Check data in console
   };
   
   const handleDeletePayment = async (paymentId: string) => {
@@ -69,6 +68,9 @@ const PaymentsManagement = () => {
       const result = await deletePayment(paymentId);
       
       if (result.success) {
+        // Update the filtered payments list immediately
+        setFilteredPayments(prevPayments => prevPayments.filter(payment => payment.id !== paymentId));
+        
         toast({
           title: "✅ تم الحذف",
           description: "تم حذف سجل الدفع بنجاح",
@@ -104,7 +106,7 @@ const PaymentsManagement = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
             
-            {/* إظهار زر إضافة دفع جديد للمدير فقط */}
+            {/* Show add payment button for admin only */}
             {currentUser?.role === "admin" && (
               <button 
                 onClick={() => setShowAddForm(true)} 
@@ -116,7 +118,7 @@ const PaymentsManagement = () => {
             )}
           </div>
           
-          {/* نموذج إضافة دفعة (للمدير فقط) */}
+          {/* Payment form (admin only) */}
           {showAddForm && currentUser?.role === "admin" && (
             <PaymentForm 
               onClose={() => setShowAddForm(false)} 
@@ -124,7 +126,7 @@ const PaymentsManagement = () => {
             />
           )}
           
-          {/* عرض أحدث دفعة تم إضافتها */}
+          {/* Show newest added payment */}
           {recentPayment && (
             <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6">
               <h2 className="text-physics-gold font-bold mb-2">تم إضافة دفعة جديدة</h2>
@@ -159,7 +161,7 @@ const PaymentsManagement = () => {
             </div>
           )}
           
-          {/* قائمة المدفوعات */}
+          {/* Payments list */}
           <div className="bg-physics-dark rounded-lg overflow-hidden mt-6">
             <PaymentsList 
               payments={filteredPayments} 
