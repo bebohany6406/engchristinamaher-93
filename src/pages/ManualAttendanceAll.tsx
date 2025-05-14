@@ -26,57 +26,27 @@ const ManualAttendanceAll = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchField, setSearchField] = useState<"all" | "name" | "code" | "group">("all");
   const [selectedGrade, setSelectedGrade] = useState<"all" | "first" | "second" | "third">("all");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [processingStudentId, setProcessingStudentId] = useState<string | null>(null);
   
   useEffect(() => {
     // تحميل قائمة الطلاب عند تحميل الصفحة
-    const loadStudents = () => {
-      setIsLoading(true);
-      try {
-        const allStudents = getAllStudents();
-        setStudents(allStudents);
-      } catch (error) {
-        console.error("Error loading students:", error);
-        toast({
-          variant: "destructive",
-          title: "خطأ في تحميل البيانات",
-          description: "حدث خطأ أثناء تحميل قائمة الطلاب"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadStudents();
+    setStudents(getAllStudents());
   }, [getAllStudents]);
   
   // تصفية الطلاب بناءً على البحث والفلتر
   const filteredStudents = students.filter(student => {
-    // تأكد من أن البيانات موجودة قبل البحث
-    if (!student) return false;
-    
-    const query = sanitizeSearchText(searchQuery.trim());
-    
-    // إذا كان البحث فارغًا، عرض جميع الطلاب (مع مراعاة فلتر الصف)
-    if (!query) {
-      return selectedGrade === "all" || student.grade === selectedGrade;
-    }
-    
-    // بحث حسب نوع الحقل المختار
-    const matchesSearch = searchField === "all" 
-      ? (
-          sanitizeSearchText(student.name || "").includes(query) ||
-          sanitizeSearchText(student.code || "").includes(query) ||
-          (student.group ? sanitizeSearchText(student.group).includes(query) : false)
-        )
-      : searchField === "name" 
-        ? sanitizeSearchText(student.name || "").includes(query)
-        : searchField === "code" 
-          ? sanitizeSearchText(student.code || "").includes(query)
-          : searchField === "group" && student.group 
-            ? sanitizeSearchText(student.group).includes(query) 
-            : false;
+    const query = sanitizeSearchText(searchQuery);
+    const matchesSearch = !query || (
+      searchField === "all" ? (
+        sanitizeSearchText(student.name).includes(query) ||
+        sanitizeSearchText(student.code).includes(query) ||
+        (student.group ? sanitizeSearchText(student.group).includes(query) : false)
+      ) :
+      searchField === "name" ? sanitizeSearchText(student.name).includes(query) :
+      searchField === "code" ? sanitizeSearchText(student.code).includes(query) :
+      searchField === "group" && student.group ? sanitizeSearchText(student.group).includes(query) : false
+    );
     
     const matchesGrade = selectedGrade === "all" || student.grade === selectedGrade;
     
