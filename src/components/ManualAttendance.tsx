@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { toast } from "@/hooks/use-toast";
-import { AlertCircle, CheckCircle2, Camera } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function ManualAttendance() {
@@ -40,6 +41,12 @@ export function ManualAttendance() {
     }
   };
 
+  // حساب رقم الحصة داخل دورة الـ 8 حصص
+  const calculateLessonNumberInCycle = (totalLessons: number): number => {
+    // إذا كان رقم الحصة 9، سيعود إلى 1، وهكذا
+    return (totalLessons % 8) + 1;
+  };
+
   // التحقق من دفع الطالب للدرس الحالي
   const checkStudentPayment = async (studentId: string, lessonNumber: number) => {
     try {
@@ -52,9 +59,12 @@ export function ManualAttendance() {
       
       if (error) throw error;
       
+      // التحقق من دفع الشهر الجديد إذا كانت الحصة الأولى
+      const monthNumber = Math.ceil(lessonNumber / 8);
+      
       // افتراض أن الدفع مقبول إذا وجدنا أي سجل دفع
-      // في التطبيق الحقيقي، يجب التحقق من الدفع المرتبط بالدرس المحدد
-      return data && data.length > 0;
+      // في التطبيق الحقيقي، يجب التحقق من عدد الأشهر المدفوعة
+      return data && data.length >= monthNumber;
     } catch (error) {
       console.error("Error checking payment:", error);
       return false;
@@ -77,7 +87,10 @@ export function ManualAttendance() {
       if (student) {
         // الحصول على عدد الدروس الحالية
         const currentLessonCount = await fetchStudentLessonCount(student.id);
-        const lessonNumber = currentLessonCount + 1; // +1 لأننا على وشك إضافة حضور جديد
+        const nextTotalLessons = currentLessonCount + 1; // +1 لأننا على وشك إضافة حضور جديد
+        
+        // حساب رقم الدرس داخل دورة الـ 8 دروس
+        const lessonNumber = calculateLessonNumberInCycle(nextTotalLessons);
         
         // التحقق من حالة الدفع
         const hasPaid = await checkStudentPayment(student.id, lessonNumber);
@@ -124,9 +137,12 @@ export function ManualAttendance() {
         const audio = new Audio("/attendance-absent.mp3");
         audio.play().catch(e => console.error("Sound play failed:", e));
         
+        const paymentMessage = !studentInfo.hasPaid ? 
+          (studentInfo.lessonNumber === 1 ? ' (مطلوب دفع الشهر الجديد)' : ' (غير مدفوع)') : '';
+        
         toast({
           title: "تم تسجيل الغياب",
-          description: `تم تسجيل غياب الطالب ${studentInfo.name}`
+          description: `تم تسجيل غياب الطالب ${studentInfo.name} (الحصة ${studentInfo.lessonNumber})${paymentMessage}`
         });
         
         setStudentCode("");
@@ -190,8 +206,10 @@ export function ManualAttendance() {
             
             <div className="text-sm text-gray-300 mb-2">
               {studentInfo.hasPaid 
-                ? 'الطالب مدفوع الاشتراك للدرس الحالي' 
-                : 'الطالب غير مدفوع الاشتراك للدرس الحالي'}
+                ? `الطالب مدفوع الاشتراك للحصة الحالية (${studentInfo.lessonNumber})` 
+                : studentInfo.lessonNumber === 1 
+                  ? `مطلوب دفع الشهر الجديد (الحصة ${studentInfo.lessonNumber})`
+                  : `الطالب غير مدفوع الاشتراك للحصة الحالية (${studentInfo.lessonNumber})`}
             </div>
             
             <button 

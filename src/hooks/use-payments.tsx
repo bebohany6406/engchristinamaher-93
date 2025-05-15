@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Payment, PaidMonth } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 // ثابت لعدد الحصص في الشهر الواحد
 const LESSONS_PER_MONTH = 8;
@@ -244,7 +243,7 @@ export function usePayments() {
         throw error;
       }
 
-      // Update local state
+      // Update local state immediately after successful database deletion
       setPayments(prevPayments => prevPayments.filter(payment => payment.id !== paymentId));
 
       return {
@@ -276,9 +275,8 @@ export function usePayments() {
     if (!studentPayment) return false;
     
     // كل شهر يتضمن 8 حصص
-    // إذا دفع الطالب ولم يصل إلى 8 حصص بعد، فيعتبر دافعًا
-    
     // حساب عدد الأشهر المطلوب دفعها بناءً على رقم الحصة
+    // يتم طلب دفع جديد بعد كل 8 حصص بغض النظر عن توقيت الدفع السابق
     const requiredMonths = Math.ceil(lessonNumber / LESSONS_PER_MONTH);
     
     // التحقق مما إذا كان لديه عدد كافٍ من الأشهر المدفوعة
