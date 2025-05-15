@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
 import { ArrowRight, DollarSign, Trash2 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
@@ -64,22 +64,17 @@ const PaymentsManagement = () => {
     debugPaymentsState(); // للتحقق من البيانات في الكونسول
   };
   
-  const handleDeletePayment = async (paymentId: string) => {
+  const handleDeletePayment = (paymentId: string) => {
     if (window.confirm("هل أنت متأكد من حذف سجل الدفع هذا؟ لا يمكن التراجع عن هذه العملية.")) {
-      const result = await deletePayment(paymentId);
+      deletePayment(paymentId);
+      // تحديث القائمة بعد الحذف
+      const updatedPayments = payments.filter(p => p.id !== paymentId);
+      setFilteredPayments(updatedPayments);
       
-      if (result.success) {
-        toast({
-          title: "✅ تم الحذف",
-          description: "تم حذف سجل الدفع بنجاح",
-        });
-      } else {
-        toast({
-          title: "❌ خطأ في الحذف",
-          description: result.message,
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "✅ تم الحذف",
+        description: "تم حذف سجل الدفع بنجاح",
+      });
     }
   };
 

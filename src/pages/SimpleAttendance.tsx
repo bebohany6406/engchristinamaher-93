@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, Camera, UserCheck, Send } from "lucide-react";
+import { ArrowRight, Camera, QrCode, UserCheck, Send } from "lucide-react";
 import { Html5QrScanner } from "@/components/scanner/Html5QrScanner";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
@@ -9,25 +10,17 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { usePayments } from "@/hooks/use-payments";
-import { useStudentAttendance } from "@/hooks/useStudentAttendance";
 
 const SimpleAttendance = () => {
   const navigate = useNavigate();
   const [showScanner, setShowScanner] = useState<boolean>(false);
-  const [successfulScans, setSuccessfulScans] = useState<{ code: string, name: string, paid: boolean, lessonNumber: number }[]>([]);
+  const [scannedCode, setScannedCode] = useState<string>("");
+  const [successfulScans, setSuccessfulScans] = useState<{ code: string, name: string, paid: boolean }[]>([]);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   const { getStudentByCode } = useAuth();
-  const { addAttendance } = useData();
+  const { addAttendance, getStudentLessonCount } = useData();
   const { hasStudentPaidForCurrentLesson } = usePayments();
-  
-  // Use the student attendance hook
-  const {
-    scannedCode,
-    setScannedCode,
-    isProcessing,
-    setIsProcessing,
-    getLessonNumberInCycle
-  } = useStudentAttendance();
   
   // تحديث: فصل مسح الكود عن تسجيل الحضور
   const handleScanSuccess = (code: string) => {
@@ -51,8 +44,8 @@ const SimpleAttendance = () => {
       const student = await getStudentByCode(scannedCode);
       
       if (student) {
-        // حساب رقم الدرس الحالي للطالب ضمن دورة الـ 8 دروس
-        const lessonNumber = await getLessonNumberInCycle(student.id);
+        // حساب رقم الدرس الحالي للطالب
+        const lessonNumber = getStudentLessonCount(student.id) + 1;
         
         // التحقق من حالة الدفع
         const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonNumber);
@@ -70,18 +63,13 @@ const SimpleAttendance = () => {
           { 
             code: scannedCode, 
             name: student.name,
-            paid: hasPaid,
-            lessonNumber: lessonNumber
+            paid: hasPaid 
           }
         ]);
         
-        // إضافة رسالة خاصة للدرس الأول في الشهر الجديد
-        const paymentMessage = !hasPaid ? 
-          (lessonNumber === 1 ? ' (مطلوب دفع الشهر الجديد)' : ' (غير مدفوع)') : '';
-        
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${lessonNumber})${paymentMessage}`
+          description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
         });
         
         // مسح الكود بعد التسجيل
@@ -205,11 +193,11 @@ const SimpleAttendance = () => {
                     <UserCheck className={scan.paid ? "text-green-500" : "text-red-500"} size={20} />
                     <div>
                       <span className="text-white block">{scan.name}</span>
-                      <span className="text-white/70 text-xs">كود: {scan.code} | الحصة: {scan.lessonNumber}</span>
+                      <span className="text-white/70 text-xs">كود: {scan.code}</span>
                     </div>
                     {!scan.paid && (
                       <span className="mr-auto text-xs bg-red-500/20 px-2 py-1 rounded text-red-300">
-                        {scan.lessonNumber === 1 ? 'مطلوب دفع الشهر الجديد' : 'غير مدفوع'}
+                        غير مدفوع
                       </span>
                     )}
                   </div>
