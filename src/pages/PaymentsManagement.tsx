@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -11,27 +10,22 @@ import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
 import { Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 const PaymentsManagement = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const { payments, debugPaymentsState, refreshPayments } = usePayments();
+  const {
+    currentUser
+  } = useAuth();
+  const {
+    payments,
+    debugPaymentsState,
+    refreshPayments
+  } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
-  
+
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
     if (!currentUser) {
@@ -42,7 +36,6 @@ const PaymentsManagement = () => {
     // تأكد من تحميل البيانات من المخزن المحلي
     const state = debugPaymentsState();
     console.log("Payments data:", state);
-    
     if (currentUser.role === "admin") {
       // المدير يرى جميع المدفوعات
       setFilteredPayments(payments);
@@ -57,95 +50,87 @@ const PaymentsManagement = () => {
       setFilteredPayments(studentPayments);
     }
   }, [currentUser, payments, debugPaymentsState]);
-  
+
   // التحقق من صلاحيات المستخدم
   useEffect(() => {
     if (!currentUser) {
       toast({
         title: "غير مصرح",
         description: "يجب تسجيل الدخول للوصول لهذه الصفحة",
-        variant: "destructive",
+        variant: "destructive"
       });
       navigate("/unauthorized");
     }
   }, [currentUser, navigate]);
-
   const handlePaymentAdded = (payment: Payment) => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
   };
-  
+
   // وظيفة حذف جميع المدفوعات
   const handleDeleteAllPayments = async () => {
     if (currentUser?.role !== "admin") {
       toast({
         title: "غير مصرح",
         description: "لا يمكن إلا للمدير حذف جميع المدفوعات",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-    
     setIsDeletingAll(true);
     try {
       // حذف جميع الأشهر المدفوعة أولاً
-      const { error: paidMonthsError } = await supabase
-        .from('paid_months')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // حذف جميع السجلات
-      
+      const {
+        error: paidMonthsError
+      } = await supabase.from('paid_months').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // حذف جميع السجلات
+
       if (paidMonthsError) {
         console.error("Error deleting all paid months:", paidMonthsError);
         toast({
           title: "خطأ في حذف الأشهر المدفوعة",
           description: paidMonthsError.message,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
-      
+
       // ثم حذف جميع سجلات المدفوعات
-      const { error: paymentsError } = await supabase
-        .from('payments')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // حذف جميع السجلات
-      
+      const {
+        error: paymentsError
+      } = await supabase.from('payments').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // حذف جميع السجلات
+
       if (paymentsError) {
         console.error("Error deleting all payments:", paymentsError);
         toast({
           title: "خطأ في حذف سجلات المدفوعات",
           description: paymentsError.message,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
-      
+
       // تحديث الحالة المحلية بعد الحذف
       setFilteredPayments([]);
-      
+
       // إعادة تحميل البيانات من Supabase
       await refreshPayments();
-      
       toast({
         title: "تم الحذف بنجاح",
-        description: "تم حذف جميع سجلات المدفوعات والأشهر المدفوعة المرتبطة بنجاح",
+        description: "تم حذف جميع سجلات المدفوعات والأشهر المدفوعة المرتبطة بنجاح"
       });
-      
       console.log("All payments deleted successfully");
     } catch (error: any) {
       console.error("Error deleting all payments:", error);
       toast({
         title: "خطأ في الحذف",
         description: `حدث خطأ أثناء محاولة حذف جميع المدفوعات: ${error.message || 'خطأ غير معروف'}`,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsDeletingAll(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-physics-navy flex flex-col">
+  return <div className="min-h-screen bg-physics-navy flex flex-col">
       <PhoneContact />
       
       {/* Header */}
@@ -167,12 +152,8 @@ const PaymentsManagement = () => {
             
             <div className="flex flex-wrap gap-2">
               {/* إظهار زر إضافة دفع جديد للمدير فقط */}
-              {currentUser?.role === "admin" && (
-                <>
-                  <button 
-                    onClick={() => setShowAddForm(true)} 
-                    className="goldBtn flex items-center gap-2"
-                  >
+              {currentUser?.role === "admin" && <>
+                  <button onClick={() => setShowAddForm(true)} className="goldBtn flex items-center gap-2">
                     <DollarSign size={18} />
                     <span>دفع شهر جديد</span>
                   </button>
@@ -180,13 +161,7 @@ const PaymentsManagement = () => {
                   {/* زر حذف جميع المدفوعات */}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <button 
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2"
-                        disabled={isDeletingAll}
-                      >
-                        <Trash2 size={18} />
-                        <span>{isDeletingAll ? "جاري الحذف..." : "حذف جميع المدفوعات"}</span>
-                      </button>
+                      
                     </AlertDialogTrigger>
                     <AlertDialogContent className="bg-physics-dark border-physics-navy text-white">
                       <AlertDialogHeader>
@@ -203,31 +178,21 @@ const PaymentsManagement = () => {
                         <AlertDialogCancel className="bg-physics-navy text-white hover:bg-physics-navy/80">
                           إلغاء
                         </AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                          onClick={handleDeleteAllPayments}
-                        >
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteAllPayments}>
                           حذف نهائي لجميع المدفوعات
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </>
-              )}
+                </>}
             </div>
           </div>
           
           {/* نموذج إضافة دفعة (للمدير فقط) */}
-          {showAddForm && currentUser?.role === "admin" && (
-            <PaymentForm 
-              onClose={() => setShowAddForm(false)} 
-              onPaymentAdded={handlePaymentAdded}
-            />
-          )}
+          {showAddForm && currentUser?.role === "admin" && <PaymentForm onClose={() => setShowAddForm(false)} onPaymentAdded={handlePaymentAdded} />}
           
           {/* عرض أحدث دفعة تم إضافتها */}
-          {recentPayment && (
-            <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6">
+          {recentPayment && <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6">
               <h2 className="text-physics-gold font-bold mb-2">تم إضافة دفعة جديدة</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
@@ -249,16 +214,13 @@ const PaymentsManagement = () => {
                 <div>
                   <span className="text-gray-400 block text-sm">الأشهر المدفوعة:</span>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {recentPayment.paidMonths.map((month, index) => (
-                      <span key={index} className="bg-physics-navy px-2 py-1 rounded-full text-xs text-white">
+                    {recentPayment.paidMonths.map((month, index) => <span key={index} className="bg-physics-navy px-2 py-1 rounded-full text-xs text-white">
                         {month.month}
-                      </span>
-                    ))}
+                      </span>)}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
           
           {/* قائمة المدفوعات */}
           <div className="bg-physics-dark rounded-lg overflow-hidden mt-6">
@@ -266,8 +228,6 @@ const PaymentsManagement = () => {
           </div>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default PaymentsManagement;
