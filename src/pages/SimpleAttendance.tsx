@@ -15,7 +15,7 @@ const SimpleAttendance = () => {
   const navigate = useNavigate();
   const [showScanner, setShowScanner] = useState<boolean>(false);
   const [scannedCode, setScannedCode] = useState<string>("");
-  const [successfulScans, setSuccessfulScans] = useState<{ code: string, name: string, paid: boolean, lessonNumber: number }[]>([]);
+  const [successfulScans, setSuccessfulScans] = useState<{ code: string, name: string, paid: boolean }[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   const { getStudentByCode } = useAuth();
@@ -45,16 +45,13 @@ const SimpleAttendance = () => {
       
       if (student) {
         // حساب رقم الدرس الحالي للطالب
-        const rawLessonNumber = getStudentLessonCount(student.id) + 1;
-        
-        // Reset count after lesson 8 (e.g., lesson 9 becomes lesson 1 of next cycle)
-        const displayLessonNumber = (rawLessonNumber - 1) % 8 + 1;
+        const lessonNumber = getStudentLessonCount(student.id) + 1;
         
         // التحقق من حالة الدفع
-        const hasPaid = hasStudentPaidForCurrentLesson(student.id, rawLessonNumber);
+        const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonNumber);
         
         // تسجيل الحضور
-        await addAttendance(student.id, student.name, "present", rawLessonNumber);
+        await addAttendance(student.id, student.name, "present", lessonNumber);
         
         // تشغيل صوت
         const audio = new Audio("/attendance-present.mp3");
@@ -66,14 +63,13 @@ const SimpleAttendance = () => {
           { 
             code: scannedCode, 
             name: student.name,
-            paid: hasPaid,
-            lessonNumber: displayLessonNumber
+            paid: hasPaid 
           }
         ]);
         
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${displayLessonNumber})${!hasPaid ? ' (غير مدفوع)' : ''}`
+          description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
         });
         
         // مسح الكود بعد التسجيل
@@ -198,7 +194,6 @@ const SimpleAttendance = () => {
                     <div>
                       <span className="text-white block">{scan.name}</span>
                       <span className="text-white/70 text-xs">كود: {scan.code}</span>
-                      <span className="text-white/70 text-xs mr-2">الحصة: {scan.lessonNumber}</span>
                     </div>
                     {!scan.paid && (
                       <span className="mr-auto text-xs bg-red-500/20 px-2 py-1 rounded text-red-300">
