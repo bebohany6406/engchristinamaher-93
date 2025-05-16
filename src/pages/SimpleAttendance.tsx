@@ -47,8 +47,8 @@ const SimpleAttendance = () => {
         // حساب رقم الدرس الحالي للطالب
         const rawLessonNumber = getStudentLessonCount(student.id) + 1;
         
-        // Reset count after lesson 8 (e.g., lesson 9 becomes lesson 1 of next cycle)
-        const displayLessonNumber = (rawLessonNumber - 1) % 8 + 1;
+        // Don't reset the lesson counter after 8, just use the raw number
+        const displayLessonNumber = rawLessonNumber;
         
         // التحقق من حالة الدفع
         const hasPaid = hasStudentPaidForCurrentLesson(student.id, rawLessonNumber);

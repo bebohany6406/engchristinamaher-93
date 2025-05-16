@@ -80,8 +80,8 @@ export function ManualAttendance() {
         const currentLessonCount = await fetchStudentLessonCount(student.id);
         const rawLessonNumber = currentLessonCount + 1; // +1 لأننا على وشك إضافة حضور جديد
         
-        // Reset count after lesson 8 (e.g., lesson 9 becomes lesson 1 of next cycle)
-        const displayLessonNumber = (rawLessonNumber - 1) % 8 + 1;
+        // Don't reset lesson count anymore
+        const displayLessonNumber = rawLessonNumber;
         
         // التحقق من حالة الدفع
         const hasPaid = await checkStudentPayment(student.id, rawLessonNumber);
@@ -124,8 +124,8 @@ export function ManualAttendance() {
           studentInfo.lessonNumber
         );
         
-        // Calculate the display lesson number (reset after 8)
-        const displayLessonNumber = (studentInfo.lessonNumber - 1) % 8 + 1;
+        // Use raw lesson number directly
+        const displayLessonNumber = studentInfo.lessonNumber;
         
         // تشغيل صوت
         const audio = new Audio("/attendance-absent.mp3");
