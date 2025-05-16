@@ -1,8 +1,21 @@
 
 import { useState } from "react";
-import { Calendar, Search } from "lucide-react";
+import { Calendar, Search, Trash2 } from "lucide-react";
 import { Payment } from "@/types";
 import { sanitizeSearchText } from "@/lib/utils";
+import { usePayments } from "@/hooks/use-payments";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface PaymentsListProps {
   payments: Payment[];
@@ -11,6 +24,9 @@ interface PaymentsListProps {
 export function PaymentsList({ payments }: PaymentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchField, setSearchField] = useState<"name" | "code" | "group">("name");
+  const { deletePayment } = usePayments();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
   
   // تنسيق التاريخ
   const formatDate = (dateString: string) => {
@@ -37,6 +53,39 @@ export function PaymentsList({ payments }: PaymentsListProps) {
         return true;
     }
   });
+
+  // وظيفة حذف سجل الدفع
+  const handleDeletePayment = async () => {
+    if (!paymentToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await deletePayment(paymentToDelete.id);
+      
+      if (result.success) {
+        toast({
+          title: "تم الحذف بنجاح",
+          description: `تم حذف سجل الدفع الخاص بالطالب ${paymentToDelete.studentName} نهائياً`,
+        });
+      } else {
+        toast({
+          title: "خطأ في الحذف",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error deleting payment:", error);
+      toast({
+        title: "خطأ في الحذف",
+        description: `حدث خطأ أثناء محاولة حذف سجل الدفع: ${error.message || 'خطأ غير معروف'}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setPaymentToDelete(null);
+    }
+  };
 
   return (
     <div>
@@ -91,11 +140,50 @@ export function PaymentsList({ payments }: PaymentsListProps) {
                   </div>
                 </div>
                 
-                <div className="flex items-center mt-2 md:mt-0">
-                  <Calendar size={14} className="ml-1 text-physics-gold" />
-                  <span className="text-physics-gold">
-                    آخر دفعة: {formatDate(payment.date)}
-                  </span>
+                <div className="flex items-center gap-3 mt-2 md:mt-0">
+                  <div className="flex items-center">
+                    <Calendar size={14} className="ml-1 text-physics-gold" />
+                    <span className="text-physics-gold">
+                      آخر دفعة: {formatDate(payment.date)}
+                    </span>
+                  </div>
+                  
+                  {/* زر حذف سجل الدفع */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        className="text-red-500 hover:text-red-300 bg-physics-navy/50 p-1 rounded-full"
+                        onClick={() => setPaymentToDelete(payment)}
+                        title="حذف سجل الدفع"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-physics-dark border-physics-navy text-white">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-physics-gold">تأكيد حذف سجل الدفع</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-300">
+                          هل أنت متأكد من رغبتك في حذف سجل الدفع الخاص بالطالب "{payment.studentName}" نهائياً؟
+                          <br />
+                          <span className="text-red-400 block mt-2">
+                            تحذير: سيتم حذف جميع الأشهر المدفوعة المرتبطة بهذا السجل ولا يمكن استعادتها.
+                          </span>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-physics-navy text-white hover:bg-physics-navy/80">
+                          إلغاء
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          onClick={handleDeletePayment}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "جاري الحذف..." : "حذف نهائي"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
               
