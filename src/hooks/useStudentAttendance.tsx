@@ -20,11 +20,11 @@ export function useStudentAttendance() {
     try {
       const student = await getStudentByCode(code);
       if (student) {
-        // Get current lesson count for the student - we'll stop resetting after 8
+        // Get current lesson count for the student
         const rawLessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
         
-        // We'll just use the raw lesson count directly without resetting
-        const displayLessonCount = rawLessonCount;
+        // Reset count after lesson 8 (e.g., lesson 9 becomes lesson 1 of next cycle)
+        const displayLessonCount = (rawLessonCount - 1) % 8 + 1;
         
         // Check if student has paid for this lesson
         const hasPaid = hasStudentPaidForCurrentLesson(student.id, rawLessonCount);
