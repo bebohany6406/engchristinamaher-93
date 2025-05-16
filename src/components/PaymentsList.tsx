@@ -39,6 +39,12 @@ export function PaymentsList({ payments, onDeletePayment }: PaymentsListProps) {
     }
   });
 
+  const handleDeleteClick = (paymentId: string) => {
+    if (onDeletePayment) {
+      onDeletePayment(paymentId);
+    }
+  };
+
   return (
     <div>
       {/* حقل البحث مع اختيار نوع البحث */}
@@ -101,9 +107,10 @@ export function PaymentsList({ payments, onDeletePayment }: PaymentsListProps) {
                   {/* زر حذف المدفوعات (للمدير فقط) */}
                   {onDeletePayment && (
                     <button
-                      onClick={() => onDeletePayment(payment.id)}
+                      onClick={() => handleDeleteClick(payment.id)}
                       className="mr-2 p-1 text-red-400 hover:text-red-500 rounded-full hover:bg-physics-navy"
                       title="حذف سجل الدفع"
+                      aria-label="حذف سجل الدفع"
                     >
                       <Trash2 size={18} />
                     </button>

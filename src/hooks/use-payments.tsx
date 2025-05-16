@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Payment, PaidMonth } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
@@ -248,6 +249,8 @@ export function usePayments() {
         };
       }
       
+      console.log("Successfully deleted related paid months, now deleting payment record");
+      
       // Then delete the payment itself
       const { error: paymentError } = await supabase
         .from('payments')
@@ -262,16 +265,16 @@ export function usePayments() {
         };
       }
 
-      // Update local state AFTER successful deletion from database
+      // After successful deletion from database, update local state
       console.log("Payment deleted from database, updating local state...");
-      console.log("Before deletion: payments count =", payments.length);
       
-      // Update local state with a new array to force a re-render
-      const updatedPayments = payments.filter(payment => payment.id !== paymentId);
-      setPayments(updatedPayments);
+      setPayments(prevPayments => {
+        const updatedPayments = prevPayments.filter(payment => payment.id !== paymentId);
+        console.log(`Payments before deletion: ${prevPayments.length}, after deletion: ${updatedPayments.length}`);
+        return updatedPayments;
+      });
       
-      console.log("After deletion: payments count =", updatedPayments.length);
-      console.log("Payment deleted successfully, updated state");
+      console.log("Payment deleted successfully, state updated");
 
       return {
         success: true,

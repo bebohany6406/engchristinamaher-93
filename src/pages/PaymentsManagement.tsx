@@ -4,12 +4,22 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign, Trash2 } from "lucide-react";
+import { ArrowRight, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
 import { Payment } from "@/types";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const PaymentsManagement = () => {
   const navigate = useNavigate();
@@ -18,6 +28,8 @@ const PaymentsManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
+  const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -64,44 +76,52 @@ const PaymentsManagement = () => {
     debugPaymentsState(); // للتحقق من البيانات في الكونسول
   };
   
-  const handleDeletePayment = async (paymentId: string) => {
-    if (window.confirm("هل أنت متأكد من حذف سجل الدفع هذا؟ لا يمكن التراجع عن هذه العملية.")) {
-      try {
-        // تشغيل الصوت عند الحذف
-        const audio = new Audio("/scan-success.mp3");
-        audio.play().catch(e => console.error("Sound play failed:", e));
+  const confirmDeletePayment = (paymentId: string) => {
+    setPaymentToDelete(paymentId);
+  };
+  
+  const handleDeletePayment = async () => {
+    if (!paymentToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      // تشغيل الصوت عند الحذف
+      const audio = new Audio("/scan-success.mp3");
+      audio.play().catch(e => console.error("Sound play failed:", e));
+      
+      // حذف السجل من قاعدة البيانات
+      console.log("Attempting to delete payment:", paymentToDelete);
+      const result = await deletePayment(paymentToDelete);
+      
+      if (result.success) {
+        // تحديث القائمة بعد الحذف مباشرة
+        setFilteredPayments(prevPayments => prevPayments.filter(p => p.id !== paymentToDelete));
         
-        // حذف السجل من قاعدة البيانات
-        console.log("Attempting to delete payment:", paymentId);
-        const result = await deletePayment(paymentId);
+        // التحقق من أن الحذف تم بنجاح
+        console.log("Payment deleted successfully. Updated payments list");
         
-        if (result.success) {
-          // تحديث القائمة بعد الحذف مباشرة
-          setFilteredPayments(prevPayments => prevPayments.filter(p => p.id !== paymentId));
-          
-          // التحقق من أن الحذف تم بنجاح
-          console.log("Payment deleted successfully. Current filtered payments:", 
-            filteredPayments.filter(p => p.id !== paymentId).length);
-          
-          toast({
-            title: "✅ تم الحذف",
-            description: "تم حذف سجل الدفع بنجاح",
-          });
-        } else {
-          toast({
-            title: "❌ خطأ في الحذف",
-            description: result.message,
-            variant: "destructive",
-          });
-        }
-      } catch (error: any) {
-        console.error("Error in payment deletion:", error);
         toast({
-          title: "❌ خطأ",
-          description: `فشل في حذف السجل: ${error.message || "خطأ غير معروف"}`,
+          title: "✅ تم الحذف",
+          description: "تم حذف سجل الدفع بنجاح",
+        });
+      } else {
+        toast({
+          title: "❌ خطأ في الحذف",
+          description: result.message,
           variant: "destructive",
         });
       }
+    } catch (error: any) {
+      console.error("Error in payment deletion:", error);
+      toast({
+        title: "❌ خطأ",
+        description: `فشل في حذف السجل: ${error.message || "خطأ غير معروف"}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setPaymentToDelete(null);
     }
   };
 
@@ -185,11 +205,38 @@ const PaymentsManagement = () => {
           <div className="bg-physics-dark rounded-lg overflow-hidden mt-6">
             <PaymentsList 
               payments={filteredPayments} 
-              onDeletePayment={currentUser?.role === "admin" ? handleDeletePayment : undefined} 
+              onDeletePayment={currentUser?.role === "admin" ? confirmDeletePayment : undefined} 
             />
           </div>
         </div>
       </main>
+
+      {/* نافذة تأكيد الحذف */}
+      <AlertDialog open={!!paymentToDelete} onOpenChange={() => !isDeleting && setPaymentToDelete(null)}>
+        <AlertDialogContent className="bg-physics-dark border border-physics-gold text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-physics-gold">تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              هل أنت متأكد من حذف سجل الدفع هذا؟ لا يمكن التراجع عن هذه العملية.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={isDeleting} 
+              className="bg-transparent border border-gray-400 text-gray-300 hover:bg-physics-navy"
+            >
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePayment}
+              disabled={isDeleting}
+              className="bg-red-700 hover:bg-red-800 text-white"
+            >
+              {isDeleting ? "جاري الحذف..." : "حذف"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
