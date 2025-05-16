@@ -71,7 +71,7 @@ export function usePayments() {
         });
         
         setPayments(processedPayments);
-        console.log("Loaded payments from Supabase:", processedPayments);
+        console.log("Loaded payments from Supabase:", processedPayments.length);
       } catch (error) {
         console.error("Error loading payments from Supabase:", error);
       } finally {
@@ -233,24 +233,45 @@ export function usePayments() {
   // Delete a payment record
   const deletePayment = async (paymentId: string) => {
     try {
-      console.log(`Deleting payment with ID: ${paymentId}`);
+      console.log(`Starting deletion process for payment ID: ${paymentId}`);
       
-      // Delete from Supabase (paid_months will be deleted by CASCADE)
-      const { error } = await supabase
+      // First delete related paid_months
+      const { error: paidMonthsError } = await supabase
+        .from('paid_months')
+        .delete()
+        .eq('payment_id', paymentId);
+        
+      if (paidMonthsError) {
+        console.error("Error deleting related paid months:", paidMonthsError);
+        return {
+          success: false,
+          message: `حدث خطأ أثناء حذف الأشهر المدفوعة المرتبطة: ${paidMonthsError.message || 'خطأ غير معروف'}`
+        };
+      }
+      
+      // Then delete the payment itself
+      const { error: paymentError } = await supabase
         .from('payments')
         .delete()
         .eq('id', paymentId);
 
-      if (error) {
-        console.error("Error deleting payment from Supabase:", error);
+      if (paymentError) {
+        console.error("Error deleting payment from Supabase:", paymentError);
         return {
           success: false,
-          message: `حدث خطأ أثناء حذف سجل الدفع: ${error.message || 'خطأ غير معروف'}`
+          message: `حدث خطأ أثناء حذف سجل الدفع: ${paymentError.message || 'خطأ غير معروف'}`
         };
       }
 
-      // Update local state
-      setPayments(prevPayments => prevPayments.filter(payment => payment.id !== paymentId));
+      // Update local state AFTER successful deletion from database
+      console.log("Payment deleted from database, updating local state...");
+      console.log("Before deletion: payments count =", payments.length);
+      
+      // Update local state with a new array to force a re-render
+      const updatedPayments = payments.filter(payment => payment.id !== paymentId);
+      setPayments(updatedPayments);
+      
+      console.log("After deletion: payments count =", updatedPayments.length);
       console.log("Payment deleted successfully, updated state");
 
       return {

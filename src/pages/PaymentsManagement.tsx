@@ -72,11 +72,16 @@ const PaymentsManagement = () => {
         audio.play().catch(e => console.error("Sound play failed:", e));
         
         // حذف السجل من قاعدة البيانات
+        console.log("Attempting to delete payment:", paymentId);
         const result = await deletePayment(paymentId);
         
         if (result.success) {
           // تحديث القائمة بعد الحذف مباشرة
           setFilteredPayments(prevPayments => prevPayments.filter(p => p.id !== paymentId));
+          
+          // التحقق من أن الحذف تم بنجاح
+          console.log("Payment deleted successfully. Current filtered payments:", 
+            filteredPayments.filter(p => p.id !== paymentId).length);
           
           toast({
             title: "✅ تم الحذف",
