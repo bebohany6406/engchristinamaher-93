@@ -52,6 +52,11 @@ const StudentGrades = () => {
       setGradeRecords(records);
     }
   }, [currentUser, getAllStudents, getStudentGrades]);
+
+  // Calculate the display lesson number (cycles of 8)
+  const getDisplayLessonNumber = (rawLessonNumber: number) => {
+    return rawLessonNumber ? (rawLessonNumber - 1) % 8 + 1 : 1;
+  };
   
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
@@ -121,7 +126,7 @@ const StudentGrades = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-center text-white">{record.totalScore}</TableCell>
-                      <TableCell className="text-white">الحصة {record.lessonNumber || 1}</TableCell>
+                      <TableCell className="text-white">الحصة {getDisplayLessonNumber(record.lessonNumber)}</TableCell>
                       <TableCell className="text-white">{record.group || "—"}</TableCell>
                       <TableCell className="text-white">{formatDate(record.date)}</TableCell>
                     </TableRow>

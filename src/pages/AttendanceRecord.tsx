@@ -48,6 +48,11 @@ const AttendanceRecord = () => {
     }
   }, [studentId, getStudentAttendance, getStudentLessonCount]);
 
+  // Calculate the display lesson number (cycles of 8)
+  const getDisplayLessonNumber = (rawLessonNumber: number) => {
+    return (rawLessonNumber - 1) % 8 + 1;
+  };
+
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col relative">
       <PhoneContact />
@@ -118,7 +123,7 @@ const AttendanceRecord = () => {
                   <Calendar size={20} className="text-physics-gold" />
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-white">
-                      الدرس رقم {record.lessonNumber}
+                      الدرس رقم {getDisplayLessonNumber(record.lessonNumber)} {/* Use display lesson number */}
                     </h3>
                     <div className="flex items-center text-sm text-gray-300 mt-1">
                       <Calendar size={14} className="ml-1" />

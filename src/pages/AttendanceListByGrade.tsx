@@ -98,6 +98,11 @@ const AttendanceListByGrade = () => {
     }
   };
 
+  // Calculate the display lesson number (cycles of 8)
+  const getDisplayLessonNumber = (rawLessonNumber: number) => {
+    return rawLessonNumber ? (rawLessonNumber - 1) % 8 + 1 : 1;
+  };
+
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col relative">
       <PhysicsBackground />
@@ -225,7 +230,7 @@ const AttendanceListByGrade = () => {
                         <TableCell className="text-white">{student?.group || "غير محدد"}</TableCell>
                         <TableCell className="text-white">{formatDate(record.date)}</TableCell>
                         <TableCell className="text-white">{record.time || "غير متاح"}</TableCell>
-                        <TableCell className="text-white">الحصة {record.lessonNumber || 1}</TableCell>
+                        <TableCell className="text-white">الحصة {getDisplayLessonNumber(record.lessonNumber)}</TableCell>
                         <TableCell className="text-center">
                           {record.status === "present" ? (
                             <div className="inline-flex items-center text-green-400 gap-1">
