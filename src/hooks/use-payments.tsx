@@ -14,74 +14,75 @@ export function usePayments() {
 
   // Load data from Supabase when hook initializes
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        setIsLoading(true);
-        
-        // First, fetch all payments
-        const { data: paymentsData, error: paymentsError } = await supabase
-          .from('payments')
-          .select('*');
-
-        if (paymentsError) {
-          console.error("Error fetching payments:", paymentsError);
-          toast({
-            title: "خطأ في جلب المدفوعات",
-            description: paymentsError.message,
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        // Then fetch all paid months
-        const { data: paidMonthsData, error: paidMonthsError } = await supabase
-          .from('paid_months')
-          .select('*');
-          
-        if (paidMonthsError) {
-          console.error("Error fetching paid months:", paidMonthsError);
-          toast({
-            title: "خطأ في جلب الأشهر المدفوعة",
-            description: paidMonthsError.message,
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        // Map the database data to our app's data structure
-        const processedPayments = paymentsData.map(payment => {
-          // Find all paid months for this payment
-          const relatedPaidMonths = paidMonthsData
-            .filter(pm => pm.payment_id === payment.id)
-            .map(pm => ({
-              month: pm.month,
-              date: pm.date
-            }));
-          
-          return {
-            id: payment.id,
-            studentId: payment.student_id,
-            studentName: payment.student_name,
-            studentCode: payment.student_code,
-            group: payment.student_group,
-            month: payment.month,
-            date: payment.date,
-            paidMonths: relatedPaidMonths
-          };
-        });
-        
-        setPayments(processedPayments);
-        console.log("Loaded payments from Supabase:", processedPayments.length);
-      } catch (error) {
-        console.error("Error loading payments from Supabase:", error);
-      } finally {
-        setIsLoading(false);
-        setIsInitialized(true);
-      }
-    };
-    
     fetchPayments();
   }, []);
+
+  // تحميل المدفوعات من Supabase
+  const fetchPayments = async () => {
+    try {
+      setIsLoading(true);
+      
+      // First, fetch all payments
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
+        .select('*');
+
+      if (paymentsError) {
+        console.error("Error fetching payments:", paymentsError);
+        toast({
+          title: "خطأ في جلب المدفوعات",
+          description: paymentsError.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Then fetch all paid months
+      const { data: paidMonthsData, error: paidMonthsError } = await supabase
+        .from('paid_months')
+        .select('*');
+        
+      if (paidMonthsError) {
+        console.error("Error fetching paid months:", paidMonthsError);
+        toast({
+          title: "خطأ في جلب الأشهر المدفوعة",
+          description: paidMonthsError.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Map the database data to our app's data structure
+      const processedPayments = paymentsData.map(payment => {
+        // Find all paid months for this payment
+        const relatedPaidMonths = paidMonthsData
+          .filter(pm => pm.payment_id === payment.id)
+          .map(pm => ({
+            month: pm.month,
+            date: pm.date
+          }));
+        
+        return {
+          id: payment.id,
+          studentId: payment.student_id,
+          studentName: payment.student_name,
+          studentCode: payment.student_code,
+          group: payment.student_group,
+          month: payment.month,
+          date: payment.date,
+          paidMonths: relatedPaidMonths
+        };
+      });
+      
+      setPayments(processedPayments);
+      console.log("Loaded payments from Supabase:", processedPayments.length);
+    } catch (error) {
+      console.error("Error loading payments from Supabase:", error);
+    } finally {
+      setIsLoading(false);
+      setIsInitialized(true);
+    }
+  };
 
   // Add a new payment
   const addPayment = async (
@@ -275,6 +276,9 @@ export function usePayments() {
       });
       
       console.log("Payment deleted successfully, state updated");
+      
+      // أضفنا هذا السطر لإعادة تحميل البيانات من قاعدة البيانات بعد الحذف
+      await fetchPayments();
 
       return {
         success: true,
@@ -345,6 +349,11 @@ export function usePayments() {
     };
   };
 
+  // أضفنا دالة إعادة تحميل البيانات لتحديث الواجهة عند الحاجة
+  const refreshPayments = async () => {
+    await fetchPayments();
+  };
+
   return {
     payments,
     isLoading,
@@ -356,6 +365,7 @@ export function usePayments() {
     getCurrentMonthByLessonNumber,
     getFirstLessonInCurrentMonth,
     getLastLessonInCurrentMonth,
-    debugPaymentsState
+    debugPaymentsState,
+    refreshPayments // تصدير الدالة الجديدة
   };
 }

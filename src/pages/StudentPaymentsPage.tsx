@@ -4,15 +4,17 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign } from "lucide-react";
+import { ArrowRight, DollarSign, RefreshCw } from "lucide-react";
 import { usePayments } from "@/hooks/use-payments";
 import { Payment } from "@/types";
+import { toast } from "@/hooks/use-toast";
 
 const StudentPaymentsPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { payments } = usePayments();
+  const { payments, refreshPayments } = usePayments();
   const [studentPayments, setStudentPayments] = useState<Payment[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   useEffect(() => {
     if (!currentUser) {
@@ -26,6 +28,22 @@ const StudentPaymentsPage = () => {
       setStudentPayments(filteredPayments);
     }
   }, [currentUser, payments, navigate]);
+  
+  // وظيفة تحديث البيانات
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshPayments();
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث بيانات المدفوعات بنجاح"
+      });
+    } catch (error) {
+      console.error("Error refreshing payments:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (!currentUser) return null;
 
@@ -47,7 +65,19 @@ const StudentPaymentsPage = () => {
       {/* Main Content */}
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-physics-gold mb-6">سجل المدفوعات الخاص بي</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-physics-gold">سجل المدفوعات الخاص بي</h1>
+            
+            {/* زر تحديث البيانات */}
+            <button 
+              onClick={handleRefresh} 
+              disabled={isRefreshing}
+              className="flex items-center gap-2 text-white bg-physics-navy hover:bg-physics-navy/80 px-4 py-2 rounded disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              <span>{isRefreshing ? "جاري التحديث..." : "تحديث البيانات"}</span>
+            </button>
+          </div>
           
           {studentPayments.length === 0 ? (
             <div className="bg-physics-dark rounded-lg p-8 text-center">

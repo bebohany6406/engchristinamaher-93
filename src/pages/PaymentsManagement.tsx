@@ -24,7 +24,7 @@ import {
 const PaymentsManagement = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { payments, debugPaymentsState, deletePayment } = usePayments();
+  const { payments, debugPaymentsState, deletePayment, refreshPayments } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
@@ -73,6 +73,7 @@ const PaymentsManagement = () => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
     // سنحتاج لتحديث قائمة المدفوعات يدوياً هنا لعرض التغييرات على الفور
+    refreshPayments(); // استخدام دالة التحديث الجديدة
     debugPaymentsState(); // للتحقق من البيانات في الكونسول
   };
   
@@ -95,8 +96,8 @@ const PaymentsManagement = () => {
       const result = await deletePayment(paymentToDelete);
       
       if (result.success) {
-        // تحديث القائمة بعد الحذف مباشرة
-        setFilteredPayments(prevPayments => prevPayments.filter(p => p.id !== paymentToDelete));
+        // تحديث القائمة بعد الحذف مباشرة - نستخدم الآن refreshPayments بدلاً من تحديث الحالة المحلية فقط
+        await refreshPayments();
         
         // التحقق من أن الحذف تم بنجاح
         console.log("Payment deleted successfully. Updated payments list");
@@ -125,6 +126,15 @@ const PaymentsManagement = () => {
     }
   };
 
+  // وظيفة تحديث البيانات يدوياً
+  const handleRefreshData = async () => {
+    await refreshPayments();
+    toast({
+      title: "تم التحديث",
+      description: "تم تحديث بيانات المدفوعات بنجاح",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
       <PhoneContact />
@@ -146,16 +156,26 @@ const PaymentsManagement = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
             
-            {/* إظهار زر إضافة دفع جديد للمدير فقط */}
-            {currentUser?.role === "admin" && (
+            <div className="flex gap-2">
+              {/* زر تحديث البيانات */}
               <button 
-                onClick={() => setShowAddForm(true)} 
-                className="goldBtn flex items-center gap-2"
+                onClick={handleRefreshData} 
+                className="text-white bg-physics-navy hover:bg-physics-navy/80 px-4 py-2 rounded"
               >
-                <DollarSign size={18} />
-                <span>دفع شهر جديد</span>
+                تحديث البيانات
               </button>
-            )}
+              
+              {/* إظهار زر إضافة دفع جديد للمدير فقط */}
+              {currentUser?.role === "admin" && (
+                <button 
+                  onClick={() => setShowAddForm(true)} 
+                  className="goldBtn flex items-center gap-2"
+                >
+                  <DollarSign size={18} />
+                  <span>دفع شهر جديد</span>
+                </button>
+              )}
+            </div>
           </div>
           
           {/* نموذج إضافة دفعة (للمدير فقط) */}
