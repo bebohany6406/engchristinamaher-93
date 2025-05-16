@@ -1,15 +1,14 @@
 
 import { useState } from "react";
-import { Calendar, Search, Trash2 } from "lucide-react";
+import { Calendar, Search } from "lucide-react";
 import { Payment } from "@/types";
 import { sanitizeSearchText } from "@/lib/utils";
 
 interface PaymentsListProps {
   payments: Payment[];
-  onDeletePayment?: (paymentId: string) => void;
 }
 
-export function PaymentsList({ payments, onDeletePayment }: PaymentsListProps) {
+export function PaymentsList({ payments }: PaymentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchField, setSearchField] = useState<"name" | "code" | "group">("name");
   
@@ -38,12 +37,6 @@ export function PaymentsList({ payments, onDeletePayment }: PaymentsListProps) {
         return true;
     }
   });
-
-  const handleDeleteClick = (paymentId: string) => {
-    if (onDeletePayment) {
-      onDeletePayment(paymentId);
-    }
-  };
 
   return (
     <div>
@@ -103,18 +96,6 @@ export function PaymentsList({ payments, onDeletePayment }: PaymentsListProps) {
                   <span className="text-physics-gold">
                     آخر دفعة: {formatDate(payment.date)}
                   </span>
-                  
-                  {/* زر حذف المدفوعات (للمدير فقط) */}
-                  {onDeletePayment && (
-                    <button
-                      onClick={() => handleDeleteClick(payment.id)}
-                      className="mr-2 p-1 text-red-400 hover:text-red-500 rounded-full hover:bg-physics-navy"
-                      title="حذف سجل الدفع"
-                      aria-label="حذف سجل الدفع"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
                 </div>
               </div>
               

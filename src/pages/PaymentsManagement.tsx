@@ -4,36 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign, RefreshCw } from "lucide-react";
+import { ArrowRight, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
 import { Payment } from "@/types";
-import { deleteAllPaymentsData } from "@/integrations/supabase/client";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const PaymentsManagement = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { payments, debugPaymentsState, deletePayment, refreshPayments } = usePayments();
+  const { payments, debugPaymentsState } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
-  const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showClearAllDialog, setShowClearAllDialog] = useState(false);
-  const [isClearingAll, setIsClearingAll] = useState(false);
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -76,112 +60,6 @@ const PaymentsManagement = () => {
   const handlePaymentAdded = (payment: Payment) => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
-    handleRefreshData();
-  };
-  
-  const confirmDeletePayment = (paymentId: string) => {
-    setPaymentToDelete(paymentId);
-  };
-  
-  const handleDeletePayment = async () => {
-    if (!paymentToDelete) return;
-    
-    try {
-      setIsDeleting(true);
-      
-      // تشغيل الصوت عند الحذف
-      const audio = new Audio("/scan-success.mp3");
-      audio.play().catch(e => console.error("Sound play failed:", e));
-      
-      // حذف السجل من قاعدة البيانات
-      console.log("Attempting to delete payment:", paymentToDelete);
-      const result = await deletePayment(paymentToDelete);
-      
-      if (result.success) {
-        // تحديث القائمة بعد الحذف مباشرة
-        await handleRefreshData();
-        
-        // التحقق من أن الحذف تم بنجاح
-        console.log("Payment deleted successfully. Updated payments list");
-        
-        toast({
-          title: "✅ تم الحذف",
-          description: "تم حذف سجل الدفع بنجاح",
-        });
-      } else {
-        toast({
-          title: "❌ خطأ في الحذف",
-          description: result.message,
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      console.error("Error in payment deletion:", error);
-      toast({
-        title: "❌ خطأ",
-        description: `فشل في حذف السجل: ${error.message || "خطأ غير معروف"}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-      setPaymentToDelete(null);
-    }
-  };
-
-  // وظيفة تحديث البيانات يدوياً
-  const handleRefreshData = async () => {
-    setIsRefreshing(true);
-    try {
-      await refreshPayments();
-      console.log("Payments refreshed successfully");
-      toast({
-        title: "تم التحديث",
-        description: "تم تحديث بيانات المدفوعات بنجاح",
-      });
-    } catch (error) {
-      console.error("Error refreshing payments:", error);
-      toast({
-        title: "خطأ في التحديث",
-        description: "حدث خطأ أثناء تحديث البيانات",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-  
-  // حذف جميع سجلات المدفوعات
-  const handleDeleteAllPayments = async () => {
-    setIsClearingAll(true);
-    
-    try {
-      const result = await deleteAllPaymentsData();
-      
-      if (result.success) {
-        await handleRefreshData();
-        
-        toast({
-          title: "✅ تم بنجاح",
-          description: "تم حذف جميع سجلات المدفوعات بنجاح",
-        });
-      } else {
-        toast({
-          title: "❌ خطأ في الحذف",
-          description: "فشل في حذف سجلات المدفوعات",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting all payments:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ غير متوقع أثناء حذف السجلات",
-        variant: "destructive",
-      });
-    } finally {
-      setIsClearingAll(false);
-      setShowClearAllDialog(false);
-    }
   };
 
   return (
@@ -206,35 +84,15 @@ const PaymentsManagement = () => {
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
             
             <div className="flex flex-wrap gap-2">
-              {/* زر تحديث البيانات */}
-              <button 
-                onClick={handleRefreshData} 
-                disabled={isRefreshing}
-                className="text-white bg-physics-navy hover:bg-physics-navy/80 px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
-              >
-                <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-                <span>{isRefreshing ? "جاري التحديث..." : "تحديث البيانات"}</span>
-              </button>
-              
               {/* إظهار زر إضافة دفع جديد للمدير فقط */}
               {currentUser?.role === "admin" && (
-                <>
-                  <button 
-                    onClick={() => setShowAddForm(true)} 
-                    className="goldBtn flex items-center gap-2"
-                  >
-                    <DollarSign size={18} />
-                    <span>دفع شهر جديد</span>
-                  </button>
-                  
-                  {/* زر حذف جميع المدفوعات */}
-                  <button
-                    onClick={() => setShowClearAllDialog(true)}
-                    className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded"
-                  >
-                    حذف جميع المدفوعات
-                  </button>
-                </>
+                <button 
+                  onClick={() => setShowAddForm(true)} 
+                  className="goldBtn flex items-center gap-2"
+                >
+                  <DollarSign size={18} />
+                  <span>دفع شهر جديد</span>
+                </button>
               )}
             </div>
           </div>
@@ -284,67 +142,10 @@ const PaymentsManagement = () => {
           
           {/* قائمة المدفوعات */}
           <div className="bg-physics-dark rounded-lg overflow-hidden mt-6">
-            <PaymentsList 
-              payments={filteredPayments} 
-              onDeletePayment={currentUser?.role === "admin" ? confirmDeletePayment : undefined} 
-            />
+            <PaymentsList payments={filteredPayments} />
           </div>
         </div>
       </main>
-
-      {/* نافذة تأكيد الحذف */}
-      <AlertDialog open={!!paymentToDelete} onOpenChange={() => !isDeleting && setPaymentToDelete(null)}>
-        <AlertDialogContent className="bg-physics-dark border border-physics-gold text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-physics-gold">تأكيد الحذف</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              هل أنت متأكد من حذف سجل الدفع هذا؟ لا يمكن التراجع عن هذه العملية.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              disabled={isDeleting} 
-              className="bg-transparent border border-gray-400 text-gray-300 hover:bg-physics-navy"
-            >
-              إلغاء
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeletePayment}
-              disabled={isDeleting}
-              className="bg-red-700 hover:bg-red-800 text-white"
-            >
-              {isDeleting ? "جاري الحذف..." : "حذف"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      
-      {/* نافذة تأكيد حذف جميع المدفوعات */}
-      <AlertDialog open={showClearAllDialog} onOpenChange={() => !isClearingAll && setShowClearAllDialog(false)}>
-        <AlertDialogContent className="bg-physics-dark border border-red-500 text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-500">تأكيد حذف جميع المدفوعات</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              هل أنت متأكد من حذف جميع سجلات المدفوعات؟ لا يمكن التراجع عن هذه العملية وستفقد جميع بيانات المدفوعات.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              disabled={isClearingAll} 
-              className="bg-transparent border border-gray-400 text-gray-300 hover:bg-physics-navy"
-            >
-              إلغاء
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteAllPayments}
-              disabled={isClearingAll}
-              className="bg-red-700 hover:bg-red-800 text-white"
-            >
-              {isClearingAll ? "جاري الحذف..." : "حذف جميع المدفوعات"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
