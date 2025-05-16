@@ -5,13 +5,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { 
-  Users, UserPlus, QrCode, Video, Book, LogOut, 
-  CheckSquare, Award, DollarSign, UserCheck, RefreshCcw 
-} from "lucide-react";
+import { Users, UserPlus, QrCode, Video, Book, LogOut, CheckSquare, Award, DollarSign, UserCheck, RefreshCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PhysicsBackground from "@/components/PhysicsBackground";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 const DashboardItem = ({
   to,
@@ -29,24 +25,21 @@ const DashboardItem = ({
   return (
     <Link 
       to={to} 
-      className="bg-physics-dark rounded-xl p-6 hover:bg-physics-dark/70 transition-all flex flex-col items-center border border-physics-gold/10 hover:border-physics-gold/30 hover:shadow-lg hover:shadow-physics-gold/5 group"
+      className="bg-physics-dark rounded-lg p-6 hover:bg-physics-dark/70 transition-all flex flex-col items-center"
     >
-      <AspectRatio ratio={1/1} className="w-16 h-16 mb-4">
-        <div className="h-16 w-16 rounded-full bg-physics-navy flex items-center justify-center text-physics-gold mb-4 transition-all group-hover:scale-110 group-hover:bg-physics-gold/20">
-          {icon}
-        </div>
-      </AspectRatio>
-      <h3 className="text-xl font-bold text-physics-gold mb-2 group-hover:scale-105 transition-transform">{title}</h3>
-      <p className="text-sm text-white/70 text-center mb-3">{description}</p>
+      <div className="h-16 w-16 rounded-full bg-physics-navy flex items-center justify-center text-physics-gold mb-4">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold text-physics-gold mb-2">{title}</h3>
       {stats && (
         <div className="mt-2 w-full">
           <div className="flex justify-between text-sm text-white">
             <div className="text-green-400">حضور: {stats.present || 0}</div>
             <div className="text-red-400">غياب: {stats.absent || 0}</div>
           </div>
-          <div className="w-full bg-physics-navy h-3 rounded-full mt-1 overflow-hidden">
+          <div className="w-full bg-physics-navy h-2 rounded-full mt-1 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-green-500 to-green-400 h-full transition-all duration-500 ease-out"
+              className="bg-green-500 h-full" 
               style={{ width: `${stats.total ? (stats.present || 0) / stats.total * 100 : 0}%` }}
             />
           </div>
@@ -87,7 +80,7 @@ const Dashboard = () => {
       <PhoneContact />
       
       {/* Header with User Info */}
-      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10 shadow-md">
+      <header className="bg-physics-dark py-4 px-6 flex items-center justify-between relative z-10">
         <div className="flex items-center">
           <div className="text-physics-gold font-bold text-lg ml-2">
             {currentUser.name}
@@ -100,10 +93,7 @@ const Dashboard = () => {
         <Logo />
         
         <div className="flex items-center gap-2">
-          <button 
-            onClick={handleLogout} 
-            className="flex items-center gap-2 text-physics-gold hover:opacity-80 bg-physics-navy/50 hover:bg-physics-navy py-2 px-4 rounded-lg transition-all"
-          >
+          <button onClick={handleLogout} className="flex items-center gap-2 text-physics-gold hover:opacity-80">
             <span>تسجيل الخروج</span>
             <LogOut size={20} />
           </button>
@@ -113,73 +103,69 @@ const Dashboard = () => {
       {/* Main Content - Dashboard */}
       <main className="flex-1 p-6 relative z-10">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-physics-gold mb-8 relative">
-            <span className="relative inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-1 after:bg-physics-gold/30 after:rounded-full">
-              لوحة التحكم
-            </span>
-          </h1>
+          <h1 className="text-2xl font-bold text-physics-gold mb-8">لوحة التحكم</h1>
           
           {/* Admin Dashboard Items */}
           {currentUser.role === "admin" && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <DashboardItem 
                   to="/students" 
-                  icon={<Users size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<Users size={32} />} 
                   title="إدارة الطلاب" 
                   description="إضافة وتعديل وحذف بيانات الطلاب" 
                 />
                 <DashboardItem 
                   to="/parents" 
-                  icon={<UserPlus size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<UserPlus size={32} />} 
                   title="إدارة أولياء الأمور" 
                   description="إضافة حسابات لأولياء الأمور" 
                 />
                 <DashboardItem 
                   to="/scan-code" 
-                  icon={<QrCode size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<QrCode size={32} />} 
                   title="تسجيل الحضور" 
                   description="مسح كود الطلاب وتسجيل الحضور" 
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <DashboardItem 
                   to="/attendance-list" 
-                  icon={<UserCheck size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<UserCheck size={32} />} 
                   title="سجل الحضور" 
                   description="عرض وإدارة سجل حضور الطلاب" 
                 />
                 <DashboardItem 
                   to="/grades-management" 
-                  icon={<Award size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<Award size={32} />} 
                   title="سجل الدرجات" 
                   description="إدخال وعرض درجات الطلاب" 
                 />
                 <DashboardItem 
                   to="/payments" 
-                  icon={<DollarSign size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<DollarSign size={32} />} 
                   title="إدارة المدفوعات" 
                   description="تسجيل ومتابعة مدفوعات الطلاب" 
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <DashboardItem 
                   to="/videos" 
-                  icon={<Video size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<Video size={32} />} 
                   title="الفيديوهات" 
                   description="إدارة وعرض الدروس المرئية" 
                 />
                 <DashboardItem 
                   to="/books" 
-                  icon={<Book size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<Book size={32} />} 
                   title="الكتب والملفات" 
                   description="رفع وإدارة الملفات التعليمية" 
                 />
                 <DashboardItem 
                   to="/system-reset" 
-                  icon={<RefreshCcw size={32} className="transition-all group-hover:text-white" />} 
+                  icon={<RefreshCcw size={32} />} 
                   title="إعادة تعيين النظام" 
                   description="إعادة ضبط بيانات النظام حسب الصف" 
                 />
@@ -189,41 +175,41 @@ const Dashboard = () => {
           
           {/* Student Dashboard Items */}
           {currentUser.role === "student" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <DashboardItem 
                 to="/student-code" 
-                icon={<QrCode size={32} className="transition-all group-hover:text-white" />} 
+                icon={<QrCode size={32} />} 
                 title="كود الطالب" 
                 description="عرض الكود الخاص بك لتسجيل الحضور" 
               />
               <DashboardItem 
                 to="/student-grades" 
-                icon={<Award size={32} className="transition-all group-hover:text-white" />} 
+                icon={<Award size={32} />} 
                 title="الدرجات" 
                 description="عرض الدرجات والتقييمات" 
               />
               <DashboardItem 
                 to="/attendance-record" 
-                icon={<CheckSquare size={32} className="transition-all group-hover:text-white" />} 
+                icon={<CheckSquare size={32} />} 
                 title="سجل الحضور" 
                 description="عرض سجل الحضور الخاص بك" 
                 stats={attendanceStats}
               />
               <DashboardItem 
                 to="/videos" 
-                icon={<Video size={32} className="transition-all group-hover:text-white" />} 
+                icon={<Video size={32} />} 
                 title="الفيديوهات" 
                 description="مشاهدة الفيديوهات التعليمية" 
               />
               <DashboardItem 
                 to="/student-books" 
-                icon={<Book size={32} className="transition-all group-hover:text-white" />} 
+                icon={<Book size={32} />} 
                 title="الكتب والملفات" 
                 description="تحميل المذكرات والملفات التعليمية" 
               />
               <DashboardItem 
                 to="/student-payments" 
-                icon={<DollarSign size={32} className="transition-all group-hover:text-white" />} 
+                icon={<DollarSign size={32} />} 
                 title="المدفوعات" 
                 description="عرض سجل المدفوعات الخاص بك" 
               />
@@ -232,22 +218,22 @@ const Dashboard = () => {
           
           {/* Parent Dashboard Items */}
           {currentUser.role === "parent" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <DashboardItem 
                 to="/grades" 
-                icon={<Award size={32} className="transition-all group-hover:text-white" />} 
+                icon={<Award size={32} />} 
                 title="الدرجات" 
                 description="عرض درجات الطالب" 
               />
               <DashboardItem 
                 to="/attendance-record" 
-                icon={<CheckSquare size={32} className="transition-all group-hover:text-white" />} 
+                icon={<CheckSquare size={32} />} 
                 title="سجل الحضور" 
                 description="عرض سجل حضور الطالب" 
               />
               <DashboardItem 
                 to="/parent-payments" 
-                icon={<DollarSign size={32} className="transition-all group-hover:text-white" />} 
+                icon={<DollarSign size={32} />} 
                 title="المدفوعات" 
                 description="عرض سجل مدفوعات الطالب" 
               />
