@@ -15,18 +15,19 @@ export function useStudentAttendance() {
   const { hasStudentPaidForCurrentLesson } = usePayments();
 
   const processScannedCode = async (code: string) => {
-    // لا نقوم بتعيين الكود في المتغير لمنع ظهور الإشعارات تلقائياً
-    // فقط بعد الضغط على زر التسجيل سيتم معالجة الكود
     setIsProcessing(true);
     
     try {
       const student = await getStudentByCode(code);
       if (student) {
-        // Get current lesson count for the student
-        const lessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
+        // Get current lesson count for the student - we need to modify it to reset after 8
+        let rawLessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
+        
+        // Reset count after lesson 8 (e.g., lesson 9 becomes lesson 1 of next cycle)
+        const lessonCount = (rawLessonCount - 1) % 8 + 1;
         
         // Check if student has paid for this lesson
-        const hasPaid = hasStudentPaidForCurrentLesson(student.id, lessonCount);
+        const hasPaid = hasStudentPaidForCurrentLesson(student.id, rawLessonCount);
         
         // Update payment status state
         setPaymentStatus({
@@ -35,7 +36,7 @@ export function useStudentAttendance() {
         });
         
         // Record attendance regardless of payment status
-        await addAttendance(student.id, student.name, "present", lessonCount);
+        await addAttendance(student.id, student.name, "present", rawLessonCount);
         
         // Play sound effect
         const audio = new Audio("/attendance-present.mp3");
@@ -43,7 +44,7 @@ export function useStudentAttendance() {
         
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name}${!hasPaid ? ' (غير مدفوع)' : ''}`
+          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${lessonCount})${!hasPaid ? ' (غير مدفوع)' : ''}`
         });
         
         // Clear code field after successful processing
