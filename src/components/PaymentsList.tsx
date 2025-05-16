@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Calendar, Search, Trash2 } from "lucide-react";
 import { Payment } from "@/types";
@@ -5,9 +6,11 @@ import { sanitizeSearchText } from "@/lib/utils";
 import { usePayments } from "@/hooks/use-payments";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 interface PaymentsListProps {
   payments: Payment[];
 }
+
 export function PaymentsList({
   payments
 }: PaymentsListProps) {
@@ -74,6 +77,7 @@ export function PaymentsList({
       setPaymentToDelete(null);
     }
   };
+
   return <div>
       {/* حقل البحث مع اختيار نوع البحث */}
       <div className="p-4">
@@ -97,7 +101,78 @@ export function PaymentsList({
       {filteredPayments.length === 0 ? <div className="p-8 text-center">
           <p className="text-white text-lg">لا توجد مدفوعات مسجلة</p>
         </div> : <div className="divide-y divide-physics-navy">
-          {filteredPayments.map(payment => {})}
+          {filteredPayments.map(payment => (
+            <div key={payment.id} className="p-6">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+                <div>
+                  <h3 className="text-lg font-medium text-white">{payment.studentName}</h3>
+                  <div className="text-sm text-gray-300">
+                    كود الطالب: {payment.studentCode} | المجموعة: {payment.group}
+                  </div>
+                </div>
+                <div className="mt-2 md:mt-0 flex items-center gap-2">
+                  <span className="text-physics-gold flex items-center">
+                    <Calendar size={16} className="ml-1" />
+                    {formatDate(payment.date)}
+                  </span>
+                  
+                  {/* زر حذف المدفوعات */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button 
+                        className="text-red-400 hover:text-red-300 p-2"
+                        title="حذف سجل الدفع"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-physics-dark border-physics-navy text-white">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-red-500">تأكيد حذف سجل الدفع</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-300">
+                          هل أنت متأكد من رغبتك في حذف سجل الدفع الخاص بالطالب {payment.studentName} نهائياً من قاعدة البيانات؟
+                          <br />
+                          <span className="text-red-400 block mt-2">
+                            تحذير: هذا الإجراء لا يمكن التراجع عنه.
+                          </span>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-physics-navy text-white hover:bg-physics-navy/80">
+                          إلغاء
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                          className="bg-red-600 hover:bg-red-700 text-white" 
+                          disabled={isDeleting}
+                          onClick={() => {
+                            setPaymentToDelete(payment);
+                            handleDeletePayment();
+                          }}
+                        >
+                          {isDeleting && paymentToDelete?.id === payment.id ? "جاري الحذف..." : "حذف نهائي"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-400 mb-2">الأشهر المدفوعة:</p>
+                <div className="flex flex-wrap gap-2">
+                  {payment.paidMonths.map((month, index) => (
+                    <span 
+                      key={index} 
+                      className="bg-physics-navy px-3 py-1 rounded-full text-sm text-white"
+                      title={`تاريخ الدفع: ${formatDate(month.date)}`}
+                    >
+                      {month.month}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>}
     </div>;
 }
