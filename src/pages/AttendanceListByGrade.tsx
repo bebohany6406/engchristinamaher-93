@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Student, Attendance } from "@/types";
 import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 const AttendanceListByGrade = () => {
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ const AttendanceListByGrade = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
   const [filter, setFilter] = useState<"all" | "present" | "absent" | "unregistered">("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [groupSearchTerm, setGroupSearchTerm] = useState<string>("");
   
   useEffect(() => {
     if (!currentUser) return;
@@ -75,19 +78,40 @@ const AttendanceListByGrade = () => {
           return false;
         }
         
-        // Apply search filter if provided
+        // Find the corresponding student for additional filtering
+        const student = students.find(s => s.id === record.studentId);
+        
+        // Apply search filter for name or code if provided
         if (searchTerm.trim() !== "") {
-          const student = students.find(s => s.id === record.studentId);
           const searchLower = searchTerm.toLowerCase();
           
-          return (
-            record.studentName.toLowerCase().includes(searchLower) ||
-            student?.code.toLowerCase().includes(searchLower)
-          );
+          if (
+            !record.studentName.toLowerCase().includes(searchLower) &&
+            !(student?.code.toLowerCase().includes(searchLower))
+          ) {
+            return false;
+          }
+        }
+        
+        // Apply group search filter if provided
+        if (groupSearchTerm.trim() !== "") {
+          const groupLower = groupSearchTerm.toLowerCase();
+          
+          // Filter by student group
+          if (!student?.group || !student.group.toLowerCase().includes(groupLower)) {
+            return false;
+          }
         }
         
         return true;
       });
+  
+  // Similarly filter unregistered students by group if group search is provided
+  const filteredStudentsWithoutAttendance = studentsWithoutAttendance.filter(student => {
+    if (groupSearchTerm.trim() === "") return true;
+    
+    return student.group?.toLowerCase().includes(groupSearchTerm.toLowerCase()) ?? false;
+  });
 
   const getGradeTitle = () => {
     switch (grade) {
@@ -147,9 +171,9 @@ const AttendanceListByGrade = () => {
             </div>
           </div>
           
-          {/* Search Bar */}
-          {filter !== "unregistered" && (
-            <div className="mb-6">
+          {/* Search Filters */}
+          {filter !== "unregistered" ? (
+            <div className="mb-6 space-y-3">
               <div className="relative">
                 <input
                   type="text"
@@ -159,6 +183,32 @@ const AttendanceListByGrade = () => {
                   className="inputField pl-10"
                 />
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+              </div>
+              
+              {/* Group Search - New Addition */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="بحث بالمجموعة..."
+                  value={groupSearchTerm}
+                  onChange={(e) => setGroupSearchTerm(e.target.value)}
+                  className="inputField pl-10"
+                />
+                <Users className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
+              </div>
+            </div>
+          ) : (
+            // Also add group search for unregistered students view
+            <div className="mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="بحث بالمجموعة..."
+                  value={groupSearchTerm}
+                  onChange={(e) => setGroupSearchTerm(e.target.value)}
+                  className="inputField pl-10"
+                />
+                <Users className="absolute right-4 top-1/2 transform -translate-y-1/2 text-physics-gold" size={18} />
               </div>
             </div>
           )}
@@ -171,7 +221,7 @@ const AttendanceListByGrade = () => {
                 <h2 className="text-physics-gold">الطلاب الغير مسجلين</h2>
               </div>
               
-              {studentsWithoutAttendance.length === 0 ? (
+              {filteredStudentsWithoutAttendance.length === 0 ? (
                 <div className="p-6 text-center">
                   <p className="text-white text-lg">جميع الطلاب مسجلين في سجل الحضور</p>
                 </div>
@@ -186,7 +236,7 @@ const AttendanceListByGrade = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {studentsWithoutAttendance.map(student => (
+                    {filteredStudentsWithoutAttendance.map(student => (
                       <TableRow key={student.id} className="border-t border-physics-navy hover:bg-physics-navy/30">
                         <TableCell className="text-white">{student.name}</TableCell>
                         <TableCell className="text-white">{student.code}</TableCell>
