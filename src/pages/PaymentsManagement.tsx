@@ -4,20 +4,33 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign } from "lucide-react";
+import { ArrowRight, DollarSign, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
 import { Payment } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const PaymentsManagement = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { payments, debugPaymentsState } = usePayments();
+  const { payments, debugPaymentsState, refreshPayments } = usePayments();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -61,6 +74,75 @@ const PaymentsManagement = () => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
   };
+  
+  // وظيفة حذف جميع المدفوعات
+  const handleDeleteAllPayments = async () => {
+    if (currentUser?.role !== "admin") {
+      toast({
+        title: "غير مصرح",
+        description: "لا يمكن إلا للمدير حذف جميع المدفوعات",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsDeletingAll(true);
+    try {
+      // حذف جميع الأشهر المدفوعة أولاً
+      const { error: paidMonthsError } = await supabase
+        .from('paid_months')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // حذف جميع السجلات
+      
+      if (paidMonthsError) {
+        console.error("Error deleting all paid months:", paidMonthsError);
+        toast({
+          title: "خطأ في حذف الأشهر المدفوعة",
+          description: paidMonthsError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // ثم حذف جميع سجلات المدفوعات
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // حذف جميع السجلات
+      
+      if (paymentsError) {
+        console.error("Error deleting all payments:", paymentsError);
+        toast({
+          title: "خطأ في حذف سجلات المدفوعات",
+          description: paymentsError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // تحديث الحالة المحلية بعد الحذف
+      setFilteredPayments([]);
+      
+      // إعادة تحميل البيانات من Supabase
+      await refreshPayments();
+      
+      toast({
+        title: "تم الحذف بنجاح",
+        description: "تم حذف جميع سجلات المدفوعات والأشهر المدفوعة المرتبطة بنجاح",
+      });
+      
+      console.log("All payments deleted successfully");
+    } catch (error: any) {
+      console.error("Error deleting all payments:", error);
+      toast({
+        title: "خطأ في الحذف",
+        description: `حدث خطأ أثناء محاولة حذف جميع المدفوعات: ${error.message || 'خطأ غير معروف'}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
@@ -86,13 +168,51 @@ const PaymentsManagement = () => {
             <div className="flex flex-wrap gap-2">
               {/* إظهار زر إضافة دفع جديد للمدير فقط */}
               {currentUser?.role === "admin" && (
-                <button 
-                  onClick={() => setShowAddForm(true)} 
-                  className="goldBtn flex items-center gap-2"
-                >
-                  <DollarSign size={18} />
-                  <span>دفع شهر جديد</span>
-                </button>
+                <>
+                  <button 
+                    onClick={() => setShowAddForm(true)} 
+                    className="goldBtn flex items-center gap-2"
+                  >
+                    <DollarSign size={18} />
+                    <span>دفع شهر جديد</span>
+                  </button>
+                  
+                  {/* زر حذف جميع المدفوعات */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button 
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2"
+                        disabled={isDeletingAll}
+                      >
+                        <Trash2 size={18} />
+                        <span>{isDeletingAll ? "جاري الحذف..." : "حذف جميع المدفوعات"}</span>
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-physics-dark border-physics-navy text-white">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-red-500">تأكيد حذف جميع المدفوعات</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-300">
+                          هل أنت متأكد من رغبتك في حذف جميع سجلات المدفوعات والأشهر المدفوعة نهائياً من قاعدة البيانات؟
+                          <br />
+                          <span className="text-red-400 block mt-2 font-bold">
+                            تحذير: هذا الإجراء لا يمكن التراجع عنه وسيتم حذف جميع سجلات المدفوعات بشكل نهائي!
+                          </span>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-physics-navy text-white hover:bg-physics-navy/80">
+                          إلغاء
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          onClick={handleDeleteAllPayments}
+                        >
+                          حذف نهائي لجميع المدفوعات
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
               )}
             </div>
           </div>
