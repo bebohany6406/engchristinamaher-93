@@ -244,6 +244,11 @@ export function usePayments() {
         
       if (paidMonthsError) {
         console.error("Error deleting related paid months:", paidMonthsError);
+        toast({
+          title: "خطأ في حذف الأشهر المدفوعة",
+          description: paidMonthsError.message,
+          variant: "destructive"
+        });
         return {
           success: false,
           message: `حدث خطأ أثناء حذف الأشهر المدفوعة المرتبطة: ${paidMonthsError.message || 'خطأ غير معروف'}`
@@ -260,6 +265,11 @@ export function usePayments() {
 
       if (paymentError) {
         console.error("Error deleting payment from Supabase:", paymentError);
+        toast({
+          title: "خطأ في حذف سجل الدفع",
+          description: paymentError.message,
+          variant: "destructive"
+        });
         return {
           success: false,
           message: `حدث خطأ أثناء حذف سجل الدفع: ${paymentError.message || 'خطأ غير معروف'}`
@@ -273,7 +283,13 @@ export function usePayments() {
         return updatedPayments;
       });
       
-      console.log("Payment deleted successfully, state updated");
+      console.log("Payment deleted successfully from Supabase, state updated");
+      
+      // Show success toast for the user
+      toast({
+        title: "تم الحذف بنجاح",
+        description: "تم حذف سجل الدفع والأشهر المدفوعة المرتبطة به بنجاح من قاعدة البيانات",
+      });
       
       return {
         success: true,
@@ -281,6 +297,11 @@ export function usePayments() {
       };
     } catch (error: any) {
       console.error("Error in deletePayment:", error);
+      toast({
+        title: "خطأ في الحذف",
+        description: `حدث خطأ أثناء حذف سجل الدفع: ${error.message || 'خطأ غير معروف'}`,
+        variant: "destructive"
+      });
       return {
         success: false,
         message: `حدث خطأ أثناء حذف سجل الدفع: ${error.message || 'خطأ غير معروف'}`

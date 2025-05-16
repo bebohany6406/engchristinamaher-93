@@ -163,7 +163,7 @@ export function PaymentsList({ payments }: PaymentsListProps) {
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-physics-gold">تأكيد حذف سجل الدفع</AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-300">
-                          هل أنت متأكد من رغبتك في حذف سجل الدفع الخاص بالطالب "{payment.studentName}" نهائياً؟
+                          هل أنت متأكد من رغبتك في حذف سجل الدفع الخاص بالطالب "{payment.studentName}" نهائياً من قاعدة البيانات؟
                           <br />
                           <span className="text-red-400 block mt-2">
                             تحذير: سيتم حذف جميع الأشهر المدفوعة المرتبطة بهذا السجل ولا يمكن استعادتها.
