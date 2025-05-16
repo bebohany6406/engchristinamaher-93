@@ -10,6 +10,7 @@ import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
 import { Payment } from "@/types";
+import { deleteAllPaymentsData } from "@/integrations/supabase/client";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,8 @@ const PaymentsManagement = () => {
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -146,6 +149,40 @@ const PaymentsManagement = () => {
       setIsRefreshing(false);
     }
   };
+  
+  // حذف جميع سجلات المدفوعات
+  const handleDeleteAllPayments = async () => {
+    setIsClearingAll(true);
+    
+    try {
+      const result = await deleteAllPaymentsData();
+      
+      if (result.success) {
+        await handleRefreshData();
+        
+        toast({
+          title: "✅ تم بنجاح",
+          description: "تم حذف جميع سجلات المدفوعات بنجاح",
+        });
+      } else {
+        toast({
+          title: "❌ خطأ في الحذف",
+          description: "فشل في حذف سجلات المدفوعات",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting all payments:", error);
+      toast({
+        title: "❌ خطأ",
+        description: "حدث خطأ غير متوقع أثناء حذف السجلات",
+        variant: "destructive",
+      });
+    } finally {
+      setIsClearingAll(false);
+      setShowClearAllDialog(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-physics-navy flex flex-col">
@@ -168,7 +205,7 @@ const PaymentsManagement = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {/* زر تحديث البيانات */}
               <button 
                 onClick={handleRefreshData} 
@@ -181,13 +218,23 @@ const PaymentsManagement = () => {
               
               {/* إظهار زر إضافة دفع جديد للمدير فقط */}
               {currentUser?.role === "admin" && (
-                <button 
-                  onClick={() => setShowAddForm(true)} 
-                  className="goldBtn flex items-center gap-2"
-                >
-                  <DollarSign size={18} />
-                  <span>دفع شهر جديد</span>
-                </button>
+                <>
+                  <button 
+                    onClick={() => setShowAddForm(true)} 
+                    className="goldBtn flex items-center gap-2"
+                  >
+                    <DollarSign size={18} />
+                    <span>دفع شهر جديد</span>
+                  </button>
+                  
+                  {/* زر حذف جميع المدفوعات */}
+                  <button
+                    onClick={() => setShowClearAllDialog(true)}
+                    className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded"
+                  >
+                    حذف جميع المدفوعات
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -267,6 +314,33 @@ const PaymentsManagement = () => {
               className="bg-red-700 hover:bg-red-800 text-white"
             >
               {isDeleting ? "جاري الحذف..." : "حذف"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* نافذة تأكيد حذف جميع المدفوعات */}
+      <AlertDialog open={showClearAllDialog} onOpenChange={() => !isClearingAll && setShowClearAllDialog(false)}>
+        <AlertDialogContent className="bg-physics-dark border border-red-500 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500">تأكيد حذف جميع المدفوعات</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              هل أنت متأكد من حذف جميع سجلات المدفوعات؟ لا يمكن التراجع عن هذه العملية وستفقد جميع بيانات المدفوعات.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={isClearingAll} 
+              className="bg-transparent border border-gray-400 text-gray-300 hover:bg-physics-navy"
+            >
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteAllPayments}
+              disabled={isClearingAll}
+              className="bg-red-700 hover:bg-red-800 text-white"
+            >
+              {isClearingAll ? "جاري الحذف..." : "حذف جميع المدفوعات"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
