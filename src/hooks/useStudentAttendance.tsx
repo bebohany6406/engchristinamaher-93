@@ -24,7 +24,7 @@ export function useStudentAttendance() {
         let rawLessonCount = getStudentLessonCount(student.id) + 1; // +1 because we're adding a new attendance
         
         // Reset count after lesson 8 (e.g., lesson 9 becomes lesson 1 of next cycle)
-        const lessonCount = (rawLessonCount - 1) % 8 + 1;
+        const displayLessonCount = (rawLessonCount - 1) % 8 + 1;
         
         // Check if student has paid for this lesson
         const hasPaid = hasStudentPaidForCurrentLesson(student.id, rawLessonCount);
@@ -44,7 +44,7 @@ export function useStudentAttendance() {
         
         toast({
           title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${lessonCount})${!hasPaid ? ' (غير مدفوع)' : ''}`
+          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${displayLessonCount})${!hasPaid ? ' (غير مدفوع)' : ''}`
         });
         
         // Clear code field after successful processing

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -77,16 +78,19 @@ export function ManualAttendance() {
       if (student) {
         // الحصول على عدد الدروس الحالية
         const currentLessonCount = await fetchStudentLessonCount(student.id);
-        const lessonNumber = currentLessonCount + 1; // +1 لأننا على وشك إضافة حضور جديد
+        const rawLessonNumber = currentLessonCount + 1; // +1 لأننا على وشك إضافة حضور جديد
+        
+        // Reset count after lesson 8 (e.g., lesson 9 becomes lesson 1 of next cycle)
+        const displayLessonNumber = (rawLessonNumber - 1) % 8 + 1;
         
         // التحقق من حالة الدفع
-        const hasPaid = await checkStudentPayment(student.id, lessonNumber);
+        const hasPaid = await checkStudentPayment(student.id, rawLessonNumber);
         
         setStudentInfo({ 
           id: student.id, 
           name: student.name,
           hasPaid,
-          lessonNumber
+          lessonNumber: rawLessonNumber
         });
       } else {
         toast({
@@ -120,13 +124,16 @@ export function ManualAttendance() {
           studentInfo.lessonNumber
         );
         
+        // Calculate the display lesson number (reset after 8)
+        const displayLessonNumber = (studentInfo.lessonNumber - 1) % 8 + 1;
+        
         // تشغيل صوت
         const audio = new Audio("/attendance-absent.mp3");
         audio.play().catch(e => console.error("Sound play failed:", e));
         
         toast({
           title: "تم تسجيل الغياب",
-          description: `تم تسجيل غياب الطالب ${studentInfo.name}`
+          description: `تم تسجيل غياب الطالب ${studentInfo.name} (الحصة ${displayLessonNumber})`
         });
         
         setStudentCode("");

@@ -52,6 +52,10 @@ export function QrScanner() {
     setShowScanner(false);
     setScannedCode(code); // ملء حقل الإدخال بالكود المقروء
     
+    // تشغيل صوت
+    const audio = new Audio("/scan-success.mp3");
+    audio.play().catch(e => console.error("Sound play failed:", e));
+    
     toast({
       title: "تم مسح الكود",
       description: "تم إدخال الكود، اضغط على زر تسجيل الحضور للتأكيد"
