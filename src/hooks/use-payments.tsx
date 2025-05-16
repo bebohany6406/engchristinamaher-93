@@ -233,6 +233,8 @@ export function usePayments() {
   // Delete a payment record
   const deletePayment = async (paymentId: string) => {
     try {
+      console.log(`Deleting payment with ID: ${paymentId}`);
+      
       // Delete from Supabase (paid_months will be deleted by CASCADE)
       const { error } = await supabase
         .from('payments')
@@ -240,12 +242,16 @@ export function usePayments() {
         .eq('id', paymentId);
 
       if (error) {
-        console.error("Error deleting payment:", error);
-        throw error;
+        console.error("Error deleting payment from Supabase:", error);
+        return {
+          success: false,
+          message: `حدث خطأ أثناء حذف سجل الدفع: ${error.message || 'خطأ غير معروف'}`
+        };
       }
 
       // Update local state
       setPayments(prevPayments => prevPayments.filter(payment => payment.id !== paymentId));
+      console.log("Payment deleted successfully, updated state");
 
       return {
         success: true,

@@ -64,17 +64,39 @@ const PaymentsManagement = () => {
     debugPaymentsState(); // للتحقق من البيانات في الكونسول
   };
   
-  const handleDeletePayment = (paymentId: string) => {
+  const handleDeletePayment = async (paymentId: string) => {
     if (window.confirm("هل أنت متأكد من حذف سجل الدفع هذا؟ لا يمكن التراجع عن هذه العملية.")) {
-      deletePayment(paymentId);
-      // تحديث القائمة بعد الحذف
-      const updatedPayments = payments.filter(p => p.id !== paymentId);
-      setFilteredPayments(updatedPayments);
-      
-      toast({
-        title: "✅ تم الحذف",
-        description: "تم حذف سجل الدفع بنجاح",
-      });
+      try {
+        // تشغيل الصوت عند الحذف
+        const audio = new Audio("/scan-success.mp3");
+        audio.play().catch(e => console.error("Sound play failed:", e));
+        
+        // حذف السجل من قاعدة البيانات
+        const result = await deletePayment(paymentId);
+        
+        if (result.success) {
+          // تحديث القائمة بعد الحذف مباشرة
+          setFilteredPayments(prevPayments => prevPayments.filter(p => p.id !== paymentId));
+          
+          toast({
+            title: "✅ تم الحذف",
+            description: "تم حذف سجل الدفع بنجاح",
+          });
+        } else {
+          toast({
+            title: "❌ خطأ في الحذف",
+            description: result.message,
+            variant: "destructive",
+          });
+        }
+      } catch (error: any) {
+        console.error("Error in payment deletion:", error);
+        toast({
+          title: "❌ خطأ",
+          description: `فشل في حذف السجل: ${error.message || "خطأ غير معروف"}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 
