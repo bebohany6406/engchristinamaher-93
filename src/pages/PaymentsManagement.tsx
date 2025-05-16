@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign } from "lucide-react";
+import { ArrowRight, DollarSign, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
@@ -30,6 +30,7 @@ const PaymentsManagement = () => {
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -72,9 +73,7 @@ const PaymentsManagement = () => {
   const handlePaymentAdded = (payment: Payment) => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
-    // سنحتاج لتحديث قائمة المدفوعات يدوياً هنا لعرض التغييرات على الفور
-    refreshPayments(); 
-    debugPaymentsState(); // للتحقق من البيانات في الكونسول
+    handleRefreshData();
   };
   
   const confirmDeletePayment = (paymentId: string) => {
@@ -97,7 +96,7 @@ const PaymentsManagement = () => {
       
       if (result.success) {
         // تحديث القائمة بعد الحذف مباشرة
-        await refreshPayments();
+        await handleRefreshData();
         
         // التحقق من أن الحذف تم بنجاح
         console.log("Payment deleted successfully. Updated payments list");
@@ -128,11 +127,24 @@ const PaymentsManagement = () => {
 
   // وظيفة تحديث البيانات يدوياً
   const handleRefreshData = async () => {
-    await refreshPayments();
-    toast({
-      title: "تم التحديث",
-      description: "تم تحديث بيانات المدفوعات بنجاح",
-    });
+    setIsRefreshing(true);
+    try {
+      await refreshPayments();
+      console.log("Payments refreshed successfully");
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث بيانات المدفوعات بنجاح",
+      });
+    } catch (error) {
+      console.error("Error refreshing payments:", error);
+      toast({
+        title: "خطأ في التحديث",
+        description: "حدث خطأ أثناء تحديث البيانات",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -160,9 +172,11 @@ const PaymentsManagement = () => {
               {/* زر تحديث البيانات */}
               <button 
                 onClick={handleRefreshData} 
-                className="text-white bg-physics-navy hover:bg-physics-navy/80 px-4 py-2 rounded"
+                disabled={isRefreshing}
+                className="text-white bg-physics-navy hover:bg-physics-navy/80 px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
               >
-                تحديث البيانات
+                <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                <span>{isRefreshing ? "جاري التحديث..." : "تحديث البيانات"}</span>
               </button>
               
               {/* إظهار زر إضافة دفع جديد للمدير فقط */}

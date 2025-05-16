@@ -265,9 +265,7 @@ export function usePayments() {
         };
       }
 
-      // After successful deletion from database, update local state
-      console.log("Payment deleted from database, updating local state...");
-      
+      // After successful deletion from database, update local state immediately
       setPayments(prevPayments => {
         const updatedPayments = prevPayments.filter(payment => payment.id !== paymentId);
         console.log(`Payments before deletion: ${prevPayments.length}, after deletion: ${updatedPayments.length}`);
@@ -276,9 +274,6 @@ export function usePayments() {
       
       console.log("Payment deleted successfully, state updated");
       
-      // Force refresh the data from database after deletion
-      await fetchPayments();
-
       return {
         success: true,
         message: "تم حذف سجل الدفع بنجاح"
