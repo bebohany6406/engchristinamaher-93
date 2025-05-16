@@ -14,8 +14,19 @@ export function ManualCodeEntry({
   handleManualEntry,
   isProcessing 
 }: ManualCodeEntryProps) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Play confirmation sound when submitting the form
+    const audio = new Audio("/scan-success.mp3");
+    audio.play().catch(e => console.error("Sound play failed:", e));
+    
+    // Call the original handler
+    handleManualEntry(e);
+  };
+
   return (
-    <form onSubmit={handleManualEntry} className="w-full">
+    <form onSubmit={handleSubmit} className="w-full">
       <div className="mb-4">
         <input
           type="text"
