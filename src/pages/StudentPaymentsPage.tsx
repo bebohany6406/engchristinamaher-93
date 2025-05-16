@@ -40,6 +40,11 @@ const StudentPaymentsPage = () => {
       });
     } catch (error) {
       console.error("Error refreshing payments:", error);
+      toast({
+        title: "خطأ في التحديث",
+        description: "حدث خطأ أثناء تحديث البيانات",
+        variant: "destructive"
+      });
     } finally {
       setIsRefreshing(false);
     }

@@ -73,7 +73,7 @@ const PaymentsManagement = () => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
     // سنحتاج لتحديث قائمة المدفوعات يدوياً هنا لعرض التغييرات على الفور
-    refreshPayments(); // استخدام دالة التحديث الجديدة
+    refreshPayments(); 
     debugPaymentsState(); // للتحقق من البيانات في الكونسول
   };
   
@@ -96,7 +96,7 @@ const PaymentsManagement = () => {
       const result = await deletePayment(paymentToDelete);
       
       if (result.success) {
-        // تحديث القائمة بعد الحذف مباشرة - نستخدم الآن refreshPayments بدلاً من تحديث الحالة المحلية فقط
+        // تحديث القائمة بعد الحذف مباشرة
         await refreshPayments();
         
         // التحقق من أن الحذف تم بنجاح

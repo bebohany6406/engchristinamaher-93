@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Payment, PaidMonth } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
@@ -277,7 +276,7 @@ export function usePayments() {
       
       console.log("Payment deleted successfully, state updated");
       
-      // أضفنا هذا السطر لإعادة تحميل البيانات من قاعدة البيانات بعد الحذف
+      // Force refresh the data from database after deletion
       await fetchPayments();
 
       return {
@@ -349,9 +348,10 @@ export function usePayments() {
     };
   };
 
-  // أضفنا دالة إعادة تحميل البيانات لتحديث الواجهة عند الحاجة
+  // تحديث البيانات يدوياً
   const refreshPayments = async () => {
-    await fetchPayments();
+    console.log("Manual refresh requested");
+    return await fetchPayments();
   };
 
   return {
@@ -366,6 +366,6 @@ export function usePayments() {
     getFirstLessonInCurrentMonth,
     getLastLessonInCurrentMonth,
     debugPaymentsState,
-    refreshPayments // تصدير الدالة الجديدة
+    refreshPayments
   };
 }
