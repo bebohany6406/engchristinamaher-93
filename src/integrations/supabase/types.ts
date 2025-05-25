@@ -11,112 +11,140 @@ export type Database = {
     Tables: {
       attendance: {
         Row: {
-          date: string | null
+          created_at: string | null
+          date: string
           id: string
-          lesson_number: number
+          lesson_number: number | null
+          notes: string | null
           status: string
           student_id: string
-          student_name: string
+          student_name: string | null
           time: string | null
         }
         Insert: {
-          date?: string | null
+          created_at?: string | null
+          date: string
           id?: string
-          lesson_number: number
+          lesson_number?: number | null
+          notes?: string | null
           status: string
           student_id: string
-          student_name: string
+          student_name?: string | null
           time?: string | null
         }
         Update: {
-          date?: string | null
+          created_at?: string | null
+          date?: string
           id?: string
-          lesson_number?: number
+          lesson_number?: number | null
+          notes?: string | null
           status?: string
           student_id?: string
-          student_name?: string
+          student_name?: string | null
           time?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       books: {
         Row: {
+          created_at: string | null
           grade: string
           id: string
           title: string
           upload_date: string | null
-          url: string
+          url: string | null
         }
         Insert: {
+          created_at?: string | null
           grade: string
           id?: string
           title: string
           upload_date?: string | null
-          url: string
+          url?: string | null
         }
         Update: {
+          created_at?: string | null
           grade?: string
           id?: string
           title?: string
           upload_date?: string | null
-          url?: string
+          url?: string | null
         }
         Relationships: []
       }
       grades: {
         Row: {
+          created_at: string | null
           date: string | null
-          exam_name: string
+          exam_name: string | null
           group_name: string | null
           id: string
-          lesson_number: number
-          performance_indicator: string
+          lesson_number: number | null
+          performance_indicator: string | null
           score: number
           student_id: string
-          student_name: string
-          total_score: number
+          student_name: string | null
+          total_score: number | null
         }
         Insert: {
+          created_at?: string | null
           date?: string | null
-          exam_name: string
+          exam_name?: string | null
           group_name?: string | null
           id?: string
-          lesson_number: number
-          performance_indicator: string
+          lesson_number?: number | null
+          performance_indicator?: string | null
           score: number
           student_id: string
-          student_name: string
-          total_score: number
+          student_name?: string | null
+          total_score?: number | null
         }
         Update: {
+          created_at?: string | null
           date?: string | null
-          exam_name?: string
+          exam_name?: string | null
           group_name?: string | null
           id?: string
-          lesson_number?: number
-          performance_indicator?: string
+          lesson_number?: number | null
+          performance_indicator?: string | null
           score?: number
           student_id?: string
-          student_name?: string
-          total_score?: number
+          student_name?: string | null
+          total_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "grades_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       paid_months: {
         Row: {
-          date: string | null
+          date: string
           id: string
           month: string
           payment_id: string | null
         }
         Insert: {
-          date?: string | null
+          date: string
           id?: string
           month: string
           payment_id?: string | null
         }
         Update: {
-          date?: string | null
+          date?: string
           id?: string
           month?: string
           payment_id?: string | null
@@ -137,32 +165,38 @@ export type Database = {
           id: string
           password: string
           phone: string
-          student_code: string
-          student_name: string
+          student_code: string | null
+          student_id: string | null
+          student_name: string | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           password: string
           phone: string
-          student_code: string
-          student_name: string
+          student_code?: string | null
+          student_id?: string | null
+          student_name?: string | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           password?: string
           phone?: string
-          student_code?: string
-          student_name?: string
+          student_code?: string | null
+          student_id?: string | null
+          student_name?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "parents_student_code_fkey"
-            columns: ["student_code"]
+            foreignKeyName: "parents_student_id_fkey"
+            columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
-            referencedColumns: ["code"]
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -172,36 +206,47 @@ export type Database = {
           date: string | null
           id: string
           month: string
-          student_code: string
-          student_group: string
+          notes: string | null
+          student_code: string | null
+          student_group: string | null
           student_id: string
-          student_name: string
+          student_name: string | null
         }
         Insert: {
           created_at?: string | null
           date?: string | null
           id?: string
           month: string
-          student_code: string
-          student_group: string
+          notes?: string | null
+          student_code?: string | null
+          student_group?: string | null
           student_id: string
-          student_name: string
+          student_name?: string | null
         }
         Update: {
           created_at?: string | null
           date?: string | null
           id?: string
           month?: string
-          student_code?: string
-          student_group?: string
+          notes?: string | null
+          student_code?: string | null
+          student_group?: string | null
           student_id?: string
-          student_name?: string
+          student_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {
-          code: string
+          code: string | null
           created_at: string | null
           grade: string
           group_name: string | null
@@ -210,9 +255,10 @@ export type Database = {
           parent_phone: string | null
           password: string
           phone: string
+          updated_at: string | null
         }
         Insert: {
-          code: string
+          code?: string | null
           created_at?: string | null
           grade: string
           group_name?: string | null
@@ -221,9 +267,10 @@ export type Database = {
           parent_phone?: string | null
           password: string
           phone: string
+          updated_at?: string | null
         }
         Update: {
-          code?: string
+          code?: string | null
           created_at?: string | null
           grade?: string
           group_name?: string | null
@@ -232,30 +279,40 @@ export type Database = {
           parent_phone?: string | null
           password?: string
           phone?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
       videos: {
         Row: {
+          created_at: string | null
+          description: string | null
           grade: string
           id: string
           is_youtube: boolean | null
+          thumbnail_url: string | null
           title: string
           upload_date: string | null
           url: string
         }
         Insert: {
+          created_at?: string | null
+          description?: string | null
           grade: string
           id?: string
           is_youtube?: boolean | null
+          thumbnail_url?: string | null
           title: string
           upload_date?: string | null
           url: string
         }
         Update: {
+          created_at?: string | null
+          description?: string | null
           grade?: string
           id?: string
           is_youtube?: boolean | null
+          thumbnail_url?: string | null
           title?: string
           upload_date?: string | null
           url?: string

@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, Camera, QrCode, UserCheck, Send } from "lucide-react";
+import { ArrowRight, Camera, QrCode, UserCheck, Send, Database } from "lucide-react";
 import { Html5QrScanner } from "@/components/scanner/Html5QrScanner";
 import PhysicsBackground from "@/components/PhysicsBackground";
 import { PhoneContact } from "@/components/PhoneContact";
@@ -43,6 +44,8 @@ const SimpleAttendance = () => {
       const student = await getStudentByCode(scannedCode);
       
       if (student) {
+        console.log("Saving attendance to Supabase for student:", student.name);
+        
         // حساب رقم الدرس الحالي للطالب
         const rawLessonNumber = getStudentLessonCount(student.id) + 1;
         
@@ -52,31 +55,42 @@ const SimpleAttendance = () => {
         // التحقق من حالة الدفع
         const hasPaid = hasStudentPaidForCurrentLesson(student.id, rawLessonNumber);
         
-        // تسجيل الحضور
-        await addAttendance(student.id, student.name, "present", rawLessonNumber);
+        // تسجيل الحضور في Supabase
+        const attendanceRecord = await addAttendance(student.id, student.name, "present", rawLessonNumber);
         
-        // تشغيل صوت
-        const audio = new Audio("/attendance-present.mp3");
-        audio.play().catch(e => console.error("Sound play failed:", e));
-        
-        // إضافة إلى قائمة المسح الناجح
-        setSuccessfulScans(prev => [
-          ...prev, 
-          { 
-            code: scannedCode, 
-            name: student.name,
-            paid: hasPaid,
-            lessonNumber: displayLessonNumber
-          }
-        ]);
-        
-        toast({
-          title: "✅ تم تسجيل الحضور",
-          description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${displayLessonNumber})${!hasPaid ? ' (غير مدفوع)' : ''}`
-        });
-        
-        // مسح الكود بعد التسجيل
-        setScannedCode("");
+        if (attendanceRecord) {
+          console.log("Attendance saved successfully to Supabase:", attendanceRecord);
+          
+          // تشغيل صوت
+          const audio = new Audio("/attendance-present.mp3");
+          audio.play().catch(e => console.error("Sound play failed:", e));
+          
+          // إضافة إلى قائمة المسح الناجح
+          setSuccessfulScans(prev => [
+            ...prev, 
+            { 
+              code: scannedCode, 
+              name: student.name,
+              paid: hasPaid,
+              lessonNumber: displayLessonNumber
+            }
+          ]);
+          
+          toast({
+            title: "✅ تم حفظ الحضور في Supabase",
+            description: `تم تسجيل حضور الطالب ${student.name} (الحصة ${displayLessonNumber})${!hasPaid ? ' (غير مدفوع)' : ''}`
+          });
+          
+          // مسح الكود بعد التسجيل
+          setScannedCode("");
+        } else {
+          console.error("Failed to save attendance to Supabase");
+          toast({
+            variant: "destructive",
+            title: "❌ خطأ في حفظ الحضور",
+            description: "لم يتم حفظ الحضور في قاعدة البيانات"
+          });
+        }
       } else {
         toast({
           variant: "destructive",
@@ -85,11 +99,11 @@ const SimpleAttendance = () => {
         });
       }
     } catch (error) {
-      console.error("Error processing code:", error);
+      console.error("Error processing code and saving to Supabase:", error);
       toast({
         variant: "destructive",
-        title: "❌ خطأ",
-        description: "حدث خطأ أثناء معالجة الكود"
+        title: "❌ خطأ في الاتصال بقاعدة البيانات",
+        description: "حدث خطأ أثناء حفظ البيانات في Supabase"
       });
     } finally {
       setIsProcessing(false);
@@ -126,7 +140,13 @@ const SimpleAttendance = () => {
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-6 relative z-10">
         <div className="mx-auto max-w-lg">
-          <h1 className="text-2xl font-bold text-physics-gold text-center mb-6">تسجيل الحضور بالباركود</h1>
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-physics-gold mb-2">تسجيل الحضور بالباركود</h1>
+            <p className="text-sm text-physics-gold/70 flex items-center justify-center gap-1">
+              <Database size={16} />
+              يتم حفظ الحضور في Supabase
+            </p>
+          </div>
           
           {showScanner ? (
             <div className="mb-6">
@@ -170,11 +190,11 @@ const SimpleAttendance = () => {
                 disabled={!scannedCode || isProcessing}
               >
                 {isProcessing ? (
-                  <span className="animate-pulse">جاري التسجيل...</span>
+                  <span className="animate-pulse">جاري الحفظ في Supabase...</span>
                 ) : (
                   <>
                     <Send size={20} />
-                    <span>تسجيل الحضور</span>
+                    <span>حفظ الحضور في Supabase</span>
                   </>
                 )}
               </button>
@@ -184,7 +204,10 @@ const SimpleAttendance = () => {
           {/* عرض الرموز التي تم مسحها بنجاح */}
           {successfulScans.length > 0 && (
             <div className="bg-physics-dark p-4 rounded-lg mt-6">
-              <h2 className="text-xl font-bold text-physics-gold mb-4">تم تسجيل حضور</h2>
+              <h2 className="text-xl font-bold text-physics-gold mb-4 flex items-center gap-2">
+                <Database size={20} />
+                تم حفظ الحضور في Supabase
+              </h2>
               <div className="space-y-2">
                 {successfulScans.map((scan, index) => (
                   <div 

@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/Logo";
 import { PhoneContact } from "@/components/PhoneContact";
-import { ArrowRight, DollarSign } from "lucide-react";
+import { ArrowRight, DollarSign, Download, Database } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePayments } from "@/hooks/use-payments";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentForm } from "@/components/PaymentForm";
 import { Payment } from "@/types";
+import { backupAllData } from "@/integrations/supabase/client";
 
 const PaymentsManagement = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const PaymentsManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [recentPayment, setRecentPayment] = useState<Payment | null>(null);
+  const [isBackingUp, setIsBackingUp] = useState(false);
   
   // فلترة المدفوعات حسب نوع المستخدم
   useEffect(() => {
@@ -26,9 +28,9 @@ const PaymentsManagement = () => {
       return;
     }
 
-    // تأكد من تحميل البيانات من المخزن المحلي
+    // تأكد من تحميل البيانات من Supabase
     const state = debugPaymentsState();
-    console.log("Payments data:", state);
+    console.log("Payments data from Supabase:", state);
     
     if (currentUser.role === "admin") {
       // المدير يرى جميع المدفوعات
@@ -60,6 +62,38 @@ const PaymentsManagement = () => {
   const handlePaymentAdded = (payment: Payment) => {
     // عند إضافة دفعة جديدة، نعرضها كأحدث دفعة
     setRecentPayment(payment);
+    toast({
+      title: "تم الحفظ في Supabase",
+      description: "تم حفظ الدفعة بنجاح في قاعدة البيانات",
+    });
+  };
+
+  const handleBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      const result = await backupAllData();
+      if (result.success) {
+        toast({
+          title: "✅ تم إنشاء النسخة الاحتياطية",
+          description: "تم تحميل ملف النسخة الاحتياطية بنجاح",
+        });
+      } else {
+        toast({
+          title: "❌ خطأ في النسخ الاحتياطي",
+          description: "حدث خطأ أثناء إنشاء النسخة الاحتياطية",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Backup error:", error);
+      toast({
+        title: "❌ خطأ",
+        description: "حدث خطأ أثناء إنشاء النسخة الاحتياطية",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackingUp(false);
+    }
   };
 
   return (
@@ -81,9 +115,27 @@ const PaymentsManagement = () => {
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-physics-gold">إدارة المدفوعات</h1>
+              <p className="text-sm text-physics-gold/70 flex items-center gap-1 mt-1">
+                <Database size={16} />
+                جميع البيانات محفوظة في Supabase
+              </p>
+            </div>
             
             <div className="flex flex-wrap gap-2">
+              {/* زر النسخ الاحتياطي للمدير */}
+              {currentUser?.role === "admin" && (
+                <button 
+                  onClick={handleBackup}
+                  disabled={isBackingUp}
+                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Download size={18} />
+                  <span>{isBackingUp ? "جاري النسخ..." : "نسخ احتياطي"}</span>
+                </button>
+              )}
+              
               {/* إظهار زر إضافة دفع جديد للمدير فقط */}
               {currentUser?.role === "admin" && (
                 <button 
@@ -108,7 +160,10 @@ const PaymentsManagement = () => {
           {/* عرض أحدث دفعة تم إضافتها */}
           {recentPayment && (
             <div className="bg-physics-gold/10 border border-physics-gold rounded-lg p-4 mb-6">
-              <h2 className="text-physics-gold font-bold mb-2">تم إضافة دفعة جديدة</h2>
+              <h2 className="text-physics-gold font-bold mb-2 flex items-center gap-2">
+                <Database size={16} />
+                تم حفظ دفعة جديدة في Supabase
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <span className="text-gray-400 block text-sm">الطالب:</span>

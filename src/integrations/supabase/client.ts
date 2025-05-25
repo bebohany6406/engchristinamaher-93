@@ -11,9 +11,11 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// وظيفة لحذف جميع سجلات المدفوعات والأشهر المدفوعة
+// وظيفة لحذف جميع سجلات المدفوعات والأشهر المدفوعة من Supabase
 export const deleteAllPaymentsData = async () => {
   try {
+    console.log("Starting to delete all payments data from Supabase...");
+    
     // حذف جميع سجلات الأشهر المدفوعة أولاً
     const { error: paidMonthsError } = await supabase
       .from('paid_months')
@@ -36,9 +38,69 @@ export const deleteAllPaymentsData = async () => {
       return { success: false, error: paymentsError };
     }
     
+    console.log("Successfully deleted all payments data from Supabase");
     return { success: true };
   } catch (error) {
     console.error("خطأ غير متوقع:", error);
+    return { success: false, error };
+  }
+};
+
+// وظيفة للنسخ الاحتياطي للبيانات
+export const backupAllData = async () => {
+  try {
+    console.log("Starting data backup from Supabase...");
+    
+    // جلب جميع البيانات من Supabase
+    const [
+      studentsData,
+      paymentsData,
+      paidMonthsData,
+      attendanceData,
+      gradesData,
+      videosData,
+      booksData,
+      parentsData
+    ] = await Promise.all([
+      supabase.from('students').select('*'),
+      supabase.from('payments').select('*'),
+      supabase.from('paid_months').select('*'),
+      supabase.from('attendance').select('*'),
+      supabase.from('grades').select('*'),
+      supabase.from('videos').select('*'),
+      supabase.from('books').select('*'),
+      supabase.from('parents').select('*')
+    ]);
+    
+    const backup = {
+      timestamp: new Date().toISOString(),
+      students: studentsData.data || [],
+      payments: paymentsData.data || [],
+      paidMonths: paidMonthsData.data || [],
+      attendance: attendanceData.data || [],
+      grades: gradesData.data || [],
+      videos: videosData.data || [],
+      books: booksData.data || [],
+      parents: parentsData.data || []
+    };
+    
+    // تحويل البيانات إلى JSON وتحميلها
+    const dataStr = JSON.stringify(backup, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `physics_system_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    console.log("Backup completed successfully");
+    return { success: true, message: "تم إنشاء النسخة الاحتياطية بنجاح" };
+  } catch (error) {
+    console.error("خطأ في النسخ الاحتياطي:", error);
     return { success: false, error };
   }
 };

@@ -77,8 +77,9 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
     
     try {
       setIsSubmitting(true);
+      console.log("Saving payment to Supabase...");
       
-      // Await the Promise returned by addPayment
+      // Await the Promise returned by addPayment - this saves to Supabase
       const result = await addPayment(
         selectedStudent.id,
         selectedStudent.name,
@@ -88,25 +89,29 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
       );
       
       if (result.success) {
-        // بعد إضافة الدفعة بنجاح، نقوم بإرسال بيانات الدفعة للدالة onPaymentAdded
+        console.log("Payment saved successfully to Supabase:", result.payment);
+        
+        // بعد إضافة الدفعة بنجاح في Supabase، نقوم بإرسال بيانات الدفعة للدالة onPaymentAdded
         onPaymentAdded(result.payment);
         
         toast({
-          title: "✅ تم تسجيل الدفعة",
+          title: "✅ تم حفظ الدفعة في Supabase",
           description: result.message,
         });
         onClose();
       } else {
+        console.error("Failed to save payment to Supabase:", result.message);
         toast({
-          title: "❌ خطأ",
+          title: "❌ خطأ في حفظ البيانات",
           description: result.message,
           variant: "destructive",
         });
       }
     } catch (error: any) {
+      console.error("Error saving to Supabase:", error);
       toast({
-        title: "❌ خطأ",
-        description: error.message || "حدث خطأ أثناء تسجيل الدفعة",
+        title: "❌ خطأ في الاتصال بقاعدة البيانات",
+        description: error.message || "حدث خطأ أثناء حفظ البيانات في Supabase",
         variant: "destructive",
       });
     } finally {
@@ -117,7 +122,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
   return (
     <div className="bg-physics-dark rounded-lg p-4 shadow-lg mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl text-physics-gold font-bold">دفع شهر جديد</h3>
+        <h3 className="text-xl text-physics-gold font-bold">دفع شهر جديد (حفظ في Supabase)</h3>
         <button onClick={onClose} className="text-white hover:text-physics-gold">
           <X size={20} />
         </button>
@@ -218,7 +223,7 @@ export function PaymentForm({ onClose, onPaymentAdded }: PaymentFormProps) {
             className="goldBtn flex-1"
             disabled={!selectedStudent || !month || isSubmitting}
           >
-            {isSubmitting ? "جاري التسجيل..." : "تسجيل الدفعة"}
+            {isSubmitting ? "جاري الحفظ في Supabase..." : "حفظ في Supabase"}
           </button>
           <button 
             type="button" 
